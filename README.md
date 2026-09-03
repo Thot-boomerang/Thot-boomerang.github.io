@@ -7,8 +7,16 @@ enseignants, gratuit et sans publicité.
 | Page | Adresse |
 |---|---|
 | Politique de confidentialité | https://thot-boomerang.github.io/ |
+| Application (version web) | https://thot-boomerang.github.io/app/ |
 
-Le code de l'application est développé dans un dépôt séparé.
+La version web de l'application est servie depuis ce dépôt, dans le dossier
+`app/`. Elle contient le même fichier que l'application Android : un seul
+HTML, sans dépendance, sans ressource externe.
+
+Les données saisies restent dans le navigateur de l'utilisateur. Aucune
+n'est transmise : ce dépôt sert du CODE, il ne reçoit jamais de DONNÉES.
+
+Le développement se fait dans un dépôt séparé.
 
 ## Pourquoi cette page existe
 
