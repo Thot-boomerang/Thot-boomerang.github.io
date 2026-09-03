@@ -1400,6 +1400,12 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
 .lock-forgot{margin-top:14px;font-size:12.5px;color:var(--ink3);text-decoration:underline;padding:6px}
 .su-ov{position:fixed;inset:0;z-index:420;background:var(--bg);display:flex;flex-direction:column;
   padding:26px 20px calc(20px + var(--safe-bot));overflow-y:auto;opacity:0;transition:opacity .28s}
+/* Le voile reste plein écran — il masque l'application derrière. Mais son
+   CONTENU se cale sur la même colonne de 480 px que le reste : sur un
+   écran d'ordinateur, l'assistant s'étalait sinon d'un bord à l'autre,
+   et c'est le premier écran qu'un nouvel utilisateur voit.
+   Aucun effet en dessous de 480 px : la règle ne mord qu'au-delà. */
+.su-ov > *{width:100%;max-width:480px;margin-left:auto;margin-right:auto}
 .su-ov.show{opacity:1}
 .su-ov.out{opacity:0}
 .su-top{display:flex;gap:5px;margin-bottom:22px}
@@ -2840,7 +2846,7 @@ const APP_CREATED = '24 juillet 2026';
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
 const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.9';
+const APP_VERSION = '3.4.10';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
