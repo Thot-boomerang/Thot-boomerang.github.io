@@ -1764,8 +1764,8 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
         <div class="set-item-desc">Les 4 niveaux de maîtrise, leurs couleurs, et la liste des compétences</div></div>
       </button>      <button class="set-item" id="setTrimestres">
         <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        <div class="set-item-body"><div class="set-item-title">Conseils de classe</div>
-        <div class="set-item-desc">Arrêt des notes + conseil, par classe et par trimestre</div></div>
+        <div class="set-item-body"><div class="set-item-title">Arrêt des notes et conseils</div>
+        <div class="set-item-desc">Par classe et par trimestre</div></div>
       </button>
       <button class="set-item" id="setEdt">
         <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
@@ -2846,7 +2846,7 @@ const APP_CREATED = '24 juillet 2026';
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
 const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.10';
+const APP_VERSION = '3.4.12';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
@@ -5249,7 +5249,7 @@ function openSauvegarde(){
       <div class="sv-bloc">
         <div class="sv-titre">Export en fichier</div>
         <div class="sv-etat">${last? 'Dernier export il y a '+jours+' jour'+(jours>1?'s':'') : 'Jamais exporté'}</div>
-        <div class="su-hint">C'est la <b>seule</b> sauvegarde qui survit à une désinstallation ou à un changement de téléphone. Conserve le fichier en lieu sûr : il contient les données en clair.</div>
+        <div class="su-hint">C'est la <b>seule</b> sauvegarde qui survit à une désinstallation ou à un changement de téléphone. <b>Chaque export remplace le précédent</b> : il n'y a jamais qu'un fichier. Conserve-le en lieu sûr, il contient les données en clair.</div>
         <button class="btn btn-primary sv-btn" id="svExport">Exporter mes données</button>
       </div>
 
@@ -5328,20 +5328,46 @@ function checkSaveNag(){
 }
 
 /* trimestre courant (par classe) → "Arrêt JJ/MM · Conseil JJ/MM" ou "" */
+/* L'heure du conseil, et seulement si elle a été saisie.
+
+   conseilH est enregistrée depuis le lot 5.6 mais ne servait qu'à poser
+   l'événement dans l'agenda. Un conseil se prépare : savoir qu'il est à
+   17h30 plutôt qu'à 8h00 change la soirée.
+
+   L'agenda, lui, retombe sur 17h00 quand le champ est vide — il lui faut
+   bien une heure pour placer un événement. Reprendre ce repli ICI
+   laisserait croire à une heure choisie : on n'affiche rien. */
+function heureConseil(t){
+  const h=(t&&t.conseilH)||'';
+  return /^\d{2}:\d{2}$/.test(h) ? ' à '+h.replace(':','h') : '';
+}
+/* Les échéances du trimestre en cours, pour la carte de classe et
+   l'écran Classe.
+
+   On choisissait le trimestre par la date du CONSEIL. Or un conseil se
+   connaît deux ou trois semaines avant, quand l'arrêt des notes est fixé
+   dès la rentrée : de septembre à décembre, aucun trimestre n'était
+   retenu et la ligne restait vide — arrêts saisis ou non. Mesuré le
+   3 septembre, trois arrêts renseignés et aucun conseil : triCourant()
+   rendait la chaîne vide.
+
+   L'utilisateur saisissait ses dates et ne les voyait nulle part. On
+   prend donc la première échéance DISPONIBLE : conseil s'il est connu,
+   arrêt sinon. */
 function triCourant(classeId){
   const tris=(CFG.trimestres[classeId]||[]);
   const now=new Date(); let chosen=null;
+  const echeance=(t)=> (t && (t.conseil || t.arret)) || '';
   for(let i=0;i<tris.length;i++){
-    const t=tris[i]; if(!t.conseil)continue;
-    const cc=new Date(t.conseil+'T23:59');
-    if(now<=cc){chosen=t;break;}
+    const e=echeance(tris[i]); if(!e)continue;
+    if(now<=new Date(e+'T23:59')){chosen=tris[i];break;}
   }
   if(!chosen){ // tout passé → dernier renseigné
-    for(let i=tris.length-1;i>=0;i--){if(tris[i].conseil){chosen=tris[i];break;}}
+    for(let i=tris.length-1;i>=0;i--){if(echeance(tris[i])){chosen=tris[i];break;}}
   }
   if(!chosen)return '';
   const a=chosen.arret?`<span class="cc-k">Arrêt</span> ${fmtDate(chosen.arret)}`:'';
-  const c=chosen.conseil?`<span class="cc-k">Conseil</span> ${fmtDate(chosen.conseil)}`:'';
+  const c=chosen.conseil?`<span class="cc-k">Conseil</span> ${fmtDate(chosen.conseil)}${heureConseil(chosen)}`:'';
   return [a,c].filter(Boolean).join(' · ');
 }
 
@@ -6779,7 +6805,7 @@ function renderSettings(){
 }
 function openTrimestres(){
   const sheet=$('#sheet');
-  let html=`<div class="sheet-grip"></div><h3>Conseils de classe</h3>
+  let html=`<div class="sheet-grip"></div><h3>Arrêt des notes et conseils</h3>
     <div class="sheet-sub">Pour chaque classe, saisis l'arrêt des notes et le conseil des 3 trimestres. Les dates du trimestre en cours s'affichent sur chaque classe.</div>`;
   S.classesMeta.forEach(m=>{
     html+=`<div class="tri-class"><div class="tri-class-h">${m.nom}</div>`;
@@ -6885,14 +6911,22 @@ function surAppareil(){
                  && Capacitor.isNativePlatform()); }
   catch(e){ return false; }
 }
-/* Toutes les sauvegardes s'appelaient pareil et s'ecrasaient l'une
-   l'autre : impossible de revenir a celle d'avant-hier. Le nom porte
-   maintenant la date et l'heure, dans un ordre qui se trie tout seul. */
-function nomSauvegarde(){
-  const d=new Date(), p=(n)=>String(n).padStart(2,'0');
-  return 'Thot-sauvegarde-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())
-       + '-'+p(d.getHours())+p(d.getMinutes())+'.json';
-}
+/* UN SEUL fichier d'export, remplacé à chaque fois.
+
+   La 3.3.1 avait fait l'inverse — un nom daté — pour pouvoir revenir à
+   la sauvegarde d'avant-hier. Hugo exporte souvent et le dossier se
+   remplit : il demande le nom fixe. Le filet contre la fausse manœuvre
+   ne disparaît pas pour autant, il est ailleurs : la copie automatique
+   quotidienne vit dans localStorage, pas dans ces fichiers.
+
+   Sur l'appareil, Filesystem.writeFile écrase : c'est exactement ce qui
+   est demandé. Dans un navigateur, l'application ne choisit pas — un
+   téléchargement dont le nom est déjà pris devient « (1) », puis
+   « (2) ». Aucun code ne peut s'y opposer.
+
+   Les exports datés déjà présents restent listés et restaurables. */
+const NOM_SAUVEGARDE='Thot-sauvegarde.json';
+function nomSauvegarde(){ return NOM_SAUVEGARDE; }
 /* Les sauvegardes ecrites par l'application, la plus recente d'abord.
    On les lit dans SON dossier : sur Android, celui-ci est invisible au
    selecteur de fichiers du systeme depuis le stockage cloisonne. */
@@ -6914,6 +6948,12 @@ function listerSauvegardes(){
          passait en tete et heritait de l'etiquette « la plus recente »,
          qui aurait ete fausse. */
       .sort((a,b)=>{
+        /* L'horodatage du fichier fait foi quand le système le donne.
+           Depuis que l'export porte un nom fixe, trier par NOM aurait
+           renvoyé la sauvegarde du jour DERRIÈRE les anciennes, datées :
+           la plus récente affichée en dernier, et étiquetée à tort. */
+        const ma=+(a.mtime||0), mb=+(b.mtime||0);
+        if(ma>0 && mb>0 && ma!==mb) return mb-ma;
         /* [0-9] plutot que la classe raccourcie : ecrite a travers trois
            couches d outils, elle perdait son antislash en chemin. */
         const estDatee=(n)=>/[0-9]{8}-[0-9]{4}/.test(String(n||''));
@@ -6988,7 +7028,7 @@ function openImport(){
       h+=`<div class="set-group-lbl" style="margin-top:14px">Tes sauvegardes</div><div class="cls-list">`;
       liste.forEach((x,i)=>{
         h+=`<button class="su-opt wide" data-sauv="${escAttr(x.name)}">
-              <div>${escHtml(jolieDateSauvegarde(x.name))}</div>
+              <div>${escHtml(jolieDateSauvegarde(x.name, x.mtime))}</div>
               <div class="su-zone-ac">${escHtml(x.name)}${(i===0&&liste.length>1)?' · la plus récente':''}</div>
             </button>`;
       });
@@ -7023,14 +7063,21 @@ function openImport(){
 }
 /* « Thot-sauvegarde-20260827-1946.json » -> « 27 août 2026 à 19:46 ».
    Un nom de fichier ne se lit pas, une date si. */
-function jolieDateSauvegarde(nom){
-  const m=String(nom||'').match(/(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})/);
-  /* Les sauvegardes d'avant la 3.3.1 n'ont pas de date dans leur nom.
-     Repeter le nom du fichier n'apprend rien ; le dire, si. */
-  if(!m) return 'Sauvegarde sans date';
+function jolieDateSauvegarde(nom, mtime){
   const mois=['janvier','février','mars','avril','mai','juin','juillet',
               'août','septembre','octobre','novembre','décembre'];
-  return (+m[3])+' '+mois[(+m[2])-1]+' '+m[1]+' à '+m[4]+':'+m[5];
+  const m=String(nom||'').match(/(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})/);
+  if(m) return (+m[3])+' '+mois[(+m[2])-1]+' '+m[1]+' à '+m[4]+':'+m[5];
+  /* Depuis que l'export porte un nom fixe, la date n'est plus dans le
+     nom. L'horodatage du fichier la donne, et readdir le fournit. */
+  const t=+mtime;
+  if(t>0){ const d=new Date(t), p=(n)=>String(n).padStart(2,'0');
+    return d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear()
+         + ' à '+p(d.getHours())+':'+p(d.getMinutes()); }
+  /* Sans horodatage, on dit ce qu'on sait : c'est le fichier d'export,
+     et il n'y en a qu'un. Répéter son nom n'apprendrait rien. */
+  if(String(nom||'')===NOM_SAUVEGARDE) return 'La dernière sauvegarde';
+  return 'Sauvegarde sans date';
 }
 function direOuEstLeFichier(r){
   /* « Documents » laissait croire au dossier Documents du telephone.
@@ -7321,8 +7368,22 @@ function renderSuivi(){
       b.addEventListener('click',()=>{suiviTri=t;suiviTriManuel=true;renderSuivi();});
       tp.appendChild(b);
     });
+    /* Cette place ne disait que COMMENT le trimestre avait été choisi.
+       Les échéances y sont plus utiles : l'arrêt des notes est la
+       première date de tout le trimestre, et le conseil celle qui se
+       prépare.
+
+       Ce sont les dates du trimestre AFFICHÉ, pas du trimestre calculé :
+       on clique sur T2, on lit les échéances du T2. C'est ce qu'on
+       attend d'un sélecteur. Quand rien n'est saisi pour celui-là,
+       l'ancien message revient — il faut bien dire pourquoi c'est vide. */
     const auto2=triCourantClasse(triClassRef);
-    const info=el('span','su-tri-info', auto2? 'trimestre calé sur tes dates d\'arrêt' : 'dates d\'arrêt non saisies · choix manuel');
+    const per=((CFG.trimestres[triClassRef]||[])[TRIS.indexOf(suiviTri)])||{};
+    const ech=[ per.arret   ? 'Arrêt '+fmtDate(per.arret) : '',
+                per.conseil ? 'Conseil '+fmtDate(per.conseil)+heureConseil(per) : ''
+              ].filter(Boolean).join(' · ');
+    const info=el('span','su-tri-info', ech
+      || (auto2? 'trimestre calé sur tes dates d\'arrêt' : 'dates d\'arrêt non saisies · choix manuel'));
     tp.appendChild(info);
   }
   // volets : en mode PP, on masque les sous-onglets et on n'affiche que la vue PP
