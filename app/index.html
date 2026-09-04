@@ -2876,7 +2876,7 @@ const APP_CREATED = '24 juillet 2026';
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
 const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.15';
+const APP_VERSION = '3.4.16';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
@@ -9652,8 +9652,8 @@ function pdAnalyser(lignes, titre){
   const mNiv=/\b(6\s*e|5\s*e|4\s*e|3\s*e|2\s*n?de|1\s*[eè]re|t\s*(?:ale|erminale))\b/i.exec(plierTexte(titre||''));
   if(mNiv) res.niveau=mNiv[1].replace(/\s+/g,'').replace('nde','de');
   let per=null, seq=null;
-  const nouvellePeriode=(label,sem)=>{
-    per={label:label, semaines:sem||0, marge:0, margeMotif:'', sequences:[]};
+  const nouvellePeriode=(label,sem,heures)=>{
+    per={label:label, semaines:sem||0, heures:heures||0, marge:0, margeMotif:'', sequences:[]};
     res.periodes.push(per); seq=null;
   };
   lignes.forEach(L=>{
@@ -9685,7 +9685,7 @@ function pdAnalyser(lignes, titre){
       per.margeMotif=(/\(([^)]*)\)/.exec(brut)||[])[1]||'';
       seq=null; return;
     }
-    if(mSem){ nouvellePeriode(brut.replace(/\s*\(\s*\d+\s*semaines?\s*\)\s*/i,'').trim()||brut, +mSem[1]); return; }
+    if(mSem){ nouvellePeriode(brut.replace(/\s*\(\s*\d+\s*semaines?\s*\)\s*/i,'').trim()||brut, +mSem[1], h); return; }
     if(mSeq){
       if(!per) nouvellePeriode('Période 1',0);
       seq={nom:brut.replace(/^\s*(?:Th\s*\d*\s*[.·:-]?\s*)?S[ée]quence\s*\d*\s*[-–—:.]\s*/i,'').trim()||brut,
@@ -9718,6 +9718,13 @@ function pdAnalyser(lignes, titre){
   });
   if(!res.sequences.length) res.avert.push("Aucune séquence reconnue. Vérifie que chaque ligne de séquence commence par « Th1. Séquence 1 - ».");
   if(!res.niveau) res.avert.push("Le niveau n'a pas été trouvé dans le titre du document : à choisir ci-dessous.");
+  /* L'horaire hebdomadaire, déduit du document : « 7 semaines · 21h »
+     vaut 3 h par semaine. On prend la MÉDIANE des périodes qui portent
+     les deux nombres — une période isolée peut être atypique (un
+     trimestre court, un voyage), la médiane non. */
+  const taux=res.periodes.filter(p=>p.semaines>0 && p.heures>0)
+                         .map(p=>p.heures/p.semaines).sort((a,b)=>a-b);
+  res.hebdo = taux.length ? Math.round(taux[Math.floor(taux.length/2)]*4)/4 : 0;
   return res;
 }
 
@@ -9742,30 +9749,56 @@ function pdModeleHtml(){
 function pdEcrire(res, niveau){
   archiverProg(niveau);
   const pids=['p1','p2','p3','p4','p5'];
+
+  /* Une progression est une LISTE ORDONNÉE : les périodes sont
+     CALCULÉES, pas choisies — c'est la règle de toute l'application.
+
+     La 3.4.14 rangeait les séquences importées dans S.customSeq, la
+     liste des AJOUTS par-dessus une progression. Elles s'affichaient
+     donc dans « Ma progression » (seqList lit les deux) mais restaient
+     invisibles à totalDedie(), qui ne lit que seq : volume annuel nul,
+     pourcentages nuls, marge nulle, et plus rien à poser dans la
+     semaine. Une donnée au mauvais endroit ne manque pas franchement,
+     elle manque à moitié — c'est pire.
+
+     On passe donc par placerSequences(), comme installerProg() pour un
+     programme officiel. L'ordre du document est conservé — il groupe
+     déjà par période — et le placement tient compte du vrai calendrier
+     de vacances. */
+  const entieres=[];
+  const marque=Date.now().toString(36);
+  res.periodes.forEach((p,i)=>(p.sequences||[]).forEach((s,k)=>{
+    const nb=Math.max(1, (s.seances&&s.seances.length) || Math.round(s.h||1));
+    entieres.push({
+      id:'imp-'+niveau+'-'+marque+'-'+i+'-'+k,
+      nom:s.nom, disc:s.disc||'', eval:0, officiel:false,
+      nb:nb, dureeSeance:((s.h||nb)/nb),
+      seances:(s.seances||[]).slice()
+    });
+  }));
+
+  /* L'horaire hebdomadaire : celui déjà réglé s'il existe, sinon celui
+     que le document annonce. Sans lui, placerSequences() n'a aucune
+     capacité de période et le volume annuel resterait nul. */
+  const hebdo = hebdoDe(niveau) || res.hebdo || 0;
+
   S.progNiv=S.progNiv||{};
   S.progNiv[niveau]={
     periodes:pids.map((id,i)=>{
       const src=res.periodes[i];
       return {id:id, label:(src&&src.label)||('Période '+(i+1)),
-              semaines:(src&&src.semaines)||0,
+              semaines:semainesPeriode(id)||((src&&src.semaines)||0),
               marge:(src&&src.marge)||0, margeMotif:(src&&src.margeMotif)||''};
     }),
-    seq:{p1:[],p2:[],p3:[],p4:[],p5:[]},
-    hebdo:hebdoDe(niveau)||0, margeAnnuelle:0
+    seq:(hebdo>0 && entieres.length) ? placerSequences(entieres, hebdo)
+                                     : {p1:[],p2:[],p3:[],p4:[],p5:[]},
+    hebdo:hebdo, margeAnnuelle:0
   };
+  /* Les ajouts perso du niveau repartent de zéro : ils appartenaient à
+     la progression qu'on vient de remplacer, et elle est en
+     bibliothèque. */
   S.customSeq=S.customSeq||{}; S.customSeq[niveau]={};
   S.seqHidden=S.seqHidden||{};  S.seqHidden[niveau]=[];
-  res.periodes.forEach((p,i)=>{
-    /* Au-delà de cinq périodes on empile dans la dernière plutôt que de
-       jeter : perdre des séquences en silence serait pire que les
-       ranger au mauvais endroit, qui se corrige à la main. */
-    const pid=pids[Math.min(i,4)];
-    S.customSeq[niveau][pid]=(S.customSeq[niveau][pid]||[]).concat(
-      p.sequences.map((s,k)=>({
-        id:'imp-'+niveau+'-'+Date.now().toString(36)+'-'+i+'-'+k,
-        nom:s.nom, disc:s.disc, h:s.h, eval:0, seances:(s.seances||[]).slice()
-      })));
-  });
   save();
   archiverProg(niveau, ['Import', CFG.matiere||'', niveau].filter(Boolean).join(' · '));
   return true;
@@ -9818,7 +9851,7 @@ function openImportProg(){
     });
     const retenus=lots.filter(r=>r.retenu && r.sequences.length);
     const cibles=retenus.map(r=>r.niveau).filter((v,i,a)=>a.indexOf(v)===i);
-    h+=`<div class="cls-warn">La progression actuelle ${cibles.length>1?'des niveaux':'du niveau'} <b>${escHtml(cibles.join(', ')||'—')}</b> part d'abord dans ta bibliothèque : elle n'est pas perdue. L'import y sera rangé aussi.</div>
+    h+=`<div class="cls-warn"><b>La progression ${cibles.length>1?'des niveaux':'du niveau'} ${escHtml(cibles.join(' et ')||'—')} sera REMPLACÉE</b> par celle du document. L'ancienne part d'abord dans ta bibliothèque — <b>Ma progression → 📚 Ma bibliothèque</b> — et l'import y sera rangé aussi. Ton emploi du temps, tes classes et tes élèves ne sont pas touchés.</div>
       <div class="sheet-btns">
         <button class="btn btn-ghost" id="ipRetour">Annuler</button>
         <button class="btn btn-primary" id="ipOk"${retenus.length?'':' disabled'}>Enregistrer sur ${escHtml(cibles.join(' et ')||'—')}</button>
