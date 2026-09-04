@@ -2876,7 +2876,7 @@ const APP_CREATED = '24 juillet 2026';
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
 const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.16';
+const APP_VERSION = '3.4.18';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
@@ -9746,8 +9746,29 @@ function pdModeleHtml(){
    l'existant part en bibliothèque AVANT d'être remplacé, l'import y part
    APRÈS. Deux entrées, l'avant et l'après : se tromper de fichier ne
    coûte qu'un rechargement. */
-function pdEcrire(res, niveau){
+/* Les séances cochées des classes d'un niveau.
+
+   Elles sont rangées par identifiant de séquence : remplacer la
+   progression les rend orphelines — comptées dans le total annuel,
+   rattachées à aucune séquence affichée. */
+function pdCochesNiveau(niveau){
+  let n=0;
+  (S.classesMeta||[]).filter(c=>c.niveau===niveau).forEach(c=>{
+    const m=(S.coches||{})[c.id]||{};
+    Object.keys(m).forEach(sid=>{ n+=((m[sid]||[]).filter(Boolean)).length; });
+  });
+  return n;
+}
+function pdEffacerCoches(niveau){
+  (S.classesMeta||[]).filter(c=>c.niveau===niveau).forEach(c=>{
+    if(S.coches && S.coches[c.id]) S.coches[c.id]={};
+  });
+}
+function pdEcrire(res, niveau, effacerCoches){
   archiverProg(niveau);
+  /* Décision de l'utilisateur, prise sur l'écran de contrôle avec le
+     nombre sous les yeux. Par défaut on ne détruit rien. */
+  if(effacerCoches) pdEffacerCoches(niveau);
   const pids=['p1','p2','p3','p4','p5'];
 
   /* Une progression est une LISTE ORDONNÉE : les périodes sont
@@ -9848,6 +9869,19 @@ function openImportProg(){
       h+=`</div>`;
     });
     if(res.ignorees) h+=`<div class="su-hint">${res.ignorees} ligne${res.ignorees>1?'s':''} non reconnue${res.ignorees>1?'s':''}, ignorée${res.ignorees>1?'s':''}.</div>`;
+    /* Les coches suivent l'ancienne progression : la question ne se
+       pose que s'il y a quelque chose à perdre, et elle ne veut rien
+       dire sans le nombre. */
+    { const nc=pdCochesNiveau(res.niveau);
+      if(nc>0){
+        h+=`<div class="field-lbl">Séances déjà cochées en ${escHtml(res.niveau)}</div>
+          <button class="motif-opt${res.razCoches?' sel':''}" data-raz="${li}">
+            <span class="mo-dot"></span><span>Repartir de zéro (<b>${nc}</b> séance${nc>1?'s':''} cochée${nc>1?'s':''})</span></button>
+          <div class="su-hint">${res.razCoches
+            ? "Les <b>"+nc+"</b> coches de ce niveau seront effacées : l'affichage redevient cohérent, et le relevé de ce qui a été fait depuis la rentrée est perdu."
+            : "Elles sont conservées. Elles comptent dans ton volume annuel, mais <b>ne seront rattachées à aucune séquence</b> : le pourcentage avancera sans qu'aucune séquence ne paraisse faite."}</div>`;
+      }
+    }
     });
     const retenus=lots.filter(r=>r.retenu && r.sequences.length);
     const cibles=retenus.map(r=>r.niveau).filter((v,i,a)=>a.indexOf(v)===i);
@@ -9860,13 +9894,16 @@ function openImportProg(){
     $$('[data-lot]',sheet).forEach(b=>b.addEventListener('click',()=>{
       const r=lots[+b.dataset.lot]; r.retenu=!r.retenu; controle(lots);
     }));
+    $$('[data-raz]',sheet).forEach(b=>b.addEventListener('click',()=>{
+      const r=lots[+b.dataset.raz]; r.razCoches=!r.razCoches; controle(lots);
+    }));
     $$('[data-niv]',sheet).forEach(b=>b.addEventListener('click',()=>{
       lots[+b.dataset.l].niveau=b.dataset.niv; controle(lots);
     }));
     $('#ipRetour',sheet).addEventListener('click',closeSheet);
     const ok=$('#ipOk',sheet);
     if(ok&&!ok.disabled) ok.addEventListener('click',()=>{
-      retenus.forEach(r=>pdEcrire(r,r.niveau));
+      retenus.forEach(r=>pdEcrire(r,r.niveau,!!r.razCoches));
       closeSheet();
       progNiveau=cibles[0];
       toast('Programmation importée sur '+cibles.join(' et '));
@@ -12952,6 +12989,13 @@ const TUTO_STEPS=[
 
   {emoji:'🔒', titre:'Le Suivi, derrière ton code',
    txt:"Les données d'élèves sont protégées par un code à 4 chiffres. Quatre volets : <b>Élèves</b> (fiche, PAP, observations, et les <b>jokers</b>, tes compteurs d'oublis et de travail non fait), <b>Notes</b>, <b>Groupes</b>, et une <b>roue</b> de tirage au sort. Pour explorer sans rien risquer, active la classe de test dans les Réglages."},
+
+  /* Placée APRÈS le Suivi : la progression et les élèves viennent
+     d'être présentés, on peut enfin dire comment les remplir sans rien
+     retaper. Les deux chemins sont donnés en toutes lettres — une étape
+     qui dit « c'est possible » sans dire « c'est ici » ne sert à rien. */
+  {emoji:'📄', titre:'Ne retape rien : importe',
+   txt:"Deux choses se remplissent depuis un fichier.<br><br><b>Tes listes de classe</b> — Réglages → <b>Importer une liste d'élèves</b>. Un tableur Excel, LibreOffice ou CSV : classe, nom, prénom, genre, date de naissance. Un modèle est fourni.<br><br><b>Ta programmation annuelle</b> — Réglages → Ma progression → <b>Importer ma programmation</b>. Un document Word ou LibreOffice contenant ton tableau habituel : périodes, séquences, séances, marge de manœuvre. Un exemple du format attendu s'affiche avant que tu choisisses le fichier.<br><br>Dans les deux cas, un écran te montre ce que Thot a compris <b>avant</b> d'écrire quoi que ce soit. Et le fichier est lu sur ton appareil : il ne part nulle part."},
 
   {emoji:'📝', titre:'Le carnet de notes',
    txt:"L'onglet Notes te permet de rentrer tes évaluations (par note et/ou compétences), ce qui calculera automatiquement la moyenne de chaque élève et alimentera sa fiche élève."},
