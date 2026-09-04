@@ -2876,7 +2876,7 @@ const APP_CREATED = '24 juillet 2026';
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
 const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.14';
+const APP_VERSION = '3.4.15';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
@@ -9545,31 +9545,69 @@ function pdDisciplineCouleur(hex){
   return '';
 }
 
-/* Un .docx : les lignes du premier tableau rencontré. La couleur est
-   lue en direct (<w:color>) OU à travers un style de caractère
-   (<w:rStyle>), parce que Word fait indifféremment l'un ou l'autre. */
-function pdLignesDocx(xmlDoc, xmlStyles){
+/* « Séance 5 : ... Séance 6 : ... » dans un SEUL paragraphe : Word ne
+   met pas toujours de saut de ligne. Mesuré sur le document réel.
+   Sans ce découpage, deux séances comptaient pour une et la durée
+   déduite était fausse. */
+function pdDecouperSeances(t){
+  const parts=String(t||'').split(/(?=S[ée]ance\s*\d+\s*[:.])/i)
+    .map(x=>x.trim()).filter(Boolean);
+  return parts.length? parts : [String(t||'')];
+}
+
+/* Un paragraphe : son texte et sa couleur. */
+function pdParagraphes(xml){
+  return (xml.match(/<w:p[\s>][\s\S]*?<\/w:p>/g)||[]).map(p=>({
+    txt: pdEntites((p.match(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)||[])
+          .map(x=>x.replace(/<[^>]+>/g,'')).join('')).trim(),
+    coul: ((p.match(/<w:color\s+w:val="([0-9a-fA-F]{6})"/)||[])[1]||'').toUpperCase(),
+    style: (p.match(/<w:rStyle\s+w:val="([^"]+)"/)||[])[1]||''
+  })).filter(x=>x.txt);
+}
+
+/* Les lignes d'UN tableau. Une cellule est lue PARAGRAPHE PAR
+   PARAGRAPHE : dans le document réel, la séquence et ses séances
+   tiennent dans la même cellule, en paragraphes distincts. Les
+   concaténer donnait une bouillie d'une seule ligne. */
+function pdLignesTbl(xmlTbl, styles){
+  const out=[];
+  (xmlTbl.match(/<w:tr[\s>][\s\S]*?<\/w:tr>/g)||[]).forEach(tr=>{
+    const tcs=tr.match(/<w:tc[\s>][\s\S]*?<\/w:tc>/g)||[];
+    const paras=[];
+    (tcs[0]?pdParagraphes(tcs[0]):[]).forEach(p=>{
+      if(!p.coul && p.style && styles[p.style]) p.coul=styles[p.style].toUpperCase();
+      paras.push(p);
+    });
+    const cells=tcs.map(tc=>pdEntites((tc.match(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)||[])
+      .map(t=>t.replace(/<[^>]+>/g,'')).join('')).trim());
+    out.push({paras, cells, ital:/<w:i\/>|<w:i\s/.test(tr)});
+  });
+  return out;
+}
+
+/* Un document peut porter PLUSIEURS niveaux : un tableau chacun,
+   précédé de son titre. Mesuré sur le document réel — « Programmation
+   annuelle prévue 5e », tableau, « ... 3e », tableau. Prendre le premier
+   titre venu aurait versé la 3e dans la 5e. */
+function pdBlocsDocx(xmlDoc, xmlStyles){
   const styles={};
   if(xmlStyles){
-    (xmlStyles.match(/<w:style[\s>][\s\S]*?<\/w:style>/g)||[]).forEach(bloc=>{
-      const id=(bloc.match(/w:styleId="([^"]+)"/)||[])[1];
-      const c=(bloc.match(/<w:color\s+w:val="([0-9a-fA-F]{6})"/)||[])[1];
+    (xmlStyles.match(/<w:style[\s>][\s\S]*?<\/w:style>/g)||[]).forEach(b=>{
+      const id=(b.match(/w:styleId="([^"]+)"/)||[])[1];
+      const c=(b.match(/<w:color\s+w:val="([0-9a-fA-F]{6})"/)||[])[1];
       if(id&&c) styles[id]=c;
     });
   }
-  const out=[];
-  (xmlDoc.match(/<w:tr[\s>][\s\S]*?<\/w:tr>/g)||[]).forEach(tr=>{
-    const cells=(tr.match(/<w:tc[\s>][\s\S]*?<\/w:tc>/g)||[]).map(tc=>
-      pdEntites((tc.match(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)||[])
-        .map(t=>t.replace(/<[^>]+>/g,'')).join('')).trim());
-    let coul=(tr.match(/<w:color\s+w:val="([0-9a-fA-F]{6})"/)||[])[1]||'';
-    if(!coul){
-      const rs=(tr.match(/<w:rStyle\s+w:val="([^"]+)"/)||[])[1];
-      if(rs && styles[rs]) coul=styles[rs];
+  const corps=(xmlDoc.match(/<w:body>([\s\S]*)<\/w:body>/)||[])[1]||xmlDoc;
+  const blocs=[]; let titre=[];
+  corps.split(/(<w:tbl>[\s\S]*?<\/w:tbl>)/).forEach(m=>{
+    if(m.indexOf('<w:tbl>')===0){
+      blocs.push({titre:titre.join(' '), lignes:pdLignesTbl(m,styles)});
+      titre=[]; return;
     }
-    out.push({cells, coul, ital:/<w:i\/>|<w:i\s/.test(tr)});
+    pdParagraphes(m).forEach(p=>titre.push(p.txt));
   });
-  return out;
+  return blocs;
 }
 
 /* Un .odt : la couleur passe presque toujours par un style nommé, il
@@ -9619,12 +9657,21 @@ function pdAnalyser(lignes, titre){
     res.periodes.push(per); seq=null;
   };
   lignes.forEach(L=>{
-    const brut=(L.cells[0]||'').trim();
+    /* Le premier paragraphe porte la nature de la ligne ; les suivants
+       sont les séances de la séquence, quand elles sont dans la même
+       cellule. */
+    const paras=(L.paras&&L.paras.length)? L.paras : [{txt:(L.cells[0]||''), coul:L.coul||''}];
+    const brut=(paras[0].txt||'').trim();
     if(!brut){ return; }
+    if(!L.coul) L.coul=paras[0].coul||'';
+    const suite=[];
+    paras.slice(1).forEach(p=>pdDecouperSeances(p.txt).forEach(x=>suite.push(x)));
     const t=plierTexte(brut);
     const h=pdHeuresLigne(L);
 
-    const mSeq=/^th\s*\d*\s*[.·:-]?\s*sequence\s*\d*\s*[-–—:.]\s*(.+)$/.exec(t);
+    /* « Th1. » est facultatif : le document réel mêle « Th1. Séquence 1
+       - ... » et « Séquence 1 - ... ». Les deux sont des séquences. */
+    const mSeq=/^(?:th\s*\d*\s*[.·:-]?\s*)?sequence\s*\d*\s*[-–—:.]\s*(.+)$/.exec(t);
     const mSem=/\(\s*(\d+)\s*semaines?\s*\)/.exec(t);
 
     if(/^seance\s*\d+\s*[:.\-]/.test(t)){
@@ -9641,13 +9688,24 @@ function pdAnalyser(lignes, titre){
     if(mSem){ nouvellePeriode(brut.replace(/\s*\(\s*\d+\s*semaines?\s*\)\s*/i,'').trim()||brut, +mSem[1]); return; }
     if(mSeq){
       if(!per) nouvellePeriode('Période 1',0);
-      seq={nom:brut.replace(/^\s*Th\s*\d*\s*[.·:-]?\s*S[ée]quence\s*\d*\s*[-–—:.]\s*/i,'').trim()||brut,
+      seq={nom:brut.replace(/^\s*(?:Th\s*\d*\s*[.·:-]?\s*)?S[ée]quence\s*\d*\s*[-–—:.]\s*/i,'').trim()||brut,
            disc:pdDisciplineCouleur(L.coul)||'AUTRE', h:h||0, seances:[]};
+      /* Les séances de la même cellule, débarrassées de leur numéro. */
+      suite.forEach(x=>{
+        if(/^s[ée]ance\s*\d+\s*[:.\-]/i.test(x))
+          seq.seances.push(x.replace(/^\s*S[ée]ance\s*\d+\s*[:.\-]\s*/i,'').trim()||x);
+      });
       per.sequences.push(seq); res.sequences.push(seq); return;
     }
     if(h!==null){
       if(!per) nouvellePeriode('Période 1',0);
       seq={nom:brut, disc:pdDisciplineCouleur(L.coul)||'ORG', h:h, seances:[]};
+      /* Elle lit ses séances comme une séquence nommée : sans cela leur
+         nombre était DEVINÉ d'après les heures, et leur détail perdu. */
+      suite.forEach(x=>{
+        if(/^s[ée]ance\s*\d+\s*[:.\-]/i.test(x))
+          seq.seances.push(x.replace(/^\s*S[ée]ance\s*\d+\s*[:.\-]\s*/i,'').trim()||x);
+      });
       per.sequences.push(seq); res.sequences.push(seq); return;
     }
     res.ignorees++;
@@ -9733,13 +9791,18 @@ function openImportProg(){
     $('#ipAnnul',sheet).addEventListener('click',closeSheet);
     $('#ipChoisir',sheet).addEventListener('click',()=>{ const i=$('#importProgFile'); if(i) i.click(); });
   };
-  const controle=(res)=>{
+  const controle=(lots)=>{
     let h=`<div class="sheet-grip"></div>
       <h3>Ce que Thot a compris</h3>
-      <div class="sheet-sub">Rien n'est encore enregistré. Vérifie, puis valide.</div>`;
+      <div class="sheet-sub">${lots.length>1?'<b>'+lots.length+' niveaux</b> trouvés dans ce document. ':''}Rien n'est encore enregistré. Vérifie, puis valide.</div>`;
+    lots.forEach((res,li)=>{
+    if(lots.length>1)
+      h+=`<button class="motif-opt${res.retenu?' sel':''}" data-lot="${li}" style="margin-top:10px">
+            <span class="mo-dot"></span><span><b>${escHtml(res.niveau||'niveau ?')}</b> · ${res.sequences.length} séquence${res.sequences.length>1?'s':''}</span></button>`;
+    if(!res.retenu){ return; }
     if(res.avert.length) h+=res.avert.map(a=>`<div class="pd-alerte">⚠ ${escHtml(a)}</div>`).join('');
     h+=`<div class="field-lbl">Niveau concerné</div>
-      <div class="prog-nivpick">${nivs.map(n=>`<button class="prog-nivchip${n===choisi?' sel':''}" data-niv="${n}">${escHtml(n)}</button>`).join('')}</div>`;
+      <div class="prog-nivpick">${nivs.map(n=>`<button class="prog-nivchip${n===res.niveau?' sel':''}" data-niv="${n}" data-l="${li}">${escHtml(n)}</button>`).join('')}</div>`;
     res.periodes.forEach((p,i)=>{
       h+=`<div class="pd-bloc">
         <div class="pd-per-t">${escHtml(p.label||('Période '+(i+1)))}</div>
@@ -9752,20 +9815,28 @@ function openImportProg(){
       h+=`</div>`;
     });
     if(res.ignorees) h+=`<div class="su-hint">${res.ignorees} ligne${res.ignorees>1?'s':''} non reconnue${res.ignorees>1?'s':''}, ignorée${res.ignorees>1?'s':''}.</div>`;
-    h+=`<div class="cls-warn">La progression actuelle du niveau <b>${escHtml(choisi)}</b> part d'abord dans ta bibliothèque : elle n'est pas perdue. L'import y sera rangé aussi.</div>
+    });
+    const retenus=lots.filter(r=>r.retenu && r.sequences.length);
+    const cibles=retenus.map(r=>r.niveau).filter((v,i,a)=>a.indexOf(v)===i);
+    h+=`<div class="cls-warn">La progression actuelle ${cibles.length>1?'des niveaux':'du niveau'} <b>${escHtml(cibles.join(', ')||'—')}</b> part d'abord dans ta bibliothèque : elle n'est pas perdue. L'import y sera rangé aussi.</div>
       <div class="sheet-btns">
         <button class="btn btn-ghost" id="ipRetour">Annuler</button>
-        <button class="btn btn-primary" id="ipOk"${res.sequences.length?'':' disabled'}>Enregistrer sur ${escHtml(choisi)}</button>
+        <button class="btn btn-primary" id="ipOk"${retenus.length?'':' disabled'}>Enregistrer sur ${escHtml(cibles.join(' et ')||'—')}</button>
       </div>`;
     sheet.innerHTML=h;
-    $$('[data-niv]',sheet).forEach(b=>b.addEventListener('click',()=>{ choisi=b.dataset.niv; controle(res); }));
+    $$('[data-lot]',sheet).forEach(b=>b.addEventListener('click',()=>{
+      const r=lots[+b.dataset.lot]; r.retenu=!r.retenu; controle(lots);
+    }));
+    $$('[data-niv]',sheet).forEach(b=>b.addEventListener('click',()=>{
+      lots[+b.dataset.l].niveau=b.dataset.niv; controle(lots);
+    }));
     $('#ipRetour',sheet).addEventListener('click',closeSheet);
     const ok=$('#ipOk',sheet);
     if(ok&&!ok.disabled) ok.addEventListener('click',()=>{
-      pdEcrire(res,choisi);
+      retenus.forEach(r=>pdEcrire(r,r.niveau));
       closeSheet();
-      progNiveau=choisi;
-      toast('Programmation importée sur '+choisi);
+      progNiveau=cibles[0];
+      toast('Programmation importée sur '+cibles.join(' et '));
       try{ renderDash(); renderBandeau(); }catch(e){}
       openProgManager();
     });
@@ -9776,9 +9847,16 @@ function openImportProg(){
       const file=ev.target.files&&ev.target.files[0]; ev.target.value='';
       if(!file) return;
       pdLireFichier(file)
-        .then(lu=>{ const res=pdAnalyser(lu.lignes, lu.titre);
-          if(res.niveau && nivs.includes(res.niveau)) choisi=res.niveau;
-          controle(res); })
+        .then(lu=>{
+          const lots=lu.blocs.map(b=>{
+            const r=pdAnalyser(b.lignes, b.titre);
+            r.retenu=true;
+            if(!r.niveau) r.niveau=choisi;
+            return r;
+          }).filter(r=>r.sequences.length || r.periodes.length);
+          if(!lots.length) throw new Error("Rien de reconnaissable dans ce document.");
+          controle(lots);
+        })
         .catch(err=>{
           sheet.innerHTML=`<div class="sheet-grip"></div><h3>Fichier illisible</h3>
             <div class="sheet-sub">${escHtml(String((err&&err.message)||err))}</div>
@@ -9800,11 +9878,16 @@ function pdLireFichier(file){
     if(ann['word/document.xml']){
       return zipTexte(buf,'word/document.xml').then(doc=>
         (ann['word/styles.xml']? zipTexte(buf,'word/styles.xml') : Promise.resolve(''))
-          .then(st=>({lignes:pdLignesDocx(doc,st), titre:(doc.match(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/)||[])[1]||nom})));
+          .then(st=>{
+            const blocs=pdBlocsDocx(doc,st).filter(b=>b.lignes.length);
+            if(!blocs.length) throw new Error("Aucun tableau trouvé dans ce document.");
+            return {blocs:blocs.map(b=>({titre:b.titre||nom, lignes:b.lignes}))};
+          }));
     }
     if(ann['content.xml']){
       return zipTexte(buf,'content.xml').then(x=>
-        ({lignes:pdLignesOdt(x), titre:(x.match(/<text:p[^>]*>([\s\S]*?)<\/text:p>/)||[])[1]?pdTexteDe((x.match(/<text:p[^>]*>[\s\S]*?<\/text:p>/)||[''])[0]):nom}));
+        ({blocs:[{titre:(x.match(/<text:p[^>]*>[\s\S]*?<\/text:p>/)||['']).map(pdTexteDe)[0]||nom,
+                  lignes:pdLignesOdt(x)}]}));
     }
     throw new Error("Ce fichier n'est ni un .docx ni un .odt.");
   });
