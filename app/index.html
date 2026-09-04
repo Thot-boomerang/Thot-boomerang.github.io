@@ -766,6 +766,35 @@ input.txt:focus,textarea.txt:focus,select.sel-input:focus{border-color:var(--acc
 .su-tile.act.obs{border-color:rgba(255,180,80,.4)}
 .su-tile.act.ret{border-color:rgba(230,90,90,.4)}
 .su-tile-minus{position:absolute;top:4px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--card);border:1px solid var(--line2);color:var(--ink2);font-size:15px;line-height:20px;font-weight:600}
+/* Le « ? » se pose dans le coin OPPOSÉ au « − » : les deux cohabitent
+   sur la même pastille sans jamais se recouvrir. */
+.su-tile-aide{position:absolute;top:4px;left:6px;width:20px;height:20px;border-radius:50%;
+  background:var(--card);border:1px solid var(--line2);color:var(--ink3);
+  font-size:12px;line-height:18px;font-weight:700}
+/* Le modèle attendu : un exemple se comprend une fois, une
+   spécification se relit trois fois. */
+.pd-modele{border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin:6px 0 4px;
+  font-size:10.5px;line-height:1.35}
+.pd-modele div{display:flex;border-top:1px solid var(--line)}
+.pd-modele div:first-child{border-top:none}
+.pd-modele span{padding:5px 7px}
+.pd-modele span:first-child{flex:1;min-width:0}
+.pd-modele span:last-child{width:38px;flex-shrink:0;text-align:right;border-left:1px solid var(--line);color:var(--ink3)}
+.pd-modele .pd-per{background:var(--card2);font-weight:700}
+.pd-modele .pd-h{color:#c0392b;font-weight:600}
+.pd-modele .pd-g{color:#2e7d46;font-weight:600}
+.pd-modele .pd-m{font-style:italic;color:var(--ink3)}
+.pd-bloc{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px;background:var(--card)}
+.pd-per-t{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.pd-per-s{font-size:11px;color:var(--ink4);margin-bottom:7px}
+.pd-seq{font-size:12px;color:var(--ink2);padding:5px 0;border-top:1px dashed var(--line)}
+.pd-seq:first-of-type{border-top:none}
+.pd-seq b{color:var(--ink);font-weight:600}
+.pd-seq-d{font-size:10.5px;color:var(--ink4)}
+.pd-alerte{font-size:11.5px;color:var(--e-orange);margin-top:3px}
+.aide-paliers{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.aide-paliers > div{font-size:12.5px;line-height:1.4;color:var(--ink2)}
+.aide-paliers b{color:var(--ink);font-weight:600}
 .su-infos{width:100%;text-align:left;margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--card2);border:1px solid var(--line2)}
 .su-infos-lbl{display:block;font-size:12px;font-weight:600;color:var(--ink2)}
 .su-infos-val{display:block;font-size:12.5px;color:var(--ink3);margin-top:3px}
@@ -1859,6 +1888,7 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
     </div>
     <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     <input type="file" id="importListe" accept=".csv,.txt,.tsv,.xlsx,.ods,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet" style="display:none">
+    <input type="file" id="importProgFile" accept=".docx,.odt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text" style="display:none">
     <div style="height:20px"></div>
   </section>
 
@@ -2846,7 +2876,7 @@ const APP_CREATED = '24 juillet 2026';
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
 const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.12';
+const APP_VERSION = '3.4.14';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
@@ -8751,6 +8781,59 @@ function openClassesManager(){
 }
 
 /* petite confirmation générique réutilisable */
+/* Les paliers de la participation à l'oral, d'après le NOMBRE de fois
+   où le compteur a été touché sur la période.
+
+   Seuils demandés par Hugo. 15 et 30 appartiennent au palier SUPÉRIEUR :
+   « de 5 à 15 » se lit donc 5 à 14 — un nombre ne peut pas être dans
+   deux cases. */
+function palierParticipation(n){
+  if(n>=30) return 'moteur';
+  if(n>=15) return 'tresbonne';
+  if(n>=5)  return 'legere';
+  return 'rare';
+}
+/* Le compteur sert-il, dans cette classe et sur cette période ?
+
+   Zéro est ambigu : l'élève ne parle pas, OU le professeur n'utilise pas
+   ce compteur. Écrire « une participation plus fréquente lui serait
+   bénéfique » dans le second cas serait un reproche fabriqué par
+   l'outil, sur la foi d'une donnée jamais saisie — et lu en conseil de
+   classe. On ne parle donc du silence que si quelqu'un, dans la classe,
+   a au moins un point. */
+function participationEnUsage(cid, tri){
+  return (elevesDe(cid)||[]).some(x=>{
+    try{ ensureSuivi(x); }catch(e){ return false; }
+    const s=x.suivi && x.suivi[tri];
+    return !!(s && (s.jPart||0)>0);
+  });
+}
+/* Ce que le « ? » d'un compteur positif raconte. */
+function openAideCompteur(key){
+  const c=suiviCols().find(x=>x.key===key); if(!c) return;
+  const sheet=$('#sheet');
+  const part=(key==='jPart');
+  sheet.innerHTML=`<div class="sheet-grip"></div>
+    <h3>${c.emoji} ${escHtml(c.label)}</h3>
+    <div class="sheet-sub">Un <b>compteur</b>, pas un joker : il s'additionne au fil de la période et ne se consomme jamais. Il repart de zéro à chaque ${escHtml(periodeMot())}.</div>
+    <div class="su-hint">Il sert à une seule chose : <b>nourrir le brouillon d'appréciation de bulletin</b>. Le nom du compteur n'y apparaît jamais — c'est le ton de la phrase qui change.</div>
+    ${part?`<div class="field-lbl">Ce que le brouillon en dit</div>
+      <div class="aide-paliers">
+        <div><b>moins de 5</b> — rien, ou une invitation à s'investir davantage à l'oral</div>
+        <div><b>5 à 14</b> — une participation présente, sans être encore régulière</div>
+        <div><b>15 à 29</b> — une participation très soutenue et de qualité</div>
+        <div><b>30 et plus</b> — un élève moteur, dont les interventions entraînent la classe</div>
+      </div>
+      <div class="su-hint" style="margin-top:10px">Tant que <b>personne</b> dans la classe n'a de point, le brouillon n'en parle pas du tout : un compteur vide ne prouve pas un élève silencieux.</div>`
+    :`<div class="field-lbl">Ce que le brouillon en dit</div>
+      <div class="aide-paliers">
+        <div><b>moins de ${c.seuil}</b> — rien</div>
+        <div><b>${c.seuil} et plus</b> — la disponibilité pour les camarades est soulignée</div>
+      </div>`}
+    <div class="sheet-btns"><button class="btn btn-primary" id="acOk">Compris</button></div>`;
+  $('#acOk',sheet).addEventListener('click',closeSheet);
+  showSheet();
+}
 function confirmSheet(titre,sub,onOk,onCancel,libelle,doux){
   const sheet=$('#sheet');
   sheet.innerHTML=`<div class="sheet-grip"></div><h3>${escHtml(titre)}</h3>
@@ -9427,6 +9510,305 @@ function showPrivacyNote(){
    Ajout de séquences perso + masquage des séquences par défaut.
    ============================================================ */
 const DISCIPLINES=[['HIST','Histoire'],['GEO','Géographie'],['EMC','EMC'],['ORG','Organisation'],['AUTRE','Autre']];
+
+/* ============================================================
+   IMPORTER UNE PROGRAMMATION — Word (.docx) et LibreOffice (.odt)
+
+   Ces deux formats sont des archives ZIP de XML : le tableau y est
+   EXPLICITE, ligne par ligne et cellule par cellule. Thot sait déjà
+   ouvrir ce genre d'archive — c'est le lecteur de l'import de classes,
+   réutilisé tel quel.
+
+   Un PDF aurait demandé de reconstruire le tableau à partir de
+   coordonnées de lettres, et de deviner la couleur : bien plus de code
+   pour un résultat qui se trompe sans prévenir.
+   ============================================================ */
+
+function pdEntites(s){
+  return String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#39;/g,"'")
+    .replace(/&amp;/g,'&');
+}
+function pdTexteDe(x){ return pdEntites(String(x).replace(/<[^>]+>/g,'')).trim(); }
+
+/* Rouge → Histoire, vert → Géographie, bleu → EMC. On regarde la
+   composante dominante plutôt qu'une liste de codes : un professeur
+   choisit « un rouge », pas #FF0000. */
+function pdDisciplineCouleur(hex){
+  const m=/^#?([0-9a-fA-F]{6})$/.exec(String(hex||'').trim());
+  if(!m) return '';
+  const v=parseInt(m[1],16), r=(v>>16)&255, g=(v>>8)&255, b=v&255;
+  if(r<60 && g<60 && b<60) return '';        /* noir : pas une consigne */
+  if(r>g+40 && r>b+40) return 'HIST';
+  if(g>r+40 && g>b+20) return 'GEO';
+  if(b>r+40 && b>g+40) return 'EMC';
+  return '';
+}
+
+/* Un .docx : les lignes du premier tableau rencontré. La couleur est
+   lue en direct (<w:color>) OU à travers un style de caractère
+   (<w:rStyle>), parce que Word fait indifféremment l'un ou l'autre. */
+function pdLignesDocx(xmlDoc, xmlStyles){
+  const styles={};
+  if(xmlStyles){
+    (xmlStyles.match(/<w:style[\s>][\s\S]*?<\/w:style>/g)||[]).forEach(bloc=>{
+      const id=(bloc.match(/w:styleId="([^"]+)"/)||[])[1];
+      const c=(bloc.match(/<w:color\s+w:val="([0-9a-fA-F]{6})"/)||[])[1];
+      if(id&&c) styles[id]=c;
+    });
+  }
+  const out=[];
+  (xmlDoc.match(/<w:tr[\s>][\s\S]*?<\/w:tr>/g)||[]).forEach(tr=>{
+    const cells=(tr.match(/<w:tc[\s>][\s\S]*?<\/w:tc>/g)||[]).map(tc=>
+      pdEntites((tc.match(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)||[])
+        .map(t=>t.replace(/<[^>]+>/g,'')).join('')).trim());
+    let coul=(tr.match(/<w:color\s+w:val="([0-9a-fA-F]{6})"/)||[])[1]||'';
+    if(!coul){
+      const rs=(tr.match(/<w:rStyle\s+w:val="([^"]+)"/)||[])[1];
+      if(rs && styles[rs]) coul=styles[rs];
+    }
+    out.push({cells, coul, ital:/<w:i\/>|<w:i\s/.test(tr)});
+  });
+  return out;
+}
+
+/* Un .odt : la couleur passe presque toujours par un style nommé, il
+   faut donc résoudre l'indirection. */
+function pdLignesOdt(xml){
+  const styles={};
+  (xml.match(/<style:style[\s>][\s\S]*?<\/style:style>/g)||[]).forEach(bloc=>{
+    const id=(bloc.match(/style:name="([^"]+)"/)||[])[1];
+    const c=(bloc.match(/fo:color="#?([0-9a-fA-F]{6})"/)||[])[1];
+    if(id&&c) styles[id]=c;
+  });
+  const out=[];
+  (xml.match(/<table:table-row[\s>][\s\S]*?<\/table:table-row>/g)||[]).forEach(tr=>{
+    const cells=(tr.match(/<table:table-cell[\s>][\s\S]*?<\/table:table-cell>/g)||[])
+      .map(tc=>pdTexteDe(tc));
+    let coul='';
+    (tr.match(/(?:text|table):style-name="([^"]+)"/g)||[]).some(m=>{
+      const id=(m.match(/="([^"]+)"/)||[])[1];
+      if(styles[id]){ coul=styles[id]; return true; }
+      return false;
+    });
+    out.push({cells, coul, ital:/fo:font-style="italic"/.test(tr)});
+  });
+  return out;
+}
+
+/* Les heures d'une ligne : cherchées dans N'IMPORTE QUELLE cellule.
+   On ne sait pas si le professeur les met en deuxième ou en troisième
+   colonne, et le deviner mal coûterait tout l'import. */
+function pdHeuresLigne(L){
+  for(let i=(L.cells.length-1); i>=0; i--){
+    const m=/(\d+(?:[.,]\d+)?)\s*h\b/i.exec(L.cells[i]||'');
+    if(m && (i>0 || L.cells.length===1)) return parseFloat(m[1].replace(',','.'));
+  }
+  return null;
+}
+
+/* Ce que Thot comprend du tableau. Ne touche à rien : renvoie une
+   lecture, que l'écran de contrôle affiche avant toute écriture. */
+function pdAnalyser(lignes, titre){
+  const res={niveau:'', periodes:[], sequences:[], ignorees:0, avert:[]};
+  const mNiv=/\b(6\s*e|5\s*e|4\s*e|3\s*e|2\s*n?de|1\s*[eè]re|t\s*(?:ale|erminale))\b/i.exec(plierTexte(titre||''));
+  if(mNiv) res.niveau=mNiv[1].replace(/\s+/g,'').replace('nde','de');
+  let per=null, seq=null;
+  const nouvellePeriode=(label,sem)=>{
+    per={label:label, semaines:sem||0, marge:0, margeMotif:'', sequences:[]};
+    res.periodes.push(per); seq=null;
+  };
+  lignes.forEach(L=>{
+    const brut=(L.cells[0]||'').trim();
+    if(!brut){ return; }
+    const t=plierTexte(brut);
+    const h=pdHeuresLigne(L);
+
+    const mSeq=/^th\s*\d*\s*[.·:-]?\s*sequence\s*\d*\s*[-–—:.]\s*(.+)$/.exec(t);
+    const mSem=/\(\s*(\d+)\s*semaines?\s*\)/.exec(t);
+
+    if(/^seance\s*\d+\s*[:.\-]/.test(t)){
+      if(seq) seq.seances.push(brut.replace(/^\s*S[ée]ance\s*\d+\s*[:.\-]\s*/i,'').trim()||brut);
+      else res.ignorees++;
+      return;
+    }
+    if(/^marge de manoeuvre/.test(t)){
+      if(!per) nouvellePeriode('Période 1',0);
+      per.marge=h||0;
+      per.margeMotif=(/\(([^)]*)\)/.exec(brut)||[])[1]||'';
+      seq=null; return;
+    }
+    if(mSem){ nouvellePeriode(brut.replace(/\s*\(\s*\d+\s*semaines?\s*\)\s*/i,'').trim()||brut, +mSem[1]); return; }
+    if(mSeq){
+      if(!per) nouvellePeriode('Période 1',0);
+      seq={nom:brut.replace(/^\s*Th\s*\d*\s*[.·:-]?\s*S[ée]quence\s*\d*\s*[-–—:.]\s*/i,'').trim()||brut,
+           disc:pdDisciplineCouleur(L.coul)||'AUTRE', h:h||0, seances:[]};
+      per.sequences.push(seq); res.sequences.push(seq); return;
+    }
+    if(h!==null){
+      if(!per) nouvellePeriode('Période 1',0);
+      seq={nom:brut, disc:pdDisciplineCouleur(L.coul)||'ORG', h:h, seances:[]};
+      per.sequences.push(seq); res.sequences.push(seq); return;
+    }
+    res.ignorees++;
+  });
+  res.sequences.forEach(s=>{
+    s.nb=s.seances.length||Math.max(1,Math.round(s.h||1));
+    s.duree=Math.round(((s.h||s.nb)/s.nb)*100)/100;
+    if(!s.h) s.h=s.nb;
+    if(!s.seances.length) s.avertSeances=true;
+  });
+  if(!res.sequences.length) res.avert.push("Aucune séquence reconnue. Vérifie que chaque ligne de séquence commence par « Th1. Séquence 1 - ».");
+  if(!res.niveau) res.avert.push("Le niveau n'a pas été trouvé dans le titre du document : à choisir ci-dessous.");
+  return res;
+}
+
+/* Le tableau attendu, montré plutôt que décrit. */
+function pdModeleHtml(){
+  return `<div class="pd-modele">
+    <div class="pd-per"><span>1er septembre – 16 octobre (7 semaines)</span><span>21h</span></div>
+    <div><span>Présentations, méthodologie</span><span>1h</span></div>
+    <div><span class="pd-h">Th1. Séquence 1 - Byzance et l'Empire carolingien</span><span>7h</span></div>
+    <div><span>Séance 1 : Introduction</span><span></span></div>
+    <div><span>Séance 2 : I) A) L'empereur Justinien</span><span></span></div>
+    <div><span class="pd-g">Th1. Séquence 1 - La croissance démographique</span><span>6h</span></div>
+    <div><span>Séance 1 : Introduction</span><span></span></div>
+    <div><span class="pd-m">Marge de manœuvre (voyage + CNDD)</span><span>6h</span></div>
+  </div>`;
+}
+
+/* Écrit la lecture dans le niveau. Dans cet ordre, et l'ordre compte :
+   l'existant part en bibliothèque AVANT d'être remplacé, l'import y part
+   APRÈS. Deux entrées, l'avant et l'après : se tromper de fichier ne
+   coûte qu'un rechargement. */
+function pdEcrire(res, niveau){
+  archiverProg(niveau);
+  const pids=['p1','p2','p3','p4','p5'];
+  S.progNiv=S.progNiv||{};
+  S.progNiv[niveau]={
+    periodes:pids.map((id,i)=>{
+      const src=res.periodes[i];
+      return {id:id, label:(src&&src.label)||('Période '+(i+1)),
+              semaines:(src&&src.semaines)||0,
+              marge:(src&&src.marge)||0, margeMotif:(src&&src.margeMotif)||''};
+    }),
+    seq:{p1:[],p2:[],p3:[],p4:[],p5:[]},
+    hebdo:hebdoDe(niveau)||0, margeAnnuelle:0
+  };
+  S.customSeq=S.customSeq||{}; S.customSeq[niveau]={};
+  S.seqHidden=S.seqHidden||{};  S.seqHidden[niveau]=[];
+  res.periodes.forEach((p,i)=>{
+    /* Au-delà de cinq périodes on empile dans la dernière plutôt que de
+       jeter : perdre des séquences en silence serait pire que les
+       ranger au mauvais endroit, qui se corrige à la main. */
+    const pid=pids[Math.min(i,4)];
+    S.customSeq[niveau][pid]=(S.customSeq[niveau][pid]||[]).concat(
+      p.sequences.map((s,k)=>({
+        id:'imp-'+niveau+'-'+Date.now().toString(36)+'-'+i+'-'+k,
+        nom:s.nom, disc:s.disc, h:s.h, eval:0, seances:(s.seances||[]).slice()
+      })));
+  });
+  save();
+  archiverProg(niveau, ['Import', CFG.matiere||'', niveau].filter(Boolean).join(' · '));
+  return true;
+}
+
+/* L'écran : le format attendu, puis ce que Thot a compris, puis
+   seulement l'écriture. */
+function openImportProg(){
+  const sheet=$('#sheet');
+  const nivs=niveauxUtilisateur();
+  let choisi=(progNiveau&&nivs.includes(progNiveau))?progNiveau:nivs[0];
+  const accueil=()=>{
+    sheet.innerHTML=`<div class="sheet-grip"></div>
+      <h3>Importer ma programmation</h3>
+      <div class="sheet-sub">Depuis un document <b>Word (.docx)</b> ou <b>LibreOffice (.odt)</b> contenant un tableau. Le fichier est lu <b>sur place</b> : rien n'est envoyé.</div>
+      <div class="field-lbl" style="margin-top:0">Le tableau attendu</div>
+      ${pdModeleHtml()}
+      <div class="su-hint">La <b>couleur du texte</b> donne la discipline : rouge Histoire, vert Géographie, bleu EMC. Les heures sont celles de la <b>séquence entière</b>.</div>
+      <div class="sheet-btns">
+        <button class="btn btn-ghost" id="ipAnnul">Annuler</button>
+        <button class="btn btn-primary" id="ipChoisir">Choisir le fichier</button>
+      </div>`;
+    $('#ipAnnul',sheet).addEventListener('click',closeSheet);
+    $('#ipChoisir',sheet).addEventListener('click',()=>{ const i=$('#importProgFile'); if(i) i.click(); });
+  };
+  const controle=(res)=>{
+    let h=`<div class="sheet-grip"></div>
+      <h3>Ce que Thot a compris</h3>
+      <div class="sheet-sub">Rien n'est encore enregistré. Vérifie, puis valide.</div>`;
+    if(res.avert.length) h+=res.avert.map(a=>`<div class="pd-alerte">⚠ ${escHtml(a)}</div>`).join('');
+    h+=`<div class="field-lbl">Niveau concerné</div>
+      <div class="prog-nivpick">${nivs.map(n=>`<button class="prog-nivchip${n===choisi?' sel':''}" data-niv="${n}">${escHtml(n)}</button>`).join('')}</div>`;
+    res.periodes.forEach((p,i)=>{
+      h+=`<div class="pd-bloc">
+        <div class="pd-per-t">${escHtml(p.label||('Période '+(i+1)))}</div>
+        <div class="pd-per-s">${p.semaines?p.semaines+' semaines · ':''}${p.sequences.length} séquence${p.sequences.length>1?'s':''}${p.marge?' · marge '+fmtNb(p.marge)+' h'+(p.margeMotif?' ('+escHtml(p.margeMotif)+')':''):''}</div>`;
+      p.sequences.forEach(s=>{
+        const lbl=(DISCIPLINES.find(d=>d[0]===s.disc)||['','—'])[1];
+        h+=`<div class="pd-seq"><b>${escHtml(s.nom)}</b>
+          <div class="pd-seq-d">${escHtml(lbl)} · ${fmtNb(s.h)} h · ${s.nb} séance${s.nb>1?'s':''} de ${fmtNb(s.duree)} h${s.avertSeances?' · <b>aucune séance détaillée</b>':''}</div></div>`;
+      });
+      h+=`</div>`;
+    });
+    if(res.ignorees) h+=`<div class="su-hint">${res.ignorees} ligne${res.ignorees>1?'s':''} non reconnue${res.ignorees>1?'s':''}, ignorée${res.ignorees>1?'s':''}.</div>`;
+    h+=`<div class="cls-warn">La progression actuelle du niveau <b>${escHtml(choisi)}</b> part d'abord dans ta bibliothèque : elle n'est pas perdue. L'import y sera rangé aussi.</div>
+      <div class="sheet-btns">
+        <button class="btn btn-ghost" id="ipRetour">Annuler</button>
+        <button class="btn btn-primary" id="ipOk"${res.sequences.length?'':' disabled'}>Enregistrer sur ${escHtml(choisi)}</button>
+      </div>`;
+    sheet.innerHTML=h;
+    $$('[data-niv]',sheet).forEach(b=>b.addEventListener('click',()=>{ choisi=b.dataset.niv; controle(res); }));
+    $('#ipRetour',sheet).addEventListener('click',closeSheet);
+    const ok=$('#ipOk',sheet);
+    if(ok&&!ok.disabled) ok.addEventListener('click',()=>{
+      pdEcrire(res,choisi);
+      closeSheet();
+      progNiveau=choisi;
+      toast('Programmation importée sur '+choisi);
+      try{ renderDash(); renderBandeau(); }catch(e){}
+      openProgManager();
+    });
+  };
+  const inp=$('#importProgFile');
+  if(inp){
+    inp.onchange=(ev)=>{
+      const file=ev.target.files&&ev.target.files[0]; ev.target.value='';
+      if(!file) return;
+      pdLireFichier(file)
+        .then(lu=>{ const res=pdAnalyser(lu.lignes, lu.titre);
+          if(res.niveau && nivs.includes(res.niveau)) choisi=res.niveau;
+          controle(res); })
+        .catch(err=>{
+          sheet.innerHTML=`<div class="sheet-grip"></div><h3>Fichier illisible</h3>
+            <div class="sheet-sub">${escHtml(String((err&&err.message)||err))}</div>
+            <div class="su-hint">Thot lit les documents <b>Word (.docx)</b> et <b>LibreOffice (.odt)</b>. Un PDF ou un document protégé ne peut pas être ouvert.</div>
+            <div class="sheet-btns"><button class="btn btn-primary" id="ipErr">Fermer</button></div>`;
+          $('#ipErr',sheet).addEventListener('click',closeSheet);
+        });
+    };
+  }
+  accueil();
+  showSheet();
+}
+
+/* Lit le fichier et rend la lecture. Ne touche à rien. */
+function pdLireFichier(file){
+  return file.arrayBuffer().then(buf=>{
+    const nom=(file.name||'').toLowerCase();
+    const ann=zipAnnuaire(buf);
+    if(ann['word/document.xml']){
+      return zipTexte(buf,'word/document.xml').then(doc=>
+        (ann['word/styles.xml']? zipTexte(buf,'word/styles.xml') : Promise.resolve(''))
+          .then(st=>({lignes:pdLignesDocx(doc,st), titre:(doc.match(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/)||[])[1]||nom})));
+    }
+    if(ann['content.xml']){
+      return zipTexte(buf,'content.xml').then(x=>
+        ({lignes:pdLignesOdt(x), titre:(x.match(/<text:p[^>]*>([\s\S]*?)<\/text:p>/)||[])[1]?pdTexteDe((x.match(/<text:p[^>]*>[\s\S]*?<\/text:p>/)||[''])[0]):nom}));
+    }
+    throw new Error("Ce fichier n'est ni un .docx ni un .odt.");
+  });
+}
 let progNiveau=null;
 function niveauxUtilisateur(){
   const set=[]; (S.classesMeta||[]).forEach(c=>{ if(c.niveau&&!set.includes(c.niveau))set.push(c.niveau); });
@@ -9473,6 +9855,7 @@ function openProgManager(){
     }
     if(nbOff) h+=`<button class="prog-vider" id="progVider">Vider ce niveau</button>`;
     const nbBib=(S.progBib||[]).length;
+    h+=`<button class="prog-vider" id="progImport" style="color:var(--accent2);border-color:var(--accent2)">📄 Importer ma programmation (Word, LibreOffice)</button>`;
     h+=`<button class="prog-vider" id="progBib">📚 Ma bibliothèque${nbBib?' · '+nbBib+' progression'+(nbBib>1?'s':''):' (vide)'}</button>`;
     h+=`</div>`;
     const periodes = prog ? prog.periodes : [{id:'p1',label:'Période 1'},{id:'p2',label:'Période 2'},{id:'p3',label:'Période 3'},{id:'p4',label:'Période 4'},{id:'p5',label:'Période 5'}];
@@ -9515,6 +9898,7 @@ function openProgManager(){
     $$('[data-niv]',sheet).forEach(b=>b.addEventListener('click',()=>{ progNiveau=b.dataset.niv; render(); }));
     $('#progMat',sheet).addEventListener('click',()=>openMatiereEditor(()=>openProgManager()));
     $('#progHebdo',sheet).addEventListener('click',()=>openHebdoEditor(niveau,()=>openProgManager()));
+    const bi=$('#progImport',sheet); if(bi) bi.addEventListener('click',openImportProg);
     $('#progBib',sheet).addEventListener('click',()=>openProgBib(niveau,()=>openProgManager()));
     const pf=$('#progFill',sheet);
     if(pf)pf.addEventListener('click',()=>{
@@ -9823,6 +10207,7 @@ function openSuiviRapide(cid,eid){
         <span class="su-tile-lbl">${escHtml(c.label)}${c.positif?` (${n})`:''}</span>
         <span class="su-tile-state">${etat}</span>
         ${n>0?`<span class="su-tile-minus" data-minus="${c.key}">−</span>`:''}
+        ${c.positif?`<span class="su-tile-aide" data-aide="${c.key}" aria-label="À quoi sert ce compteur">?</span>`:''}
       </button>`;
     }).join('');
     sheet.innerHTML=`
@@ -9850,6 +10235,7 @@ function openSuiviRapide(cid,eid){
     $$('.su-tile[data-col]',sheet).forEach(tile=>{
       tile.addEventListener('click',ev=>{
         if(ev.target.dataset.minus)return; // géré à part
+        if(ev.target.dataset.aide)return;  // idem : le « ? » ne compte pas un point
         const col=tile.dataset.col, motif=tile.dataset.motif;
         const colDef=suiviCols().find(c=>c.key===col);
         const colLabel=colDef.label.toLowerCase();
@@ -9877,6 +10263,9 @@ function openSuiviRapide(cid,eid){
         render();
       });
     });
+    $$('[data-aide]',sheet).forEach(b=>b.addEventListener('click',ev=>{
+      ev.stopPropagation(); openAideCompteur(b.dataset.aide);
+    }));
     $$('[data-minus]',sheet).forEach(b=>b.addEventListener('click',ev=>{
       ev.stopPropagation(); const col=b.dataset.minus;
       const cd=suiviCols().find(c=>c.key===col);
@@ -11434,8 +11823,26 @@ function genAppreciation(cid,e,tri,variant){
      precis : il compte des faits, la jauge est une impression. Quand le
      compteur parle, la jauge se tait. */
   const colPart=suiviCols().find(c=>c.key==='jPart');
-  const compteurParticipationParle = !!(colPart && (st[colPart.key]||0)>=colPart.seuil);
-  if(typeof st.participation==='number' && !compteurParticipationParle){
+  const nPart=(colPart && (st[colPart.key]||0)) || 0;
+  /* Quatre paliers plutôt qu'un seuil unique : lever la main cinq fois
+     et la lever cinquante fois ne donnaient jusqu'ici pas un mot de
+     différence. */
+  const palierPart = participationEnUsage(cid,tri) ? palierParticipation(nPart) : null;
+  if(palierPart==='moteur')
+    faits.push({t:pick([`son implication à l'oral entraîne la classe`,
+                        `ses interventions tirent le groupe vers le haut`]), pol:1, prio:62});
+  else if(palierPart==='tresbonne')
+    faits.push({t:pick([`sa participation orale est très soutenue et de qualité`,
+                        `ses prises de parole, nombreuses et justes, font avancer le cours`]), pol:1, prio:60});
+  else if(palierPart==='legere')
+    faits.push({t:pick([`sa participation à l'oral est présente, sans être encore régulière`,
+                        `ses interventions sont ponctuelles mais pertinentes`]), pol:1, prio:52});
+  else if(palierPart==='rare')
+    faits.push({t:(doux ? `oser prendre la parole plus souvent serait un beau progrès`
+                        : `une participation orale plus fréquente lui serait bénéfique`), pol:-1, prio:50});
+  /* La jauge est une IMPRESSION, le compteur compte des FAITS : elle ne
+     parle que si le compteur ne sert pas. */
+  if(typeof st.participation==='number' && palierPart===null){
     const pa=st.participation;
     if(pa>=8)      faits.push({t:pick([`sa participation à l'oral est constante et de qualité`,
                                        `sa participation orale fait avancer la classe`]), pol:1, prio:50});
@@ -11575,15 +11982,14 @@ function genAppreciation(cid,e,tri,variant){
      quatre fois n'a pas le meme poids qu'aider trois fois.
      On ne cite jamais le nom du compteur -- ce sont des mots d'outil,
      pas des mots de bulletin : on en tire un ton. */
-  { const atteints=suiviCols().filter(c=>c.positif && (st[c.key]||0)>=c.seuil);
-    const aParticipe=atteints.some(c=>c.key==='jPart');
+  /* La participation a désormais ses quatre paliers, plus haut : on
+     l'exclut d'ici, sinon elle serait dite deux fois. La formule
+     combinée « à l'oral comme auprès de ses camarades » disparaît avec
+     elle — deux phrases séparées, que le budget de 250 signes arbitre
+     déjà par les priorités. */
+  { const atteints=suiviCols().filter(c=>c.positif && c.key!=='jPart' && (st[c.key]||0)>=c.seuil);
     const aAide=atteints.some(c=>c.key==='jAide');
-    if(aParticipe&&aAide)
-      faits.push({t:`sa présence dans le groupe est précieuse, à l'oral comme auprès de ses camarades`, pol:1, prio:60});
-    else if(aParticipe)
-      faits.push({t:pick([`ses prises de parole sont justes et font avancer le cours`,
-                          `sa participation orale est régulière et pertinente`]), pol:1, prio:58});
-    else if(aAide)
+    if(aAide)
       faits.push({t:pick([`sa disponibilité pour ses camarades mérite d'être soulignée`,
                           `son aide envers les camarades en difficulté est précieuse`]), pol:1, prio:58});
     else if(atteints.length)
@@ -12629,9 +13035,24 @@ const IMP_COLONNES=[
   {cle:'genre',    mots:['genre','sexe','civilite','f/g','fille/garcon']},
   {cle:'naissance',mots:['date de naissance','naissance','ne le','nee le','date naissance','birth']}
 ];
-function impSansAccent(s){
+/* Retirer les accents ET les ligatures.
+
+   normalize('NFD') ne décompose PAS « œ » : ce n'est pas une lettre
+   accentuée, c'est un caractère à part entière. Un pliage fondé sur le
+   seul NFD échoue donc en silence sur manœuvre, cœur, sœur, œuvre —
+   mesuré en écrivant l'import de programmation, où « Marge de
+   manœuvre » n'était pas reconnue.
+
+   Aucun libellé attendu par l'import de classes ne porte de ligature
+   aujourd'hui : le défaut n'y est pas atteignable. Il n'y a pas de
+   raison de le laisser en place pour autant. */
+function plierTexte(s){
   return String(s==null?'':s).trim().toLocaleLowerCase('fr')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+    .replace(/œ/g,'oe').replace(/æ/g,'ae')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function impSansAccent(s){
+  return plierTexte(s).replace(/\s+/g,' ');
 }
 /* Rend {carte, aEntete}. carte.cle = index de colonne, ou -1. */
 function impRepererColonnes(premiere){
