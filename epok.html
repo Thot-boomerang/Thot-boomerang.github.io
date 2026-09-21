@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="Clio — culture historique quotidienne : mini-cours et QCM, hors ligne.">
-<title>Clio</title>
+<meta name="description" content="Epok — culture historique quotidienne : mini-cours et QCM, hors ligne.">
+<title>Epok</title>
 
 <!-- Ajout a l'ecran d'accueil d'un telephone : nom court, ouverture en
      plein ecran sans barre de navigateur, icone dediee. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Clio">
-<meta name="application-name" content="Clio">
+<meta name="apple-mobile-web-app-title" content="Epok">
+<meta name="application-name" content="Epok">
 <meta name="theme-color" content="#0d0c0a">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icone-512.png">
 
 <!--
   =====================================================================
-  CLIO — application personnelle de culture historique quotidienne
+  EPOK — application personnelle de culture historique quotidienne
   ---------------------------------------------------------------------
   Fichier unique, autonome, hors ligne. HTML + CSS + JS « vanilla ».
   Aucune dependance obligatoire : les polices Google Fonts sont
@@ -239,6 +239,34 @@ body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
   font-style:italic;color:var(--creme-2);
 }
 
+/* --- Ecran d'ouverture ----------------------------------------------
+   Fond brun chaud, logo en fondu montant, puis effacement de l'ecran.
+   Tout est en CSS : si le JavaScript tarde, le fondu se joue quand meme.
+   pointer-events:none garantit qu'un ecran reste inoffensif meme si le
+   retrait par script echouait. */
+#ouverture{
+  position:fixed;inset:0;z-index:200;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 44%,
+              #4e3822 0%, #3a2a19 46%, #241a10 100%);
+  animation:ouv-sortie .6s ease-in 1.3s forwards;
+}
+#ouverture svg{
+  width:min(72vw,320px);height:auto;
+  animation:ouv-entree .8s cubic-bezier(.2,.75,.3,1) both;
+}
+@keyframes ouv-entree{
+  from{opacity:0;transform:scale(.9) translateY(10px)}
+  to  {opacity:1;transform:scale(1) translateY(0)}
+}
+@keyframes ouv-sortie{ to{opacity:0;visibility:hidden} }
+/* Mouvement reduit : on garde le fondu, on supprime le deplacement. */
+@media (prefers-reduced-motion:reduce){
+  #ouverture{animation:ouv-sortie .3s linear .3s forwards}
+  #ouverture svg{animation:ouv-entree .3s linear both}
+  @keyframes ouv-entree{from{opacity:0}to{opacity:1}}
+}
+
 /* --- Croquis : cartes et schemas (SVG inline) ------------------------
    Figure encadree, fond parchemin, qui tranche volontairement sur le
    theme sombre : effet << carte depliee sur la table >>. Le trace est
@@ -411,14 +439,54 @@ select{width:100%}
   </defs>
 </svg>
 
+<!-- Ecran d'ouverture : le logo monte en fondu sur un fond brun, puis
+     s'efface. Purement decoratif, donc masque aux lecteurs d'ecran et
+     insensible au toucher ; il est retire du DOM une fois joue. -->
+<div id="ouverture" aria-hidden="true">
+  <svg viewBox="0 0 512 512" focusable="false">
+    <defs>
+      <!-- Demi-disque : l'eventail s'arrete net sur sa base, jamais sur le
+           bord du cadre. -->
+      <clipPath id="ouv-demi-disque">
+        <path d="M146,410 A110,110 0 0 1 366,410 Z"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#ouv-demi-disque)">
+      <path d="M256,410 L56.1,403.0 L59.9,370.5 Z" fill="#c9a227" opacity="0.38"/>
+      <path d="M256,410 L63.5,355.9 L74.9,325.2 Z" fill="#c9a227" opacity="0.2"/>
+      <path d="M256,410 L81.8,311.8 L100.1,284.7 Z" fill="#c9a227" opacity="0.38"/>
+      <path d="M256,410 L110.0,273.3 L134.2,251.3 Z" fill="#c9a227" opacity="0.2"/>
+      <path d="M256,410 L146.5,242.6 L175.3,227.0 Z" fill="#c9a227" opacity="0.38"/>
+      <path d="M256,410 L189.2,221.5 L220.9,213.1 Z" fill="#c9a227" opacity="0.2"/>
+      <path d="M256,410 L235.8,211.0 L268.6,210.4 Z" fill="#c9a227" opacity="0.38"/>
+      <path d="M256,410 L283.5,211.9 L315.5,219.0 Z" fill="#c9a227" opacity="0.2"/>
+      <path d="M256,410 L329.6,224.0 L359.0,238.6 Z" fill="#c9a227" opacity="0.38"/>
+      <path d="M256,410 L371.6,246.8 L396.7,267.8 Z" fill="#c9a227" opacity="0.2"/>
+      <path d="M256,410 L406.9,278.8 L426.3,305.2 Z" fill="#c9a227" opacity="0.38"/>
+      <path d="M256,410 L433.7,318.3 L446.3,348.5 Z" fill="#c9a227" opacity="0.2"/>
+      <path d="M256,410 L450.4,363.0 L455.5,395.4 Z" fill="#c9a227" opacity="0.38"/>
+      <circle cx="256" cy="410" r="40" fill="none" stroke="#c9a227" stroke-width="1.8" opacity=".45"/>
+      <circle cx="256" cy="410" r="70" fill="none" stroke="#c9a227" stroke-width="1.8" opacity=".45"/>
+      <circle cx="256" cy="410" r="100" fill="none" stroke="#c9a227" stroke-width="1.8" opacity=".45"/>
+    </g>
+    <rect x="78" y="90" width="356" height="4" fill="#c9a227"/>
+    <rect x="78" y="102" width="356" height="1.6" fill="#c9a227" opacity=".7"/>
+    <rect x="78" y="408" width="356" height="1.6" fill="#c9a227" opacity=".7"/>
+    <rect x="78" y="416" width="356" height="4" fill="#c9a227"/>
+    <text x="256" y="142" text-anchor="middle" font-family="Georgia,serif" font-size="26" fill="#c9a227">&#9670;</text>
+    <text x="249" y="252" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="118" letter-spacing="14" fill="#f3e9d6">EPOK</text>
+    <text x="252" y="298" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#f3e9d6" opacity=".85">HISTOIRE</text>
+  </svg>
+</div>
+
 <div class="app">
 
   <header class="entete">
     <div class="filet-haut"></div><div class="filet-bas"></div>
     <div style="height:14px"></div>
     <div class="eventail" aria-hidden="true"></div>
-    <h1>CLIO</h1>
-    <p class="sous">Culture historique &#8226; une seance par jour</p>
+    <h1>EPOK</h1>
+    <p class="sous">Culture historique &#8226; une séance par jour</p>
     <div class="filet-bas"></div>
   </header>
 
@@ -431,7 +499,7 @@ select{width:100%}
   <!-- ================= ONGLET 3 : QUIZ ==================== -->
   <main id="vue-quiz" class="vue" role="tabpanel" aria-label="Quiz"></main>
 
-  <p class="pied">&#9670; CLIO &#9670;</p>
+  <p class="pied">&#9670; EPOK &#9670;</p>
 </div>
 
 <nav class="onglets" role="tablist" aria-label="Navigation principale">
@@ -8769,11 +8837,14 @@ const COURS = [
    lendemain. Modifiable dans les reglages de l'onglet Accueil. */
 const UNE_SEANCE_PAR_JOUR = true;
 
-/* Nombre de seances par cours, et donc duree d'une << semaine Clio >> :
+/* Nombre de seances par cours, et donc duree d'une << semaine Epok >> :
    une semaine se compte en seances, pas en jours de calendrier. */
 const SEANCES_PAR_COURS = 6;
 
-const CLE_STOCKAGE = "clio.progression.v1";
+const CLE_STOCKAGE = "epok.progression.v1";
+/* L'application s'est d'abord appelee Clio : on recupere la progression
+   enregistree sous l'ancienne cle, puis on la reecrit sous la nouvelle. */
+const CLE_ANCIENNE = "clio.progression.v1";
 
 /* Etat vierge. Toute lecture de l'etat passe par cet objet de reference,
    ce qui evite les undefined lors d'une montee de version. */
@@ -8793,14 +8864,18 @@ let ETAT = chargerEtat();
 function chargerEtat(){
   const base = etatVierge();
   try{
-    const brut = localStorage.getItem(CLE_STOCKAGE);
+    let brut = localStorage.getItem(CLE_STOCKAGE);
+    if(!brut){
+      brut = localStorage.getItem(CLE_ANCIENNE);
+      if(brut) localStorage.setItem(CLE_STOCKAGE, brut);
+    }
     if(!brut) return base;
     const lu = JSON.parse(brut);
     if(!lu || typeof lu !== "object") return base;
     return fusionnerEtat(base, lu);
   }catch(e){
     // localStorage indisponible (navigation privee, fichier local bride...)
-    console.warn("Clio : progression illisible, on repart d'un etat vierge.", e);
+    console.warn("Epok : progression illisible, on repart d'un etat vierge.", e);
     return base;
   }
 }
@@ -8822,7 +8897,7 @@ function sauverEtat(){
     localStorage.setItem(CLE_STOCKAGE, JSON.stringify(ETAT));
     return true;
   }catch(e){
-    console.warn("Clio : sauvegarde impossible.", e);
+    console.warn("Epok : sauvegarde impossible.", e);
     return false;
   }
 }
@@ -9028,7 +9103,7 @@ function rendreAccueil(){
   parts.push(`<div class="carte">
     <h3>Rythme</h3>
     <p class="secondaire" style="margin-bottom:8px">
-      Une semaine Clio se compte en séances, non en jours : <strong>${faitesCoursCourant} séance(s) sur ${SEANCES_PAR_COURS}</strong>
+      Une semaine Epok se compte en séances, non en jours : <strong>${faitesCoursCourant} séance(s) sur ${SEANCES_PAR_COURS}</strong>
       pour la semaine en cours. Un jour oublié ne se rattrape pas, on reprend simplement à la séance suivante.
     </p>
     ${jauge(faitesCoursCourant, SEANCES_PAR_COURS)}
@@ -9685,12 +9760,12 @@ document.querySelectorAll(".onglets button").forEach(b => {
 /* ---------- Export / import ---------- */
 
 function paquetExport(){
-  return JSON.stringify({ app:"clio", version:1, exporte:new Date().toISOString(), etat:ETAT }, null, 2);
+  return JSON.stringify({ app:"epok", version:1, exporte:new Date().toISOString(), etat:ETAT }, null, 2);
 }
 
 function exporterFichier(){
   const texte = paquetExport();
-  const nom = "clio-progression-" + aujourdhui() + ".json";
+  const nom = "epok-progression-" + aujourdhui() + ".json";
   /* Deux contextes possibles :
      - fichier ouvert depuis le disque : un lien <a download> suffit ;
      - page publiee sur claude.ai : le lien y est sans effet, il faut
@@ -9738,7 +9813,7 @@ function afficherJson(){
 function zoneImportTexte(){
   const z = document.getElementById("zone-json");
   if(!z) return;
-  z.innerHTML = `<p class="minuscule">Collez ici un export Clio, puis validez.</p>
+  z.innerHTML = `<p class="minuscule">Collez ici un export Epok, puis validez.</p>
     <textarea id="json-import" style="width:100%;min-height:150px;background:var(--noir-3);color:var(--creme);
       border:1px solid var(--laiton);padding:10px;font-size:12px;font-family:monospace"></textarea>
     <div class="saut"></div>
@@ -9751,7 +9826,7 @@ function appliquerImport(texte){
   catch(e){ return avisAccueil("Import impossible : ce n’est pas un JSON valide.", false); }
   const donnees = (lu && lu.etat) ? lu.etat : lu;
   if(!donnees || typeof donnees !== "object" || (!donnees.cours && !donnees.historique)){
-    return avisAccueil("Import impossible : ce fichier ne ressemble pas à une progression Clio.", false);
+    return avisAccueil("Import impossible : ce fichier ne ressemble pas à une progression Epok.", false);
   }
   if(!confirm("Remplacer la progression actuelle par celle du fichier ?")) return;
   ETAT = fusionnerEtat(etatVierge(), donnees);
@@ -9773,6 +9848,13 @@ function avisAccueil(texte, ok){
 
 /* ---------- Demarrage ---------- */
 rendre();
+
+/* L'ecran d'ouverture a fini son fondu : on le retire du DOM plutot que
+   de le laisser, invisible, par-dessus la page. */
+(function(){
+  const ouverture = document.getElementById("ouverture");
+  if(ouverture) setTimeout(() => ouverture.remove(), 2200);
+})();
 </script>
 </body>
 </html>
