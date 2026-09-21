@@ -5,7 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="Clio — culture historique quotidienne : mini-cours et QCM, hors ligne.">
-<title>Clio — culture historique quotidienne</title>
+<title>Clio</title>
+
+<!-- Ajout a l'ecran d'accueil d'un telephone : nom court, ouverture en
+     plein ecran sans barre de navigateur, icone dediee. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clio">
+<meta name="application-name" content="Clio">
+<meta name="theme-color" content="#0d0c0a">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icone-512.png">
 
 <!--
   =====================================================================
@@ -9679,12 +9690,35 @@ function paquetExport(){
 
 function exporterFichier(){
   const texte = paquetExport();
+  const nom = "clio-progression-" + aujourdhui() + ".json";
+  /* Deux contextes possibles :
+     - fichier ouvert depuis le disque : un lien <a download> suffit ;
+     - page publiee sur claude.ai : le lien y est sans effet, il faut
+       passer par la capacite « downloads » de la visionneuse.
+     On detecte le second cas et on retombe sur le premier sinon. */
+  if(window.claude && typeof window.claude.use === "function"){
+    window.claude.use("downloads").then(outil => {
+      if(!outil){ telechargerBlob(texte, nom); return; }
+      outil.save({ filename: nom, data: texte })
+        .then(() => avisAccueil("Progression exportée.", true))
+        .catch(err => {
+          if(err && err.code === "declined") avisAccueil("Export annulé.", true);
+          else afficherJson();
+        });
+    }).catch(() => telechargerBlob(texte, nom));
+    return;
+  }
+  telechargerBlob(texte, nom);
+}
+
+/* Telechargement classique, pour le fichier ouvert depuis le disque. */
+function telechargerBlob(texte, nom){
   try{
     const blob = new Blob([texte], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "clio-progression-" + aujourdhui() + ".json";
+    a.download = nom;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     avisAccueil("Fichier exporté. S’il ne s’est pas téléchargé, utilisez « Afficher le JSON ».", true);
