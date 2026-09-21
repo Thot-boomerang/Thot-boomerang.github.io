@@ -227,6 +227,44 @@ body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
   margin:1.2em 0;padding:2px 0 2px 16px;border-left:3px solid var(--bordeaux);
   font-style:italic;color:var(--creme-2);
 }
+
+/* --- Croquis : cartes et schemas (SVG inline) ------------------------
+   Figure encadree, fond parchemin, qui tranche volontairement sur le
+   theme sombre : effet << carte depliee sur la table >>. Le trace est
+   schematique (jamais une projection exacte) pour rester lisible a
+   petite taille sur telephone. Palette commune : --cr-terre (sol),
+   --cr-mer (eau), --cr-encre (traits et texte), --cr-a / --cr-b (deux
+   camps opposes, bordeaux et vert), --cr-or (axe principal ou avancee
+   decisive), --cr-n (element neutre ou anterieur).
+   Les marqueurs de fleche et les hachures sont definis UNE SEULE FOIS
+   dans #croquis-defs (juste apres <body>) et partages par tous les
+   croquis : chaque figure n'a donc pas besoin de son propre <defs>. */
+:root{
+  --cr-fond:#ece1c4; --cr-terre:#e4d6ae; --cr-terre-2:#d8c896;
+  --cr-terre-3:#cdbc8a; --cr-mer:#aac0c2; --cr-encre:#3a3020;
+  --cr-a:#8c2432; --cr-b:#1f4a3c; --cr-or:#a9761f; --cr-n:#6b5a34;
+}
+#croquis-defs{position:absolute;width:0;height:0;overflow:hidden}
+.lecture figure.croquis{
+  margin:24px 0;padding:12px 12px 10px;background:var(--cr-fond);
+  border:1px solid var(--or);border-radius:var(--rayon);
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.lecture figure.croquis svg{display:block;width:100%;height:auto}
+.lecture figure.croquis figcaption{
+  font-family:var(--police-titre);font-size:13px;letter-spacing:.04em;
+  color:#4a3d22;text-align:center;margin-top:9px;line-height:1.5;
+  padding-top:8px;border-top:1px solid rgba(58,48,32,.25);
+}
+.lecture figure.croquis figcaption b{color:#2f2614}
+/* Classes de texte pour les croquis : evite de repeter font-family. */
+.lecture figure.croquis text{font-family:Georgia,"Times New Roman",serif;fill:var(--cr-encre)}
+.cr-pays{font-size:12px;letter-spacing:2px}
+.cr-region{font-size:11px;letter-spacing:1.2px;font-weight:700}
+.cr-ville{font-size:9px}
+.cr-eau{font-size:9.5px;font-style:italic;fill:#4b6066}
+.cr-leg{font-size:8.5px}
+.cr-note{font-size:9px;font-style:italic}
 .probleme{
   border:1px solid var(--or);border-left-width:5px;padding:12px 14px;
   margin:0 0 20px;background:rgba(201,162,39,.06);font-style:italic;
@@ -340,6 +378,25 @@ select{width:100%}
 </style>
 </head>
 <body>
+
+<!-- Motifs partages par tous les croquis (fleches, hachures). Definis une
+     seule fois ici : les figures inserees dans les seances y renvoient par
+     url(#...), ce qui evite de dupliquer un <defs> dans chaque carte. -->
+<svg id="croquis-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="f-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#8c2432"/></marker>
+    <marker id="f-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#1f4a3c"/></marker>
+    <marker id="f-or" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#a9761f"/></marker>
+    <marker id="f-n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#3a3020"/></marker>
+    <pattern id="h-a" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#dcaaad" opacity=".6"/><line x1="0" y1="0" x2="0" y2="7" stroke="#8c2432" stroke-width="2.2" opacity=".8"/></pattern>
+    <pattern id="h-b" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#a9c2ae" opacity=".55"/><line x1="0" y1="0" x2="0" y2="7" stroke="#1f4a3c" stroke-width="2.2" opacity=".75"/></pattern>
+    <pattern id="h-or" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#e8ce93" opacity=".75"/><line x1="0" y1="0" x2="0" y2="7" stroke="#a9761f" stroke-width="2.2" opacity=".8"/></pattern>
+    <pattern id="h-n" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><rect width="7" height="7" fill="#d3c69c"/><line x1="0" y1="0" x2="0" y2="7" stroke="#6b5a34" stroke-width="1.6" opacity=".7"/></pattern>
+    <pattern id="p-a" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#e2c3c0" opacity=".55"/><circle cx="3" cy="3" r="1.25" fill="#8c2432" opacity=".85"/></pattern>
+    <pattern id="p-b" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#b9cdbd" opacity=".5"/><circle cx="3" cy="3" r="1.25" fill="#1f4a3c" opacity=".8"/></pattern>
+  </defs>
+</svg>
+
 <div class="app">
 
   <header class="entete">
@@ -391,7 +448,8 @@ select{width:100%}
          numero: 1,
          titre: "Titre de la seance",
          problematique: "Une phrase.",
-         contenu: ` ... HTML simple : h3, p, ul, strong, blockquote ... `,
+         contenu: ` ... HTML simple : h3, p, ul, strong, blockquote,
+                    et, ponctuellement, une <figure class="croquis"> ... `,
          anecdote: ` ... HTML simple, jamais evalue ... `,
          questions: [             // EXACTEMENT 5
            {
@@ -411,6 +469,34 @@ select{width:100%}
    - un paragraphe final << Fil rouge >> qui annonce la seance suivante ;
    - anecdote vraie et verifiable ; si elle releve de la legende, le dire ;
    - un point douteux se signale par un commentaire <!-- A VERIFIER -->.
+
+   Cartes et schemas (facultatif, la ou ils eclairent vraiment le propos) :
+   inseres dans contenu sous la forme
+
+     <figure class="croquis">
+       <svg viewBox="0 0 360 236" role="img" aria-label="...">...</svg>
+       <figcaption><b>Titre.</b> Une ou deux phrases.</figcaption>
+     </figure>
+
+   Regles :
+   - trace schematique, a main levee, jamais une projection exacte ;
+     des polygones a facettes suffisent et s'accordent au style Art deco ;
+   - largeur de reference 360 unites, hauteur libre (200 a 260) ;
+   - couleurs : #ece1c4 fond, #e4d6ae / #d8c896 / #cdbc8a les sols,
+     #aac0c2 l'eau, #3a3020 l'encre, #8c2432 le camp A, #1f4a3c le
+     camp B, #a9761f l'axe decisif, #6b5a34 le neutre ;
+   - fleches : marker-end="url(#f-a)" (bordeaux), #f-b (vert), #f-or
+     (or), #f-n (encre) ; hachures : fill="url(#h-a)", #h-b, #h-or,
+     #h-n ; pointilles : url(#p-a), url(#p-b). Tous ces motifs sont
+     definis une seule fois dans #croquis-defs, au debut du <body> :
+     ne PAS redefinir de <defs> dans la figure (les id seraient en
+     double) ;
+   - textes : classes .cr-pays, .cr-region, .cr-ville, .cr-eau,
+     .cr-leg, .cr-note (la police est deja posee par le CSS) ;
+   - legende encadree en bas de la figure, fond #f3ead2 ;
+   - ne jamais mettre d'espace devant ; : ? ! dans une balise : la
+     fonction typo() y glisserait une espace insecable et casserait
+     l'attribut SVG.
    ===================================================================== */
 
 /* Ordre d'affichage des periodes dans l'onglet Cours. Une periode sans
@@ -456,6 +542,40 @@ const COURS = [
 
 <h3>4. La Ruhr : la force sans les alliés (1923-1924)</h3>
 <p>En janvier 1922, <strong>Raymond Poincaré</strong> revient à la présidence du Conseil avec l’intention d’appliquer le traité à la lettre. Un défaut allemand sur des livraisons de bois et de charbon lui sert de fondement juridique : le <strong>11 janvier 1923</strong>, troupes françaises et belges occupent la <strong>Ruhr</strong>, cœur industriel du Reich, accompagnées d’ingénieurs chargés de prélever charbon et coke à la source.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 236" role="img" aria-label="Carte schématique de l'occupation de la Ruhr en janvier 1923">
+  <rect width="360" height="236" fill="#ece1c4"/>
+  <path d="M0,0 H128 L112,26 L60,40 L0,52 Z" fill="#aac0c2"/>
+  <text class="cr-eau" x="30" y="20">Mer du Nord</text>
+  <path d="M128,0 L188,10 L196,40 L170,56 L112,26 Z" fill="#ded0a6" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="132" y="26" letter-spacing="0.6">PAYS-BAS</text>
+  <path d="M112,26 L170,56 L166,88 L96,98 L52,72 L0,52 L0,40 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="56" y="74" font-size="10" letter-spacing="1.2">BELGIQUE</text>
+  <path d="M0,52 L52,72 L96,98 L150,124 L146,196 L62,222 L0,196 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="40" y="164">FRANCE</text>
+  <path d="M188,10 L346,6 L352,206 L184,228 L146,196 L150,124 L96,98 L166,88 L196,40 Z" fill="#d8c896" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="238" y="142">ALLEMAGNE</text>
+  <path d="M178,24 L198,48 L212,78 L200,112 L212,150 L196,214" fill="none" stroke="#7fa0a6" stroke-width="3" stroke-linecap="round"/>
+  <text class="cr-eau" x="214" y="118" transform="rotate(72 214 118)">Rhin</text>
+  <path d="M180,30 L198,48 L212,78 L200,112 L178,116 L168,84 L158,52 Z" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1" stroke-dasharray="4,3"/>
+  <path d="M214,44 L286,36 L300,70 L238,88 L208,74 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.6"/>
+  <text class="cr-region" x="230" y="64" font-size="12" fill="#6d1b26">RUHR</text>
+  <circle cx="258" cy="50" r="2.6" fill="#3a3020"/><text class="cr-ville" x="264" y="48">Essen</text>
+  <circle cx="200" cy="96" r="2.6" fill="#3a3020"/><text class="cr-ville" x="206" y="104">Cologne</text>
+  <path d="M112,120 Q168,104 204,84" fill="none" stroke="#8c2432" stroke-width="2.6" marker-end="url(#f-a)"/>
+  <path d="M122,62 Q166,56 202,60" fill="none" stroke="#8c2432" stroke-width="2.6" marker-end="url(#f-a)"/>
+  <g transform="translate(192,170)">
+    <rect x="0" y="0" width="160" height="58" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="7" y="7" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="15">Occupé en janvier 1923</text>
+    <rect x="7" y="23" width="15" height="9" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1" stroke-dasharray="3,2"/>
+    <text class="cr-leg" x="28" y="31">Rhénanie occupée depuis 1919</text>
+    <path d="M7,44 L19,44" stroke="#8c2432" stroke-width="2.4" marker-end="url(#f-a)"/>
+    <text class="cr-leg" x="28" y="47">Troupes franco-belges</text>
+  </g>
+</svg>
+<figcaption><b>L'occupation de la Ruhr, janvier 1923.</b> Les troupes françaises et belges s'avancent au-delà de la Rhénanie déjà occupée depuis 1919 : la saisie porte sur le bassin charbonnier, cœur industriel du Reich.</figcaption>
+</figure>
 <p>Berlin réplique par la <strong>résistance passive</strong> : grèves payées par l’État allemand, qui fait tourner la planche à billets et provoque l’<strong>hyperinflation</strong> de 1923. L’opération devient ruineuse pour tout le monde. Londres et Washington la désapprouvent ; la spéculation se retourne contre le franc au début de 1924, et Poincaré doit imposer le <strong>« double décime »</strong>, une hausse d’impôts de 20 %, pour sauver la monnaie. L’Allemagne cède sur la résistance passive en septembre 1923, mais la sortie de crise est confiée à un comité d’experts : le <strong>plan Dawes</strong> (août 1924) allège les annuités, prête des capitaux américains à l’Allemagne et prépare l’évacuation de la Ruhr en 1925.</p>
 <p>Le bilan est amer : la France a obtenu de l’argent, mais a perdu le droit d’agir seule. Les réparations sont désormais une affaire internationale, arbitrée par les banquiers américains. Aux élections du <strong>11 mai 1924</strong>, le <strong>Cartel des gauches</strong> l’emporte. Le président de la République <strong>Alexandre Millerand</strong>, qui s’était engagé publiquement pour le Bloc, se heurte à une « grève des ministères » : aucun dirigeant du Cartel n’accepte de former un gouvernement sous lui. Il démissionne le <strong>11 juin 1924</strong> et Gaston Doumergue lui succède. Le précédent est capital : sous la III<sup>e</sup> République, un président ne gouverne pas contre la Chambre.</p>
 <p><strong>Fil rouge.</strong> Le Cartel arrive donc au pouvoir avec une double hypothèque : un budget bâti sur des recettes allemandes incertaines et une dette à court terme qu’il faut renouveler chaque mois. C’est sur ce terrain financier — et non sur son programme — qu’il va se briser.</p>
@@ -628,6 +748,39 @@ const COURS = [
 
 <h3>4. Le 7 mars 1936 : le point de bascule</h3>
 <p>Le <strong>7 mars 1936</strong>, la Wehrmacht réoccupe la <strong>Rhénanie démilitarisée</strong>. Militairement, l’opération est un bluff : les unités engagées sont faibles et ont ordre de se replier en cas de riposte. La France ne bouge pas. Les raisons sont cumulatives : un gouvernement intérimaire (Albert Sarraut) à deux mois des élections ; un état-major qui, ne disposant pas de forces d’intervention immédiate, réclame une <strong>mobilisation générale</strong> politiquement impensable ; un allié britannique qui juge que les Allemands ne font qu’« entrer dans leur propre jardin » ; et une opinion pacifiste marquée par 1914-1918.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 236" role="img" aria-label="Carte de la zone démilitarisée rhénane et de sa remilitarisation le 7 mars 1936">
+  <rect width="360" height="236" fill="#ece1c4"/>
+  <path d="M0,0 H128 L112,26 L60,40 L0,52 Z" fill="#aac0c2"/>
+  <text class="cr-eau" x="30" y="20">Mer du Nord</text>
+  <path d="M128,0 L188,10 L196,40 L170,56 L112,26 Z" fill="#ded0a6" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="132" y="26" letter-spacing="0.6">PAYS-BAS</text>
+  <path d="M112,26 L170,56 L166,88 L96,98 L52,72 L0,52 L0,40 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="52" y="72" font-size="10" letter-spacing="1.2">BELGIQUE</text>
+  <path d="M0,52 L52,72 L96,98 L150,124 L146,196 L62,222 L0,196 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="26" y="150">FRANCE</text>
+  <path d="M188,10 L346,6 L352,206 L184,228 L146,196 L150,124 L96,98 L166,88 L196,40 Z" fill="#d8c896" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="266" y="104">ALLEMAGNE</text>
+  <path d="M188,12 L206,26 L226,50 L240,80 L228,114 L240,152 L222,216 L184,228 L146,196 L150,124 L96,98 L166,88 L196,40 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.4" stroke-dasharray="5,3"/>
+  <path d="M178,24 L198,48 L212,78 L200,112 L212,150 L196,214" fill="none" stroke="#7fa0a6" stroke-width="3" stroke-linecap="round"/>
+  <text class="cr-eau" x="198" y="226">Rhin</text>
+  <path d="M152,126 L148,194" fill="none" stroke="#1f4a3c" stroke-width="3.4" stroke-dasharray="7,3"/>
+  <circle cx="200" cy="96" r="2.6" fill="#3a3020"/><text class="cr-ville" x="176" y="92">Cologne</text>
+  <circle cx="176" cy="160" r="2.6" fill="#3a3020"/><text class="cr-ville" x="182" y="158">Sarrebruck</text>
+  <path d="M312,66 Q266,62 238,66" fill="none" stroke="#8c2432" stroke-width="2.8" marker-end="url(#f-a)"/>
+  <path d="M316,156 Q272,148 240,140" fill="none" stroke="#8c2432" stroke-width="2.8" marker-end="url(#f-a)"/>
+  <g transform="translate(6,176)">
+    <rect x="0" y="0" width="182" height="54" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="7" y="6" width="15" height="9" fill="url(#h-or)" stroke="#a9761f" stroke-width="1" stroke-dasharray="3,2"/>
+    <text class="cr-leg" x="28" y="14">Zone démilitarisée rhénane</text>
+    <path d="M7,25 L22,25" stroke="#1f4a3c" stroke-width="3" stroke-dasharray="5,2"/>
+    <text class="cr-leg" x="28" y="28">Ligne Maginot (chantier ouvert en 1930)</text>
+    <path d="M7,41 L19,41" stroke="#8c2432" stroke-width="2.6" marker-end="url(#f-a)"/>
+    <text class="cr-leg" x="28" y="44">Remilitarisation, 7 mars 1936</text>
+  </g>
+</svg>
+<figcaption><b>La Rhénanie démilitarisée, 1919-1936.</b> Le traité de Versailles interdisait toute force allemande à l'ouest du Rhin et sur une bande de 50 km à l'est : c'est ce glacis, qui couvrait la France et la route de ses alliés de l'Est, que la Wehrmacht efface le 7 mars 1936.</figcaption>
+</figure>
 <p>Les conséquences sont immenses. L’Allemagne peut fortifier sa frontière occidentale : la France ne pourra plus porter secours à ses alliés de l’Est, qui en tirent la leçon — la <strong>Belgique</strong> renonce à l’alliance française et proclame sa neutralité en octobre 1936. L’historiographie (Robert Frank, Martin Alexander) a montré que cette paralysie ne tient pas à une lâcheté des dirigeants, mais à l’articulation entre une <strong>doctrine militaire défensive</strong>, des finances exsangues et une dépendance à Londres.</p>
 <p><strong>Fil rouge.</strong> Pour comprendre cette impuissance, il faut regarder ce qui se passe à l’intérieur : depuis 1932, la France est entrée dans une crise économique et politique qui consomme ses gouvernements en quelques mois.</p>
 `,
@@ -1072,6 +1225,43 @@ const COURS = [
 
 <h3>3. La famine de 1932-1933</h3>
 <p>La conjonction de la désorganisation, de l’abattage du bétail et de <strong>plans de collecte maintenus malgré des récoltes insuffisantes</strong> provoque une famine massive en 1932-1933. Les régions les plus frappées sont l’<strong>Ukraine</strong>, le <strong>Kouban</strong>, le bassin de la Volga, la Sibérie occidentale et le <strong>Kazakhstan</strong>. Le bilan, estimé à partir des archives et des recensements, se situe entre <strong>5 et 7 millions de morts</strong>, dont près de 4 millions en Ukraine et environ 1,5 million au Kazakhstan — soit, pour la population kazakhe nomade, la perte proportionnellement la plus lourde.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 252" role="img" aria-label="Carte des principales régions frappées par la famine soviétique de 1932-1933">
+  <rect width="360" height="252" fill="#ece1c4"/>
+  <path d="M26,74 L74,40 L150,26 L236,24 L312,36 L348,62 L344,128 L312,172 L248,192 L166,194 L94,180 L40,148 L20,110 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1.2"/>
+  <path d="M26,74 L58,50 L68,64 L38,88 Z" fill="#aac0c2" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-eau" x="16" y="44">Baltique</text>
+  <path d="M72,156 L126,148 L152,162 L138,184 L90,186 L68,172 Z" fill="#aac0c2" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-eau" x="80" y="172">Mer Noire</text>
+  <path d="M236,134 L260,128 L270,172 L248,188 L232,170 Z" fill="#aac0c2" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-eau" x="234" y="160" font-size="8">Caspienne</text>
+  <path d="M26,74 L40,148 L82,174" fill="none" stroke="#6b5a34" stroke-width="1.6" stroke-dasharray="5,3"/>
+  <path d="M62,110 L124,100 L154,124 L148,152 L84,158 L56,138 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.5"/>
+  <text class="cr-region" x="70" y="144" fill="#6d1b26">UKRAINE</text>
+  <path d="M158,164 L204,156 L220,180 L174,192 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.5"/>
+  <text class="cr-ville" x="176" y="180" font-weight="700" fill="#6d1b26">KOUBAN</text>
+  <path d="M198,104 L232,98 L242,134 L204,140 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.5"/>
+  <text class="cr-ville" x="202" y="122" font-weight="700" fill="#6d1b26">VOLGA</text>
+  <path d="M266,106 L326,98 L332,146 L284,162 L262,134 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.5"/>
+  <text class="cr-ville" x="272" y="132" font-weight="700" fill="#6d1b26">KAZAKHSTAN</text>
+  <circle cx="98" cy="122" r="2.6" fill="#3a3020"/><text class="cr-ville" x="78" y="116">Kiev</text>
+  <circle cx="134" cy="118" r="2.6" fill="#3a3020"/><text class="cr-ville" x="138" y="114">Kharkov</text>
+  <circle cx="160" cy="158" r="2.6" fill="#3a3020"/><text class="cr-ville" x="158" y="152">Rostov</text>
+  <circle cx="150" cy="78" r="2.8" fill="#3a3020"/><text class="cr-ville" x="156" y="76">Moscou</text>
+  <circle cx="70" cy="64" r="2.6" fill="#3a3020"/><text class="cr-ville" x="60" y="58">Leningrad</text>
+  <text class="cr-pays" x="250" y="66" font-size="11">U. R. S. S.</text>
+  <g transform="translate(6,206)">
+    <rect x="0" y="0" width="348" height="40" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="7" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="29" y="15">Régions les plus durement frappées par la famine de 1932-1933</text>
+    <circle cx="15" cy="29" r="2.6" fill="#3a3020"/>
+    <text class="cr-leg" x="29" y="32">Villes ravitaillées en priorité</text>
+    <path d="M186,25 L201,25" stroke="#6b5a34" stroke-width="1.6" stroke-dasharray="4,2"/>
+    <text class="cr-leg" x="207" y="32">Frontière occidentale de l'URSS</text>
+  </g>
+</svg>
+<figcaption><b>Les régions de la famine, 1932-1933.</b> La disette frappe les grandes régions céréalières et d'élevage soumises aux quotas de livraison les plus lourds : Ukraine, Kouban et Caucase du Nord, Basse-Volga, Kazakhstan, où la sédentarisation forcée des éleveurs nomades s'ajoute à la collectivisation.</figcaption>
+</figure>
 <p>Des décisions aggravent délibérément la crise : blocage des villages « en retard » sur leurs livraisons, interdiction faite aux paysans ukrainiens de gagner les villes en janvier 1933, poursuite des exportations de céréales. L’État savait et n’a pas cessé de prélever.</p>
 
 <h3>4. Le débat sur la qualification : le Holodomor</h3>
@@ -1246,6 +1436,42 @@ const COURS = [
 <p>Il faut en outre distinguer le camp du <strong>« peuplement spécial »</strong> : les koulaks déportés en 1930-1931 ne sont pas détenus derrière des barbelés, mais assignés à résidence dans des villages du Nord ou de Sibérie, sous surveillance, avec une mortalité parfois supérieure à celle des camps. Au total, selon les statistiques établies depuis l’ouverture des archives, quelque <strong>18 millions de personnes</strong> passent par les camps et colonies entre 1930 et 1953, auxquelles s’ajoutent environ 6 millions de déportés spéciaux. Le nombre de détenus présents simultanément dépasse 1,5 million à la veille de la guerre.</p>
 
 <h3>3. Mourir au Goulag</h3>
+<figure class="croquis">
+<svg viewBox="0 0 360 252" role="img" aria-label="Carte schématique des grands complexes du Goulag en URSS">
+  <rect width="360" height="252" fill="#ece1c4"/>
+  <path d="M8,56 L30,60 L86,46 L152,36 L230,32 L300,38 L352,48 L350,124 L334,150 L344,176 L306,190 L252,176 L198,186 L142,178 L94,186 L46,170 L16,138 L6,112 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1.2"/>
+  <path d="M0,0 H360 V40 L300,30 L230,24 L152,28 L86,38 L30,52 L0,48 Z" fill="#aac0c2"/>
+  <text class="cr-eau" x="112" y="18">Océan glacial Arctique</text>
+  <path d="M344,176 L358,166 L360,202 L334,204 Z" fill="#aac0c2" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-eau" x="286" y="200" font-size="8">Mer d'Okhotsk</text>
+  <path d="M98,50 L104,128" fill="none" stroke="#6b5a34" stroke-width="1.4" stroke-dasharray="4,3"/>
+  <text class="cr-note" x="86" y="150" font-size="8.5" transform="rotate(-84 86 150)">Oural</text>
+  <text class="cr-note" x="26" y="158" font-size="8.5">Russie d'Europe</text>
+  <text class="cr-pays" x="186" y="112" font-size="11">SIBÉRIE</text>
+  <text class="cr-note" x="276" y="146" font-size="8.5">Extrême-Orient</text>
+  <path d="M56,58 L64,52 L72,58 L64,64 Z" fill="#8c2432"/><text class="cr-ville" x="18" y="52">Solovki</text>
+  <path d="M60,76 Q54,90 58,104" fill="none" stroke="#1f4a3c" stroke-width="2.6"/>
+  <text class="cr-ville" x="8" y="118" font-size="8">Belomorkanal</text>
+  <path d="M116,48 L124,42 L132,48 L124,54 Z" fill="#8c2432"/><text class="cr-ville" x="110" y="68">Vorkouta</text>
+  <path d="M180,46 L188,40 L196,46 L188,52 Z" fill="#8c2432"/><text class="cr-ville" x="192" y="62">Norilsk</text>
+  <path d="M302,72 L310,66 L318,72 L310,78 Z" fill="#8c2432"/><text class="cr-ville" x="300" y="62">Kolyma</text>
+  <path d="M314,98 L322,92 L330,98 L322,104 Z" fill="#8c2432"/><text class="cr-ville" x="316" y="116">Magadan</text>
+  <path d="M158,146 L166,140 L174,146 L166,152 Z" fill="#8c2432"/><text class="cr-ville" x="160" y="164">Karaganda</text>
+  <path d="M214,152 L222,146 L230,152 L222,158 Z" fill="#8c2432"/><text class="cr-ville" x="224" y="168">Bratsk</text>
+  <circle cx="70" cy="122" r="2.8" fill="#3a3020"/><text class="cr-ville" x="32" y="126">Moscou</text>
+  <circle cx="54" cy="96" r="2.6" fill="#3a3020"/><text class="cr-ville" x="16" y="92">Leningrad</text>
+  <g transform="translate(6,206)">
+    <rect x="0" y="0" width="348" height="40" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <path d="M9,11 L17,5 L25,11 L17,17 Z" fill="#8c2432"/>
+    <text class="cr-leg" x="31" y="14">Grands complexes de camps</text>
+    <path d="M9,28 L25,28" stroke="#1f4a3c" stroke-width="2.6"/>
+    <text class="cr-leg" x="31" y="31">Canal mer Blanche-Baltique (1931-1933)</text>
+    <path d="M196,24 L212,24" stroke="#6b5a34" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <text class="cr-leg" x="218" y="31">Oural</text>
+  </g>
+</svg>
+<figcaption><b>L'archipel du Goulag.</b> Les grands complexes sont implantés là où la main-d'œuvre libre refuse d'aller : forêts du Nord, houille de Vorkouta, nickel de Norilsk, or de la Kolyma. La géographie du camp est d'abord celle des ressources à extraire.</figcaption>
+</figure>
 <p>La mortalité varie fortement selon les années et les lieux. Elle culmine lors des grandes crises alimentaires : 1933, puis surtout <strong>1942-1943</strong>, où elle atteint environ un détenu sur cinq. Les archives recensent près de <strong>1,6 million de décès</strong> en détention entre 1930 et 1953, chiffre qui n’inclut ni les exécutions hors camp, ni les morts pendant les transports, ni celles qui suivent une libération pour cause de maladie — pratique courante qui améliorait les statistiques.</p>
 <p>Une distinction s’impose : le Goulag n’est pas un système d’<strong>extermination</strong> au sens des camps nazis de mise à mort. On n’y entre pas pour être tué, mais pour travailler ; on y meurt de froid, de faim, d’épuisement et de violence. Cette différence de finalité n’atténue pas la responsabilité : elle définit un autre type de crime.</p>
 
@@ -1528,6 +1754,44 @@ const COURS = [
 <p>Le krach de 1929 frappe une économie qui vivait des capitaux américains à court terme. Le chômage passe de 1,3 million en 1929 à plus de <strong>6 millions au début de 1932</strong>. Le chancelier <strong>Brüning</strong>, sans majorité, gouverne par <strong>décrets présidentiels</strong> fondés sur l’article 48 de la Constitution et impose une politique de déflation qui aggrave la contraction. Le Reichstag ne légifère presque plus : la démocratie parlementaire est morte avant l’arrivée d’Hitler.</p>
 <p>Le vote nazi explose : <strong>18,3 % en septembre 1930</strong>, puis <strong>37,3 % en juillet 1932</strong>, qui font du NSDAP le premier parti du Reichstag. Sa sociologie est celle d’un <strong>parti attrape-tout de la protestation</strong> : surreprésenté chez les protestants, les ruraux, les classes moyennes indépendantes, les jeunes ; nettement plus faible chez les catholiques pratiquants, encadrés par le Zentrum, et chez les ouvriers syndiqués, fidèles au SPD et au KPD. Ces derniers s’affrontent d’ailleurs entre eux, le KPD, sur consigne de Moscou, désignant les socialistes comme « sociaux-fascistes ».</p>
 
+<figure class="croquis">
+<svg viewBox="0 0 360 250" role="img" aria-label="Diagramme des résultats du NSDAP aux élections au Reichstag de 1928 à 1933">
+  <rect width="360" height="250" fill="#ece1c4"/>
+  <line x1="44" y1="30" x2="44" y2="190" stroke="#3a3020" stroke-width="1.2"/>
+  <line x1="44" y1="190" x2="350" y2="190" stroke="#3a3020" stroke-width="1.2"/>
+  <g stroke="#6b5a34" stroke-width=".6" opacity=".55">
+    <line x1="44" y1="158" x2="350" y2="158"/><line x1="44" y1="126" x2="350" y2="126"/>
+    <line x1="44" y1="94" x2="350" y2="94"/><line x1="44" y1="62" x2="350" y2="62"/>
+  </g>
+  <g class="cr-leg" text-anchor="end">
+    <text x="38" y="193">0</text><text x="38" y="161">10</text><text x="38" y="129">20</text>
+    <text x="38" y="97">30</text><text x="38" y="65">40</text><text x="38" y="33">50</text>
+  </g>
+  <text class="cr-note" x="14" y="118" font-size="8.5" transform="rotate(-90 14 118)">% des voix</text>
+  <line x1="44" y1="30" x2="350" y2="30" stroke="#1f4a3c" stroke-width="1.6" stroke-dasharray="6,3"/>
+  <text class="cr-leg" x="197" y="26" text-anchor="middle" fill="#1f4a3c">majorité absolue : jamais atteinte dans une élection libre</text>
+  <rect x="56" y="182" width="46" height="8" fill="#8c2432"/>
+  <rect x="114" y="131" width="46" height="59" fill="#8c2432"/>
+  <rect x="172" y="71" width="46" height="119" fill="#8c2432"/>
+  <rect x="230" y="84" width="46" height="106" fill="#8c2432"/>
+  <rect x="288" y="50" width="46" height="140" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.4"/>
+  <g class="cr-leg" text-anchor="middle" font-weight="700">
+    <text x="79" y="178">2,6 %</text><text x="137" y="127">18,3 %</text><text x="195" y="67">37,3 %</text>
+    <text x="253" y="80">33,1 %</text><text x="311" y="46">43,9 %</text>
+  </g>
+  <g class="cr-leg" text-anchor="middle">
+    <text x="79" y="203">mai</text><text x="79" y="213">1928</text><text x="79" y="225">12 sièges</text>
+    <text x="137" y="203">septembre</text><text x="137" y="213">1930</text><text x="137" y="225">107 sièges</text>
+    <text x="195" y="203">juillet</text><text x="195" y="213">1932</text><text x="195" y="225">230 sièges</text>
+    <text x="253" y="203">novembre</text><text x="253" y="213">1932</text><text x="253" y="225">196 sièges</text>
+    <text x="311" y="203">5 mars</text><text x="311" y="213">1933</text><text x="311" y="225">288 sièges</text>
+  </g>
+  <line x1="288" y1="196" x2="334" y2="196" stroke="#8c2432" stroke-width="1.2"/>
+  <text class="cr-note" x="350" y="241" text-anchor="end" font-size="8.5">scrutin tenu sous la terreur,</text>
+  <text class="cr-note" x="350" y="249" text-anchor="end" font-size="8.5">après l'incendie du Reichstag</text>
+</svg>
+<figcaption><b>Le NSDAP au Reichstag, 1928-1933.</b> Le parti ne décolle qu'avec la crise, plafonne dès novembre 1932 et n'obtient jamais la majorité absolue : le 30 janvier 1933, Hitler est nommé chancelier par le président Hindenburg, il n'est pas porté au pouvoir par une majorité d'électeurs.</figcaption>
+</figure>
 <p>La rue compte autant que les urnes. L’année 1932 est la plus violente de la République : affrontements quotidiens entre SA, militants communistes et sociaux-démocrates, avec plusieurs centaines de morts. Le pouvoir répond en frappant la démocratie plutôt que ses adversaires : le <strong>20 juillet 1932</strong>, von Papen destitue par décret le gouvernement prussien dirigé par les sociaux-démocrates, qui contrôlait la plus grande police d’Allemagne. Ce coup de force, accepté sans résistance, prive le camp républicain de son dernier bastion institutionnel six mois avant l’arrivée d’Hitler.</p>
 
 <h3>4. Une nomination, pas une conquête</h3>
@@ -1972,6 +2236,58 @@ const COURS = [
 
 <h3>3. 1939 : la rupture</h3>
 <p>Le <strong>15 mars 1939</strong>, la Wehrmacht occupe Prague : il ne s’agit plus de rassembler des Allemands, mais de soumettre un peuple slave. L’argument national qui justifiait l’apaisement s’effondre. Londres et Paris garantissent la <strong>Pologne</strong> le 31 mars.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 278" role="img" aria-label="Carte de l'expansion territoriale du Reich allemand entre 1935 et 1939">
+  <rect width="360" height="278" fill="#ece1c4"/>
+  <path d="M18,10 H116 L112,38 L40,42 L14,30 Z" fill="#aac0c2"/>
+  <text class="cr-eau" x="30" y="26">Mer du Nord</text>
+  <path d="M132,8 L286,14 L290,44 L182,48 L128,34 Z" fill="#aac0c2"/>
+  <text class="cr-eau" x="170" y="28">Baltique</text>
+  <path d="M14,30 L40,42 L112,38 L118,86 L128,130 L104,158 L54,176 L18,150 L10,86 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="24" y="128" font-size="10">FRANCE</text>
+  <path d="M112,38 L182,48 L246,44 L256,84 L250,124 L212,148 L150,156 L128,130 L118,86 Z" fill="#cdbc8a" stroke="#3a3020" stroke-width="1.2"/>
+  <text class="cr-pays" x="148" y="98" font-size="11">REICH 1933</text>
+  <path d="M112,38 L130,40 L136,90 L144,132 L128,130 L118,86 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.2"/>
+  <path d="M116,132 L134,130 L138,150 L118,152 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.2"/>
+  <path d="M150,156 L212,148 L228,170 L196,188 L146,180 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.2"/>
+  <path d="M212,148 L250,124 L300,132 L322,154 L286,180 L228,170 Z" fill="#dccda2" stroke="#3a3020" stroke-width="1"/>
+  <path d="M212,148 L250,124 L300,132 L296,144 L252,138 L222,158 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.2"/>
+  <text class="cr-ville" x="232" y="194" font-size="8">TCHÉCOSLOVAQUIE</text>
+  <path d="M246,44 L318,56 L336,114 L300,132 L250,124 L256,84 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="274" y="94" font-size="10">POLOGNE</text>
+  <path d="M286,40 L306,42 L304,58 L286,54 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.2"/>
+  <path d="M146,180 L196,188 L206,222 L152,228 L132,200 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="136" y="202" font-size="7.5">HONGRIE, YOUGOSLAVIE</text>
+  <path d="M54,176 L104,158 L146,180 L132,200 L96,214 L58,198 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="66" y="190" font-size="8">SUISSE, ITALIE</text>
+  <g font-size="9" text-anchor="middle">
+    <circle cx="127" cy="141" r="8" fill="#a9761f"/><text x="127" y="144" fill="#f3ead2">1</text>
+    <circle cx="127" cy="66" r="8" fill="#a9761f"/><text x="127" y="69" fill="#f3ead2">2</text>
+    <circle cx="184" cy="170" r="8" fill="#a9761f"/><text x="184" y="173" fill="#f3ead2">3</text>
+    <circle cx="256" cy="139" r="8" fill="#a9761f"/><text x="256" y="142" fill="#f3ead2">4</text>
+    <circle cx="290" cy="160" r="8" fill="#a9761f"/><text x="290" y="163" fill="#f3ead2">5</text>
+    <circle cx="316" cy="48" r="8" fill="#a9761f"/><text x="316" y="51" fill="#f3ead2">6</text>
+  </g>
+  <circle cx="240" cy="158" r="2.4" fill="#3a3020"/><text class="cr-ville" x="214" y="156" font-size="8">Prague</text>
+  <circle cx="200" cy="164" r="2.4" fill="#3a3020"/><text class="cr-ville" x="170" y="162" font-size="8">Vienne</text>
+  <circle cx="216" cy="70" r="2.6" fill="#3a3020"/><text class="cr-ville" x="192" y="66" font-size="8">Berlin</text>
+  <circle cx="268" cy="56" r="2.4" fill="#3a3020"/><text class="cr-ville" x="244" y="70" font-size="8">Dantzig</text>
+  <g transform="translate(6,210)">
+    <rect x="0" y="0" width="348" height="64" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="14" height="9" fill="#cdbc8a" stroke="#3a3020" stroke-width="1"/>
+    <text class="cr-leg" x="27" y="14">Reich en 1933</text>
+    <rect x="8" y="20" width="14" height="9" fill="url(#h-or)" stroke="#a9761f" stroke-width="1"/>
+    <text class="cr-leg" x="27" y="28">Acquis de 1935 à 1939</text>
+    <text class="cr-leg" x="8" y="42">1 Sarre, plébiscite de janvier 1935</text>
+    <text class="cr-leg" x="8" y="56">2 Rhénanie remilitarisée, mars 1936</text>
+    <text class="cr-leg" x="180" y="14">3 Autriche, Anschluss, mars 1938</text>
+    <text class="cr-leg" x="180" y="28">4 Sudètes, Munich, octobre 1938</text>
+    <text class="cr-leg" x="180" y="42">5 Bohême-Moravie, mars 1939</text>
+    <text class="cr-leg" x="180" y="56">6 Memel, mars 1939</text>
+  </g>
+</svg>
+<figcaption><b>L'expansion du Reich, 1935-1939.</b> Jusqu'en octobre 1938, chaque coup de force peut être présenté comme la réunion de populations germanophones ; l'occupation de Prague, le 15 mars 1939, sort de ce registre et fait basculer Londres et Paris vers la garantie donnée à la Pologne.</figcaption>
+</figure>
 <p>Le dernier verrou saute le <strong>23 août 1939</strong> avec le <strong>pacte germano-soviétique</strong>, dont le protocole secret partage l’Europe orientale en zones d’influence. Staline gagne du temps et des territoires ; Hitler s’assure de ne pas combattre sur deux fronts. Le <strong>1<sup>er</sup> septembre 1939</strong>, l’Allemagne envahit la Pologne ; la France et le Royaume-Uni déclarent la guerre le 3.</p>
 
 <p>Un système d’alliances se met en place en parallèle : rapprochement avec l’Italie à l’occasion de la guerre d’Éthiopie et de l’Espagne, <strong>Axe Rome-Berlin</strong> en octobre 1936, <strong>pacte antikomintern</strong> avec le Japon en novembre 1936, enfin <strong>pacte d’Acier</strong> militaire avec l’Italie en mai 1939. L’historien <strong>Tim Mason</strong> a soutenu que la fuite en avant guerrière tenait aussi à une impasse intérieure : pénurie de main-d’œuvre, tensions sur les salaires et déséquilibres financiers provoqués par le réarmement rendaient l’économie allemande de 1939 intenable sans pillage extérieur. La thèse est discutée, mais elle rappelle qu’un régime construit sur la mobilisation permanente supporte mal l’attente.</p>
@@ -2528,6 +2844,60 @@ const COURS = [
 <p>Les étapes s’enchaînent : intervention commune en <strong>Espagne</strong> à partir de 1936, où l’Italie engage des dizaines de milliers d’hommes ; <strong>Axe Rome-Berlin</strong> proclamé en octobre 1936 ; adhésion au <strong>pacte antikomintern</strong> en 1937 ; sortie de la SDN la même année ; acceptation de l’<strong>Anschluss</strong> en mars 1938, alors que Mussolini l’avait empêché quatre ans plus tôt ; rôle de médiateur à <strong>Munich</strong> en septembre 1938 ; invasion de l’<strong>Albanie</strong> en avril 1939 ; enfin <strong>pacte d’Acier</strong>, alliance militaire signée en mai 1939.</p>
 <p>Le renversement est complet : l’Italie, qui garantissait l’indépendance autrichienne, devient le partenaire junior d’une Allemagne quatre fois plus puissante. Consciente de son impréparation militaire, elle déclarera en septembre 1939 sa « non-belligérance » avant d’entrer en guerre le 10 juin 1940, quand la défaite française paraît acquise.</p>
 
+<figure class="croquis">
+<svg viewBox="0 0 360 262" role="img" aria-label="Carte de l'empire italien et des conquêtes de 1935 à 1939">
+  <rect width="360" height="262" fill="#aac0c2"/>
+  <g fill="#e4d6ae" stroke="#3a3020" stroke-width="1">
+    <path d="M0,0 H360 V30 L330,38 L300,28 L268,40 L236,30 L206,28 L176,34 L150,26 L120,32 L90,26 L60,34 L26,26 L0,32 Z"/>
+    <path d="M100,24 L134,28 L146,60 L158,86 L150,98 L132,94 L126,66 L110,44 L94,32 Z"/>
+    <path d="M130,102 L150,100 L148,112 L128,110 Z"/>
+    <path d="M88,58 L100,56 L102,78 L88,76 Z"/>
+    <path d="M176,34 L206,28 L216,56 L190,68 L174,54 Z"/>
+  </g>
+  <text class="cr-ville" x="14" y="20" font-size="8.5" letter-spacing="1">FRANCE</text>
+  <text class="cr-ville" x="290" y="22" font-size="8.5" letter-spacing="1">TURQUIE</text>
+  <text class="cr-ville" x="184" y="52" font-size="8">GRÈCE</text>
+  <text class="cr-ville" x="106" y="42" font-size="8.5" transform="rotate(58 106 42)">ITALIE</text>
+  <path d="M164,32 L178,32 L174,56 L160,52 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.5"/>
+  <path d="M162,78 L166,60" fill="none" stroke="#6d1b26" stroke-width="1"/>
+  <text class="cr-ville" x="124" y="86" font-size="7.5" fill="#6d1b26" font-weight="700">Albanie, avril 1939</text>
+  <g fill="#cdbc8a" stroke="#3a3020" stroke-width=".8">
+    <circle cx="234" cy="56" r="3"/><circle cx="242" cy="64" r="2.4"/><circle cx="228" cy="66" r="2.2"/>
+  </g>
+  <text class="cr-ville" x="248" y="58" font-size="7.5">Dodécanèse (it.)</text>
+  <text class="cr-eau" x="20" y="94">Méditerranée</text>
+  <path d="M0,116 L60,122 L124,112 L190,118 L252,108 L306,118 L360,112 V262 H0 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <path d="M296,114 L308,120 L292,182 L278,178 Z" fill="#aac0c2" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-eau" x="300" y="136" font-size="7.5" transform="rotate(76 300 136)">Mer Rouge</text>
+  <path d="M280,180 L344,192 L348,206 L286,196 Z" fill="#aac0c2" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-ville" x="322" y="158" font-size="8" letter-spacing="1">ARABIE</text>
+  <path d="M0,118 L92,120 L96,166 L0,170 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="8" y="146" font-size="7.5">AFR. DU NORD FR.</text>
+  <path d="M102,124 L172,118 L180,164 L106,168 Z" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1.3"/>
+  <text class="cr-ville" x="122" y="148" font-weight="700" letter-spacing="1">LIBYE</text>
+  <path d="M186,118 L240,112 L248,156 L190,160 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="192" y="140" font-size="8">ÉGYPTE (GB)</text>
+  <path d="M186,164 L246,158 L252,196 L192,202 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="192" y="182" font-size="8">SOUDAN (GB)</text>
+  <path d="M252,160 L282,150 L290,172 L258,180 Z" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1.3"/>
+  <text class="cr-ville" x="256" y="172" font-size="7">Érythrée</text>
+  <path d="M292,206 L332,214 L322,250 L288,232 Z" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1.3"/>
+  <text class="cr-ville" x="294" y="230" font-size="7">Somalie it.</text>
+  <path d="M222,190 L280,180 L292,214 L240,232 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.6"/>
+  <text class="cr-ville" x="230" y="206" font-weight="700" fill="#6d1b26">ÉTHIOPIE</text>
+  <text class="cr-ville" x="234" y="218" font-size="7.5" fill="#6d1b26">1935-1936</text>
+  <path d="M272,176 Q264,182 258,188" fill="none" stroke="#8c2432" stroke-width="2.6" marker-end="url(#f-a)"/>
+  <path d="M296,214 Q284,212 276,208" fill="none" stroke="#8c2432" stroke-width="2.6" marker-end="url(#f-a)"/>
+  <g transform="translate(8,212)">
+    <rect x="0" y="0" width="172" height="28" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="7" y="4" width="14" height="8" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1"/>
+    <text class="cr-leg" x="26" y="11">Possessions italiennes avant 1935</text>
+    <rect x="7" y="16" width="14" height="8" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="26" y="23">Conquêtes du régime fasciste</text>
+  </g>
+</svg>
+<figcaption><b>L'empire italien, 1912-1939.</b> La Libye, l'Érythrée, la Somalie et le Dodécanèse sont antérieurs au fascisme ; l'Éthiopie, envahie en octobre 1935 et proclamée « Empire » en mai 1936, puis l'Albanie, occupée en avril 1939, sont les conquêtes propres au régime — et celles qui le coupent de Londres et de Paris.</figcaption>
+</figure>
 <p>Il faut rappeler que l’empire ne commence pas en 1935. La reconquête de la <strong>Libye</strong>, menée de 1923 à 1932, fut d’une violence extrême : déportation de populations de Cyrénaïque dans des camps d’internement où des dizaines de milliers de personnes périrent, exécution publique du chef de la résistance <strong>Omar al-Mukhtar</strong> en 1931. Cette guerre coloniale a servi de laboratoire — méthodes, hommes, vocabulaire de la hiérarchie des races — à ce qui suivra en Éthiopie puis en Italie même.</p>
 
 <h3>4. Les lois raciales de 1938</h3>
@@ -2726,6 +3096,55 @@ const COURS = [
 <p>Les deux camps pratiquent la <strong>violence contre les civils</strong>, mais selon des logiques différentes. Dans la zone républicaine, l’été 1936 voit des milliers d’exécutions sommaires commises par des milices échappant au gouvernement, frappant notamment le clergé — près de sept mille religieux tués — et les notables ; le pouvoir républicain rétablit progressivement son contrôle et met fin à ces pratiques à partir de 1937. Dans la zone insurgée, la répression est au contraire <strong>ordonnée par le commandement</strong>, planifiée comme un instrument de terreur — le massacre de Badajoz en août 1936 en donne l’exemple —, et elle se poursuivra après la victoire.</p>
 
 <h3>4. L’usure et la défaite</h3>
+<figure class="croquis">
+<svg viewBox="0 0 360 206" role="img" aria-label="Trois cartes de l'avance nationaliste pendant la guerre civile espagnole, de juillet 1936 à avril 1938">
+  <rect width="360" height="206" fill="#ece1c4"/>
+  <g class="cr-leg" text-anchor="middle" font-size="10" font-weight="700">
+    <text x="64" y="20">Juillet 1936</text><text x="184" y="20">Octobre 1937</text><text x="304" y="20">Avril 1938</text>
+  </g>
+  <g transform="translate(8,26) scale(1.1)" stroke="#3a3020" stroke-width=".9">
+    <path d="M6,20 L42,8 L76,14 L94,32 L90,68 L64,86 L26,82 L4,52 Z" fill="url(#h-b)"/>
+    <path d="M6,20 L42,8 L58,14 L52,44 L20,48 L4,34 Z" fill="url(#h-a)"/>
+    <path d="M22,66 L44,62 L48,80 L26,82 Z" fill="url(#h-a)"/>
+    <path d="M18,92 L60,90 L62,98 L20,100 Z" fill="url(#h-a)"/>
+    <text class="cr-ville" x="22" y="97" font-size="7" stroke="none">Maroc espagnol</text>
+    <path d="M42,90 Q38,84 34,76" fill="none" stroke="#8c2432" stroke-width="2.4" marker-end="url(#f-a)"/>
+    <circle cx="48" cy="46" r="2.4" fill="#3a3020" stroke="none"/>
+    <text class="cr-ville" x="52" y="45" font-size="7.5" stroke="none">Madrid</text>
+  </g>
+  <g transform="translate(128,26) scale(1.1)" stroke="#3a3020" stroke-width=".9">
+    <path d="M6,20 L42,8 L76,14 L94,32 L90,68 L64,86 L26,82 L4,52 Z" fill="url(#h-b)"/>
+    <path d="M6,16 L42,8 L76,14 L86,24 L66,40 L56,58 L24,56 L4,34 Z" fill="url(#h-a)"/>
+    <path d="M20,62 L50,58 L56,82 L26,84 Z" fill="url(#h-a)"/>
+    <circle cx="48" cy="46" r="2.4" fill="#3a3020" stroke="none"/>
+    <text class="cr-ville" x="52" y="45" font-size="7.5" stroke="none">Madrid</text>
+    <text class="cr-ville" x="14" y="97" font-size="7" stroke="none">Chute du front du Nord</text>
+  </g>
+  <g transform="translate(248,26) scale(1.1)" stroke="#3a3020" stroke-width=".9">
+    <path d="M6,20 L42,8 L76,14 L94,32 L90,68 L64,86 L26,82 L4,52 Z" fill="url(#h-b)"/>
+    <path d="M6,16 L42,8 L70,16 L80,34 L92,44 L90,50 L70,48 L60,62 L26,58 L4,34 Z" fill="url(#h-a)"/>
+    <path d="M20,62 L56,56 L62,84 L26,84 Z" fill="url(#h-a)"/>
+    <path d="M56,40 L86,42" fill="none" stroke="#8c2432" stroke-width="2.6" marker-end="url(#f-a)" stroke-linecap="round"/>
+    <circle cx="48" cy="46" r="2.4" fill="#3a3020" stroke="none"/>
+    <text class="cr-ville" x="16" y="45" font-size="7.5" stroke="none">Madrid</text>
+    <text class="cr-ville" x="70" y="24" font-size="7" stroke="none">Catalogne</text>
+    <text class="cr-ville" x="8" y="97" font-size="7" stroke="none">Zone républicaine coupée en deux</text>
+  </g>
+  <g transform="translate(8,152)">
+    <rect x="0" y="0" width="344" height="46" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="14">Zone tenue par les insurgés</text>
+    <rect x="8" y="20" width="15" height="9" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="28">Zone restée républicaine</text>
+    <path d="M8,39 L23,39" stroke="#8c2432" stroke-width="2.4" marker-end="url(#f-a)"/>
+    <text class="cr-leg" x="28" y="42">Offensive décisive de la période</text>
+    <text class="cr-leg" x="186" y="14">Juillet 1936 : le coup d'État n'emporte ni Madrid,</text>
+    <text class="cr-leg" x="186" y="25">ni Barcelone, ni Valence ; il devient une guerre.</text>
+    <text class="cr-leg" x="186" y="42">Avril 1938 : la percée jusqu'à la Méditerranée.</text>
+  </g>
+</svg>
+<figcaption><b>Trois états du front, 1936-1938.</b> Faute d'avoir emporté les grandes villes en juillet 1936, Franco renonce à la guerre courte : il use l'adversaire secteur par secteur, prend le Nord industriel à l'automne 1937, puis atteint la Méditerranée en avril 1938, coupant la République en deux.</figcaption>
+</figure>
 <p>Après l’échec devant <strong>Madrid</strong> à l’automne 1936, Franco renonce à la guerre courte et choisit une progression méthodique, qui permet d’occuper et d’épurer le terrain conquis. Il prend le Nord industriel en 1937, coupe la zone républicaine en deux en 1938, et l’emporte lors de la bataille de l’<strong>Èbre</strong> (juillet-novembre 1938), qui épuise les dernières réserves républicaines. La Catalogne tombe en février 1939, provoquant l’exode de près de <strong>450 000 réfugiés</strong> vers la France — la <em>Retirada</em>. La guerre s’achève le <strong>1<sup>er</sup> avril 1939</strong>.</p>
 <p>Le bilan est lourd : de l’ordre de <strong>500 000 morts</strong> <!-- A VERIFIER : les estimations du bilan humain global de la guerre civile varient sensiblement selon les auteurs -->, dont une part considérable due non aux combats mais à la <strong>répression</strong> dans les deux zones — beaucoup plus massive et durable du côté franquiste, où elle se poursuit après la victoire, comme l’ont établi les travaux de Paul Preston et de Santos Juliá.</p>
 <p><strong>Fil rouge.</strong> Reste à définir ce qui sort de cette victoire : un régime, et un régime dont la nature divise encore les historiens.</p>
