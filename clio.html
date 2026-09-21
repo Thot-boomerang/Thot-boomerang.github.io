@@ -1,0 +1,1940 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Clio — culture historique quotidienne : mini-cours et QCM, hors ligne.">
+<title>Clio — culture historique quotidienne</title>
+
+<!--
+  =====================================================================
+  CLIO — application personnelle de culture historique quotidienne
+  ---------------------------------------------------------------------
+  Fichier unique, autonome, hors ligne. HTML + CSS + JS « vanilla ».
+  Aucune dependance obligatoire : les polices Google Fonts sont
+  chargees de maniere non bloquante et remplacees par des polices
+  systeme si le reseau est absent.
+
+  Organisation du fichier :
+    1. CSS (charte Art deco)
+    2. Structure HTML des trois onglets
+    3. const COURS  — TOUT le contenu pedagogique (cours, seances, QCM)
+    4. Logique      — etat, progression, rendu, quiz, correction
+  =====================================================================
+-->
+
+<!-- Polices : chargement non bloquant. Hors ligne, les replis systeme
+     definis dans --police-titre / --police-texte prennent le relais. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+
+<style>
+/* =====================================================================
+   1. CHARTE ART DECO — annees 1920
+   Noir profond, or/laiton, creme (papier ancien), accents bordeaux et
+   vert bouteille. Geometrie : eventails, chevrons, lignes rayonnantes.
+   ===================================================================== */
+:root{
+  --noir:#0d0c0a;
+  --noir-2:#14120e;        /* fond des cartes */
+  --noir-3:#1c1913;        /* fond des elements actifs */
+  --or:#c9a227;
+  --or-clair:#e6c96f;
+  --laiton:#8a7233;
+  --creme:#f3e9d6;
+  --creme-2:#c8bda6;       /* texte secondaire */
+  --bordeaux:#8c2432;
+  --vert:#1f4a3c;
+  --rouge-faux:#e0665f;
+  --vert-juste:#7fc09b;
+
+  --police-titre:'Poiret One','Josefin Sans','Century Gothic',
+                 'Futura','Trebuchet MS',sans-serif;
+  --police-texte:'Playfair Display','Libre Baskerville',Georgia,
+                 'Times New Roman',serif;
+
+  --rayon:2px;             /* l'Art deco aime les angles nets */
+  --large:min(100%,720px);
+  --barre:62px;            /* hauteur de la barre d'onglets */
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--noir);
+  color:var(--creme);
+  font-family:var(--police-texte);
+  font-size:17px;
+  line-height:1.72;
+  min-height:100vh;
+  position:relative;
+}
+/* Rayonnement discret derriere l'en-tete, facon affiche 1925. Le degrade
+   de masque evite toute limite franche en bas des rayons. */
+body::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:300px;z-index:-1;
+  pointer-events:none;
+  background:repeating-conic-gradient(from 180deg at 50% 0%,
+    rgba(201,162,39,.075) 0deg 2.5deg, transparent 2.5deg 9deg);
+  -webkit-mask-image:linear-gradient(#000 10%,transparent 100%);
+  mask-image:linear-gradient(#000 10%,transparent 100%);
+}
+img{max-width:100%}
+h1,h2,h3,h4{font-family:var(--police-titre);font-weight:400;line-height:1.25;margin:0}
+p{margin:0 0 1em}
+a{color:var(--or-clair)}
+button{font:inherit;color:inherit}
+
+/* --- Ossature ------------------------------------------------------ */
+.app{width:var(--large);margin:0 auto;padding:0 16px calc(var(--barre) + 28px + env(safe-area-inset-bottom));}
+.vue{display:none}
+.vue.active{display:block}
+
+/* --- En-tete facon affiche / journal -------------------------------- */
+.entete{text-align:center;padding:22px 0 14px;position:relative}
+.entete .filet-haut{height:3px;background:var(--or);opacity:.85}
+.entete .filet-bas{height:1px;background:var(--laiton);margin-top:3px}
+.entete h1{
+  font-size:clamp(38px,13vw,58px);letter-spacing:.22em;
+  text-indent:.22em;color:var(--or);margin:10px 0 2px;
+  text-shadow:0 0 18px rgba(201,162,39,.18);
+}
+.entete .sous{
+  font-family:var(--police-titre);font-size:11px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--creme-2);margin:0 0 10px;
+}
+.eventail{
+  height:26px;margin:0 auto 8px;width:132px;
+  background:repeating-conic-gradient(from 180deg at 50% 100%,
+    var(--or) 0deg 1.2deg, transparent 1.2deg 7deg);
+  -webkit-mask-image:linear-gradient(to top,#000 20%,transparent 100%);
+  mask-image:linear-gradient(to top,#000 20%,transparent 100%);
+  opacity:.9;
+}
+
+/* En-tete compact hors de l'accueil : la lecture doit commencer haut. */
+body[data-onglet="cours"] .entete,
+body[data-onglet="quiz"] .entete{padding:10px 0 8px}
+body[data-onglet="cours"] .entete h1,
+body[data-onglet="quiz"] .entete h1{font-size:clamp(24px,7vw,32px);margin:6px 0 0}
+body[data-onglet="cours"] .entete .sous,
+body[data-onglet="quiz"] .entete .sous{display:none}
+body[data-onglet="cours"] .eventail,
+body[data-onglet="quiz"] .eventail{height:13px;width:84px;margin-bottom:2px}
+body[data-onglet="cours"] .entete>div[style],
+body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
+
+/* Filet dore avec losange central : separateur recurrent */
+.filet{display:flex;align-items:center;gap:10px;margin:22px 0 14px}
+.filet::before,.filet::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--laiton),transparent)}
+.filet span{
+  font-family:var(--police-titre);font-size:12px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--or);white-space:nowrap;
+}
+.losange{color:var(--or);opacity:.8}
+
+/* --- Cartes --------------------------------------------------------- */
+.carte{
+  background:var(--noir-2);
+  border:1px solid rgba(138,114,51,.5);
+  border-radius:var(--rayon);
+  padding:16px;margin:0 0 14px;position:relative;
+}
+.carte::before{ /* chevrons discrets en haut de carte */
+  content:"";position:absolute;inset:0 0 auto 0;height:4px;
+  background:repeating-linear-gradient(135deg,
+    rgba(201,162,39,.45) 0 2px, transparent 2px 7px);
+}
+.carte h2,.carte h3{color:var(--or-clair)}
+.carte h2{font-size:24px;letter-spacing:.06em;margin-bottom:6px}
+.carte h3{font-size:19px;letter-spacing:.05em;margin-bottom:6px}
+.secondaire{color:var(--creme-2);font-size:15px}
+.minuscule{font-size:13px;color:var(--creme-2);letter-spacing:.04em}
+
+/* --- Boutons -------------------------------------------------------- */
+.bouton,.bouton-plein{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:48px;padding:10px 20px;width:100%;
+  font-family:var(--police-titre);font-size:16px;letter-spacing:.16em;
+  text-transform:uppercase;cursor:pointer;border-radius:var(--rayon);
+  background:transparent;border:1px solid var(--or);color:var(--or-clair);
+  text-align:center;
+}
+.bouton-plein{background:var(--or);border-color:var(--or);color:#17140c;font-weight:700}
+.bouton:active,.bouton-plein:active{transform:translateY(1px)}
+.bouton[disabled],.bouton-plein[disabled]{opacity:.42;cursor:not-allowed}
+.bouton.petit,.bouton-plein.petit{width:auto;min-height:40px;padding:6px 14px;font-size:13px;letter-spacing:.12em}
+.bouton.discret{border-color:var(--laiton);color:var(--creme-2)}
+.rang-boutons{display:flex;flex-wrap:wrap;gap:8px}
+
+/* --- Pastilles (filtres de periode) --------------------------------- */
+.pastilles{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.pastille{
+  font-family:var(--police-titre);font-size:13px;letter-spacing:.1em;
+  text-transform:uppercase;padding:8px 14px;min-height:40px;
+  border:1px solid var(--laiton);color:var(--creme-2);
+  background:transparent;border-radius:999px;cursor:pointer;
+}
+.pastille[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#17140c;font-weight:700}
+
+/* --- Etiquettes ----------------------------------------------------- */
+.etiq{
+  display:inline-block;font-family:var(--police-titre);font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;
+  border:1px solid var(--laiton);color:var(--creme-2);border-radius:999px;
+  vertical-align:middle;
+}
+.etiq.or{border-color:var(--or);color:var(--or-clair)}
+.etiq.faite{border-color:var(--vert-juste);color:var(--vert-juste)}
+.etiq.bientot{border-color:var(--bordeaux);color:#e5a3ab}
+
+/* --- Liste des seances / cours -------------------------------------- */
+.liste{list-style:none;margin:0;padding:0}
+.ligne{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:13px 12px;margin:0 0 8px;background:var(--noir-3);
+  border:1px solid rgba(138,114,51,.38);border-radius:var(--rayon);
+  cursor:pointer;color:var(--creme);font-family:var(--police-texte);
+  font-size:16px;line-height:1.4;
+}
+.ligne[disabled]{cursor:not-allowed;opacity:.5}
+.ligne .num{
+  flex:0 0 34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--or);color:var(--or);font-family:var(--police-titre);
+  font-size:15px;transform:rotate(45deg);
+}
+.ligne .num span{transform:rotate(-45deg)}
+.ligne .corps{flex:1;min-width:0}
+.ligne .corps .t{display:block}
+.ligne.faite .num{border-color:var(--vert-juste);color:var(--vert-juste)}
+.ligne .etat{flex:0 0 auto;font-size:12px;color:var(--creme-2);letter-spacing:.08em;font-family:var(--police-titre);text-transform:uppercase}
+
+/* --- Lecture d'une seance ------------------------------------------- */
+.lecture{font-size:17.5px}
+.lecture h3{
+  font-size:21px;color:var(--or-clair);margin:26px 0 8px;letter-spacing:.04em;
+  padding-bottom:5px;border-bottom:1px solid rgba(138,114,51,.45);
+}
+.lecture p{margin:0 0 1.05em;text-align:left}
+.lecture ul{margin:0 0 1.1em;padding-left:1.1em}
+.lecture li{margin:0 0 .5em}
+.lecture strong{color:var(--or-clair);font-weight:700}
+.lecture blockquote{
+  margin:1.2em 0;padding:2px 0 2px 16px;border-left:3px solid var(--bordeaux);
+  font-style:italic;color:var(--creme-2);
+}
+.probleme{
+  border:1px solid var(--or);border-left-width:5px;padding:12px 14px;
+  margin:0 0 20px;background:rgba(201,162,39,.06);font-style:italic;
+}
+.anecdote{
+  border:1px solid var(--vert);border-left-width:5px;background:rgba(31,74,60,.28);
+  padding:14px;margin:26px 0 8px;
+}
+.anecdote .titre{
+  font-family:var(--police-titre);font-size:12px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--or-clair);display:block;margin-bottom:6px;
+}
+.anecdote p{margin:0;font-size:16.5px}
+
+/* --- QCM ------------------------------------------------------------ */
+.question{border:1px solid rgba(138,114,51,.45);background:var(--noir-2);padding:14px;margin:0 0 14px}
+.question .enonce{font-weight:600;margin:0 0 4px}
+.question .consigne{font-family:var(--police-titre);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--creme-2);margin:0 0 10px}
+.option{
+  display:flex;gap:11px;align-items:flex-start;padding:11px 10px;margin:0 0 7px;
+  border:1px solid rgba(138,114,51,.35);cursor:pointer;background:rgba(0,0,0,.18);
+}
+.option:has(input:checked){border-color:var(--or);background:rgba(201,162,39,.10)}
+.option input{
+  appearance:none;-webkit-appearance:none;margin:2px 0 0;flex:0 0 20px;height:20px;
+  border:1px solid var(--or);background:transparent;cursor:pointer;position:relative;
+}
+.option input:checked::after{
+  content:"";position:absolute;inset:3px;background:var(--or);
+}
+.option input:focus-visible{outline:2px solid var(--or-clair);outline-offset:2px}
+.erreur{color:var(--rouge-faux);font-size:14.5px;margin:8px 0 0;font-style:italic}
+.question.en-erreur{border-color:var(--rouge-faux)}
+
+/* --- Correction ----------------------------------------------------- */
+.score{
+  text-align:center;border:1px solid var(--or);padding:16px;margin:0 0 18px;
+  background:rgba(201,162,39,.07);
+}
+.score .chiffre{font-family:var(--police-titre);font-size:46px;color:var(--or);line-height:1}
+.corr{border-left:4px solid var(--rouge-faux);background:var(--noir-2);padding:13px 14px;margin:0 0 13px}
+.corr .ligne-rep{margin:0 0 4px;font-size:15.5px}
+.corr .ligne-rep b{font-family:var(--police-titre);letter-spacing:.1em;font-size:12px;text-transform:uppercase;color:var(--creme-2);display:block}
+.corr .rep{display:block;padding-left:16px;position:relative;margin:2px 0}
+.corr .rep::before{content:"\25C6";position:absolute;left:0;font-size:9px;top:.45em;opacity:.8}
+.corr .faux{color:var(--rouge-faux)}
+.corr .juste{color:var(--vert-juste)}
+.corr .expl{margin:9px 0 0;font-size:16px;border-top:1px solid rgba(138,114,51,.4);padding-top:9px}
+details.justes{border:1px solid rgba(138,114,51,.4);padding:10px 12px;margin:18px 0}
+details.justes summary{cursor:pointer;font-family:var(--police-titre);letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--vert-juste)}
+details.justes .corr{border-left-color:var(--vert-juste);margin-top:12px}
+
+/* --- Formulaires (reglages, quiz compose) --------------------------- */
+.champ{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(138,114,51,.25)}
+.champ:last-child{border-bottom:0}
+.champ .txt{flex:1}
+.champ .txt small{display:block;color:var(--creme-2);font-size:13.5px;line-height:1.45}
+.interrupteur{flex:0 0 auto;width:54px;height:30px;border:1px solid var(--or);background:transparent;cursor:pointer;position:relative;border-radius:999px}
+.interrupteur::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:var(--laiton);border-radius:50%;transition:left .15s,background .15s}
+.interrupteur[aria-checked="true"]::after{left:27px;background:var(--or)}
+.coche{display:flex;gap:11px;align-items:flex-start;padding:11px 8px;border:1px solid rgba(138,114,51,.35);margin:0 0 7px;cursor:pointer;background:rgba(0,0,0,.18)}
+.coche input{appearance:none;-webkit-appearance:none;margin:3px 0 0;flex:0 0 20px;height:20px;border:1px solid var(--or);background:transparent;position:relative;cursor:pointer}
+.coche input:checked::after{content:"";position:absolute;inset:3px;background:var(--or)}
+.coche:has(input:checked){border-color:var(--or);background:rgba(201,162,39,.10)}
+select,input[type=file]{font:inherit;color:var(--creme);background:var(--noir-3);border:1px solid var(--laiton);padding:10px;border-radius:var(--rayon);min-height:44px}
+select{width:100%}
+
+/* --- Tableau de progression ----------------------------------------- */
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{flex:1 1 30%;min-width:96px;border:1px solid rgba(138,114,51,.45);padding:11px 8px;text-align:center;background:rgba(0,0,0,.2)}
+.stat .v{font-family:var(--police-titre);font-size:28px;color:var(--or);line-height:1.1}
+.stat .l{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--creme-2);font-family:var(--police-titre)}
+.jauge{height:8px;background:rgba(0,0,0,.45);border:1px solid rgba(138,114,51,.5);margin:10px 0 4px}
+.jauge div{height:100%;background:linear-gradient(90deg,var(--laiton),var(--or))}
+
+/* --- Barre d'onglets ------------------------------------------------- */
+.onglets{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  display:flex;background:rgba(10,9,7,.97);
+  border-top:1px solid var(--or);
+  padding-bottom:env(safe-area-inset-bottom);
+  backdrop-filter:blur(6px);
+}
+.onglets button{
+  flex:1;background:transparent;border:0;padding:9px 4px 11px;cursor:pointer;
+  font-family:var(--police-titre);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--creme-2);
+}
+.onglets button .ic{display:block;font-size:17px;line-height:1.5;color:var(--laiton)}
+.onglets button[aria-current="page"]{color:var(--or)}
+.onglets button[aria-current="page"] .ic{color:var(--or)}
+
+/* --- Divers ---------------------------------------------------------- */
+.fil{display:flex;align-items:center;gap:10px;margin:14px 0 10px}
+.fil .bouton{width:auto}
+.vide{text-align:center;color:var(--creme-2);padding:26px 10px;font-style:italic}
+.avis{border:1px solid var(--bordeaux);background:rgba(140,36,50,.15);padding:11px 13px;margin:0 0 14px;font-size:15.5px}
+.avis.ok{border-color:var(--vert-juste);background:rgba(127,192,155,.1)}
+.sources li{margin-bottom:.45em;font-size:15.5px}
+.pied{text-align:center;color:var(--creme-2);font-size:12.5px;letter-spacing:.1em;padding:22px 0 6px}
+.saut{height:10px}
+@media (min-width:640px){
+  body{font-size:18px}
+  .app{padding-bottom:calc(var(--barre) + 40px)}
+  .stat{flex:1 1 0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="entete">
+    <div class="filet-haut"></div><div class="filet-bas"></div>
+    <div style="height:14px"></div>
+    <div class="eventail" aria-hidden="true"></div>
+    <h1>CLIO</h1>
+    <p class="sous">Culture historique &#8226; une seance par jour</p>
+    <div class="filet-bas"></div>
+  </header>
+
+  <!-- ================= ONGLET 1 : ACCUEIL ================= -->
+  <main id="vue-accueil" class="vue active" role="tabpanel" aria-label="Accueil"></main>
+
+  <!-- ================= ONGLET 2 : COURS =================== -->
+  <main id="vue-cours" class="vue" role="tabpanel" aria-label="Cours"></main>
+
+  <!-- ================= ONGLET 3 : QUIZ ==================== -->
+  <main id="vue-quiz" class="vue" role="tabpanel" aria-label="Quiz"></main>
+
+  <p class="pied">&#9670; CLIO &#9670;</p>
+</div>
+
+<nav class="onglets" role="tablist" aria-label="Navigation principale">
+  <button type="button" data-onglet="accueil" aria-current="page"><span class="ic" aria-hidden="true">&#9650;</span>Accueil</button>
+  <button type="button" data-onglet="cours"><span class="ic" aria-hidden="true">&#9670;</span>Cours</button>
+  <button type="button" data-onglet="quiz"><span class="ic" aria-hidden="true">&#9679;</span>Quiz</button>
+</nav>
+
+<script>
+"use strict";
+/* =====================================================================
+   3. CONTENU PEDAGOGIQUE
+   ---------------------------------------------------------------------
+   Tout le contenu vit ici, separe de la logique. Pour ajouter un cours,
+   il suffit de coller un objet supplementaire dans le tableau COURS, en
+   respectant exactement ce gabarit :
+
+   {
+     id: "identifiant-unique-sans-espace",
+     titre: "Titre du cours",
+     periode: "1914-1945",        // doit figurer dans PERIODES ci-dessous
+     dates: "1919-1939",
+     note: "",                    // facultatif : precision affichee en gris
+     problematique: "Une phrase.",
+     sources: [ "Auteur, Titre, editeur, annee", ... ],   // 3 a 5
+     seances: [                   // EXACTEMENT 6
+       {
+         numero: 1,
+         titre: "Titre de la seance",
+         problematique: "Une phrase.",
+         contenu: ` ... HTML simple : h3, p, ul, strong, blockquote ... `,
+         anecdote: ` ... HTML simple, jamais evalue ... `,
+         questions: [             // EXACTEMENT 5
+           {
+             enonce: "...",
+             options: ["...","...","...","..."],   // exactement 4
+             correctes: [0,2],                     // 1 a 4 indices
+             explication: "2 a 3 phrases renvoyant au mecanisme du cours."
+           }, ...
+         ]
+       }, ...
+     ]
+   }
+
+   Conventions de redaction :
+   - notions cles en <strong>, dates et acteurs precis ;
+   - 3 ou 4 parties titrees (h3) : causes, mecanismes, consequences ;
+   - un paragraphe final << Fil rouge >> qui annonce la seance suivante ;
+   - anecdote vraie et verifiable ; si elle releve de la legende, le dire ;
+   - un point douteux se signale par un commentaire <!-- A VERIFIER -->.
+   ===================================================================== */
+
+/* Ordre d'affichage des periodes dans l'onglet Cours. Une periode sans
+   aucun cours reste visible et porte la mention << bientot >>. */
+const PERIODES = ["Antiquite","Moyen Age","Epoque moderne","XIXe siecle",
+                  "1914-1945","Depuis 1945"];
+
+const COURS = [
+
+/* ====================== COURS 1 ====================== */
+{
+  id: "france-1920-1930",
+  titre: "La France des années 1920-1930",
+  periode: "1914-1945",
+  dates: "1919-1939",
+  note: "",
+  problematique: "Comment une France victorieuse en 1918, mais saignée et endettée, en vient-elle en vingt ans à douter de son régime, de sa monnaie et de sa sécurité ?",
+  sources: [
+    "Jean-Jacques Becker et Serge Berstein, Victoire et frustrations, 1914-1929, Seuil, coll. « Nouvelle histoire de la France contemporaine », 1990",
+    "Dominique Borne et Henri Dubief, La Crise des années 30, 1929-1938, Seuil, coll. « Nouvelle histoire de la France contemporaine », 1989",
+    "Jean-Noël Jeanneney, Leçon d’histoire pour une gauche au pouvoir. La faillite du Cartel (1924-1926), Seuil, 1977",
+    "Julian Jackson, The Popular Front in France. Defending Democracy, 1934-1938, Cambridge University Press, 1988",
+    "Robert Frank, Le Prix du réarmement français, 1935-1939, Publications de la Sorbonne, 1982"
+  ],
+  seances: [
+  /* ---------- Cours 1, séance 1 ---------- */
+  {
+    numero: 1,
+    titre: "Le Bloc national (1919-1924) : la victoire et ses comptes",
+    problematique: "Pourquoi la France victorieuse de 1918 a-t-elle fondé sa reconstruction sur l’argent allemand, et qu’advient-il quand ce pari échoue ?",
+    contenu: `
+<h3>1. Une Chambre « bleu horizon »</h3>
+<p>Les élections législatives du <strong>16 novembre 1919</strong> sont les premières depuis 1914. Le pays sort de la guerre avec près de <strong>1,4 million de morts</strong>, dix départements dévastés et une dette publique multipliée par cinq. Le <strong>mode de scrutin</strong> adopté en juillet 1919 est décisif : on vote pour des <strong>listes départementales</strong>, et toute liste qui obtient la majorité absolue emporte l’ensemble des sièges du département ; sinon, la répartition se fait à la proportionnelle. Ce système récompense les coalitions et punit l’isolement.</p>
+<p>Les droites et le centre s’allient donc dans le <strong>Bloc national</strong>, sur un programme de fermeté envers l’Allemagne et de défense de l’ordre social, agitant la peur du bolchevisme — l’affiche de « l’homme au couteau entre les dents » date de cette campagne. Les socialistes, eux, se présentent seuls. Résultat : le Bloc rassemble près des deux tiers des 613 sièges, tandis que la <strong>SFIO</strong> tombe sous les 70 députés alors qu’elle réunit plus d’un cinquième des suffrages. On surnomme cette assemblée la <strong>« Chambre bleu horizon »</strong>, du nom de la couleur des uniformes : plus du tiers des élus sont d’anciens combattants.</p>
+
+<h3>2. La gauche coupée en deux : Tours, décembre 1920</h3>
+<p>Au <strong>congrès de Tours</strong> (25-30 décembre 1920), la SFIO débat de l’adhésion à l’<strong>Internationale communiste</strong> fondée par Lénine, qui impose <strong>21 conditions</strong> : discipline de fer, exclusion des « réformistes », soumission des élus au parti. La majorité l’emporte par environ <strong>3 200 mandats contre 1 000</strong> et fonde la Section française de l’Internationale communiste, futur <strong>Parti communiste français</strong>, qui emporte avec elle le journal <em>L’Humanité</em>. La minorité, autour de <strong>Léon Blum</strong>, reste dans ce qu’il appelle « la vieille maison » et conserve le sigle SFIO.</p>
+<p>La fracture gagne le syndicalisme : après l’échec de la grande grève des cheminots de 1920, la CGT se divise à son tour et une <strong>CGTU</strong> proche des communistes naît en 1921-1922. Conséquence durable : pendant quinze ans, la gauche française additionne des voix mais pas des sièges, et le Bloc national gouverne sans véritable alternative parlementaire.</p>
+
+<h3>3. « L’Allemagne paiera » : le pari financier de la victoire</h3>
+<p>Le traité de Versailles n’a pas fixé le montant des réparations ; il l’a renvoyé à une commission, qui arrête la somme de <strong>132 milliards de marks-or</strong> en <strong>mai 1921</strong>, dont 52 % pour la France. Or l’État a déjà engagé la reconstruction : il indemnise les sinistrés et reconstruit routes, mines et usines en empruntant, inscrivant ces sommes dans un <strong>budget des dépenses « recouvrables »</strong>, c’est-à-dire censées être remboursées plus tard par Berlin. Le mot d’ordre que l’on prête au ministre des Finances <strong>Louis-Lucien Klotz</strong>, « l’Allemagne paiera », n’est donc pas un slogan : c’est une <strong>architecture budgétaire</strong>.</p>
+<p>Elle repose sur un enchaînement fragile. La France doit rembourser ses propres <strong>dettes interalliées</strong> aux États-Unis et au Royaume-Uni, qui refusent de les lier aux réparations allemandes. Si l’Allemagne paie mal, Paris doit malgré tout payer : le déficit se creuse, la dette flottante gonfle, le franc s’affaiblit. Le problème allemand est ainsi devenu, mécaniquement, un problème <strong>intérieur</strong> français.</p>
+
+<h3>4. La Ruhr : la force sans les alliés (1923-1924)</h3>
+<p>En janvier 1922, <strong>Raymond Poincaré</strong> revient à la présidence du Conseil avec l’intention d’appliquer le traité à la lettre. Un défaut allemand sur des livraisons de bois et de charbon lui sert de fondement juridique : le <strong>11 janvier 1923</strong>, troupes françaises et belges occupent la <strong>Ruhr</strong>, cœur industriel du Reich, accompagnées d’ingénieurs chargés de prélever charbon et coke à la source.</p>
+<p>Berlin réplique par la <strong>résistance passive</strong> : grèves payées par l’État allemand, qui fait tourner la planche à billets et provoque l’<strong>hyperinflation</strong> de 1923. L’opération devient ruineuse pour tout le monde. Londres et Washington la désapprouvent ; la spéculation se retourne contre le franc au début de 1924, et Poincaré doit imposer le <strong>« double décime »</strong>, une hausse d’impôts de 20 %, pour sauver la monnaie. L’Allemagne cède sur la résistance passive en septembre 1923, mais la sortie de crise est confiée à un comité d’experts : le <strong>plan Dawes</strong> (août 1924) allège les annuités, prête des capitaux américains à l’Allemagne et prépare l’évacuation de la Ruhr en 1925.</p>
+<p>Le bilan est amer : la France a obtenu de l’argent, mais a perdu le droit d’agir seule. Les réparations sont désormais une affaire internationale, arbitrée par les banquiers américains. Aux élections du <strong>11 mai 1924</strong>, le <strong>Cartel des gauches</strong> l’emporte. Le président de la République <strong>Alexandre Millerand</strong>, qui s’était engagé publiquement pour le Bloc, se heurte à une « grève des ministères » : aucun dirigeant du Cartel n’accepte de former un gouvernement sous lui. Il démissionne le <strong>11 juin 1924</strong> et Gaston Doumergue lui succède. Le précédent est capital : sous la III<sup>e</sup> République, un président ne gouverne pas contre la Chambre.</p>
+<p><strong>Fil rouge.</strong> Le Cartel arrive donc au pouvoir avec une double hypothèque : un budget bâti sur des recettes allemandes incertaines et une dette à court terme qu’il faut renouveler chaque mois. C’est sur ce terrain financier — et non sur son programme — qu’il va se briser.</p>
+`,
+    anecdote: `
+<p>Dans la nuit du <strong>23 au 24 mai 1920</strong>, le président de la République <strong>Paul Deschanel</strong>, élu quatre mois plus tôt contre Clemenceau, tombe du train présidentiel qui l’emmène à Montbrison, près de Montargis. Il est recueilli, en pyjama et légèrement blessé, par un garde-barrière. Selon la tradition, l’épouse de celui-ci aurait refusé de croire son visiteur, jusqu’à ce qu’il montre ses pieds propres : « ce ne peut être qu’un monsieur ». Le dialogue est invérifiable, la chute ne l’est pas : malade, Deschanel démissionne en septembre 1920, et Millerand lui succède — celui-là même qui sera contraint de partir en 1924.</p>
+`,
+    questions: [
+      {
+        enonce: "Pourquoi le Bloc national obtient-il en 1919 une majorité sans commune mesure avec son avance en voix ?",
+        options: [
+          "Le scrutin de liste départemental donne tous les sièges à la liste qui atteint la majorité absolue, ce qui récompense les coalitions",
+          "La SFIO a appelé ses électeurs à boycotter le scrutin",
+          "Les gauches se présentent divisées et sans alliance de listes",
+          "Les femmes votent pour la première fois et se portent vers la droite"
+        ],
+        correctes: [0,2],
+        explication: "La distorsion vient de la combinaison entre un mode de scrutin favorable aux listes coalisées et la division des gauches, qui se présentent séparément. Les femmes ne votent pas : elles n’obtiendront le droit de vote qu’en 1944. La SFIO participe bien au scrutin, mais seule, et transforme mal ses voix en sièges."
+      },
+      {
+        enonce: "Quelles conséquences le congrès de Tours (décembre 1920) a-t-il eues ?",
+        options: [
+          "La majorité accepte les 21 conditions et fonde la SFIC, futur Parti communiste français",
+          "Le journal L’Humanité passe au nouveau parti",
+          "La minorité, autour de Léon Blum, maintient la SFIO",
+          "Les deux partis se réunifient dès 1928"
+        ],
+        correctes: [0,1,2],
+        explication: "La scission est nette et durable : un parti communiste discipliné d’un côté, une SFIO réformiste de l’autre, chacun revendiquant l’héritage de Jaurès. Aucune réunification n’intervient ; les deux partis ne se retrouveront que dans l’alliance électorale du Front populaire, en 1934-1936. La perte de L’Humanité prive la SFIO de son principal outil de presse."
+      },
+      {
+        enonce: "Qu’est-ce qui caractérise le mécanisme budgétaire résumé par la formule « l’Allemagne paiera » ?",
+        options: [
+          "L’État français avance par l’emprunt les frais de reconstruction, en gageant ces dépenses sur les réparations à venir",
+          "Le traité de Versailles a lui-même fixé le montant des réparations à 132 milliards de marks-or",
+          "Les réparations sont versées directement aux sinistrés par le gouvernement allemand",
+          "La France renonce en 1921 à ses créances pour favoriser la reprise européenne"
+        ],
+        correctes: [0],
+        explication: "Versailles pose le principe des réparations mais en renvoie le chiffrage à une commission, qui fixe 132 milliards de marks-or en mai 1921. Entre-temps, l’État français a emprunté pour reconstruire et inscrit ces dépenses comme « recouvrables ». Tout retard allemand se transforme donc immédiatement en déficit français."
+      },
+      {
+        enonce: "Pourquoi l’occupation de la Ruhr (1923) est-elle un échec pour la France, malgré l’absence de défaite militaire ?",
+        options: [
+          "La résistance passive allemande, financée par la planche à billets, ruine le rendement de l’opération",
+          "Londres et Washington la désapprouvent, ce qui fragilise le franc sur les marchés",
+          "La Reichswehr repousse militairement les troupes françaises",
+          "La Société des Nations condamne l’occupation et impose des sanctions à la France"
+        ],
+        correctes: [0,1],
+        explication: "L’Allemagne, désarmée par Versailles, ne peut pas combattre : elle oppose une résistance passive qui vide l’opération de son rendement tout en provoquant l’hyperinflation. Le coût politique est le plus lourd : isolée face aux Anglo-Saxons, la France doit accepter le plan Dawes, qui internationalise la question des réparations et lui retire toute action unilatérale."
+      },
+      {
+        enonce: "Que révèle la démission d’Alexandre Millerand en juin 1924 sur le fonctionnement de la IIIe République ?",
+        options: [
+          "Le président de la République ne peut pas gouverner contre la majorité élue",
+          "La pratique parlementaire l’emporte sur la lettre des lois constitutionnelles de 1875",
+          "Le président dispose d’un droit de dissolution qu’il utilise couramment",
+          "La Constitution est révisée en 1924 pour supprimer la présidence de la République"
+        ],
+        correctes: [0,1],
+        explication: "Les lois de 1875 donnaient au président des pouvoirs étendus, mais l’usage les avait vidés de substance depuis la crise du 16 mai 1877, qui avait rendu la dissolution politiquement inutilisable. En refusant de former un gouvernement sous Millerand, le Cartel impose cette coutume : le chef de l’État règne sans gouverner. Aucune révision constitutionnelle n’est intervenue."
+      }
+    ]
+  },
+
+  /* ---------- Cours 1, séance 2 ---------- */
+  {
+    numero: 2,
+    titre: "Le Cartel des gauches et la question financière (1924-1928)",
+    problematique: "Pourquoi une majorité de gauche élue en 1924 est-elle renversée par un problème de trésorerie, et que signifie vraiment le « mur d’argent » ?",
+    contenu: `
+<h3>1. Une majorité mal ajustée</h3>
+<p>Le <strong>Cartel des gauches</strong>, victorieux le 11 mai 1924, associe le <strong>Parti radical</strong> d’<strong>Édouard Herriot</strong> et la <strong>SFIO</strong>. Mais l’accord est bancal : les socialistes pratiquent le <strong>« soutien sans participation »</strong> — ils votent la confiance sans entrer au gouvernement — tandis que les radicaux, attachés à la petite propriété, refusent leur principale proposition, un <strong>prélèvement sur le capital</strong>. La majorité est donc soudée sur les questions morales et laïques, et divisée sur la seule question qui compte alors : l’argent.</p>
+<p>Herriot commence donc par ce qui unit sa majorité : amnistie politique, réintégration des cheminots révoqués de 1920, transfert des cendres de <strong>Jean Jaurès au Panthéon</strong> (novembre 1924), <strong>reconnaissance de l’URSS</strong> (octobre 1924). Sa tentative d’étendre les lois laïques à l’<strong>Alsace-Moselle</strong>, restées sous régime concordataire depuis 1918, déclenche en revanche une mobilisation catholique massive et doit être abandonnée.</p>
+
+<h3>2. Le piège de la dette flottante</h3>
+<p>Le mécanisme financier est décisif. La guerre a été financée par l’emprunt, et une grande partie de la dette est à <strong>court terme</strong> : les <strong>bons de la Défense nationale</strong>, souscrits par des centaines de milliers d’épargnants, arrivent sans cesse à échéance. L’État ne vit donc que si les porteurs <strong>renouvellent</strong> leurs bons chaque mois. Qu’ils cessent de le faire, et le Trésor doit trouver des liquidités immédiates : il se tourne alors vers les <strong>avances de la Banque de France</strong>, plafonnées par la loi.</p>
+<p>Or les détenteurs de bons, effrayés par les rumeurs d’impôt sur le capital, se retirent. Pour tenir, la Banque de France dépasse secrètement le plafond légal, puis révèle l’irrégularité : ce sont les « faux bilans » du printemps 1925. Le <strong>10 avril 1925</strong>, le Sénat renverse Herriot. En un an, cinq ou six ministères se succèdent sans parvenir à faire voter un plan financier ; le franc s’effondre jusqu’à près de <strong>240 francs pour une livre sterling en juillet 1926</strong>, contre 25 avant 1914.</p>
+<p>Le détail de ces chutes importe moins que leur mécanique. Chaque cabinet tente de faire voter des recettes nouvelles ; chaque échec parlementaire accélère le retrait des porteurs de bons ; chaque retrait rend la mesure suivante plus urgente et plus impopulaire. Trésorerie et instabilité politique se nourrissent l’une l’autre, et l’on voit revenir aux affaires des hommes que la Chambre vient de renverser — <strong>Paul Painlevé</strong>, <strong>Aristide Briand</strong>, <strong>Joseph Caillaux</strong> — sans qu’aucun dispose d’une majorité pour trancher.</p>
+
+<h3>3. « Mur d’argent » : un mot et un débat</h3>
+<p>Herriot a popularisé l’image d’un <strong>« mur d’argent »</strong> : les puissances financières auraient étranglé délibérément un gouvernement de gauche. L’historiographie, en particulier <strong>Jean-Noël Jeanneney</strong>, nuance sans nier. Il y eut bien pression des milieux d’affaires, régents de la Banque de France hostiles, campagnes de presse. Mais il n’y eut pas de complot : le comportement des épargnants a compté davantage que celui des banquiers, et le Cartel a surtout été victime de ses propres contradictions, incapable de choisir entre l’impôt sur le capital réclamé par la SFIO et la rigueur souhaitée par les radicaux. La leçon est autant politique que financière : une majorité qui ne tranche pas sur les moyens perd la maîtrise des marchés.</p>
+
+<h3>4. Poincaré et le franc de 1928</h3>
+<p>Le <strong>23 juillet 1926</strong>, Raymond Poincaré revient à la tête d’un gouvernement d’<strong>union nationale</strong> réunissant six anciens présidents du Conseil, Herriot compris. L’effet est d’abord psychologique : la confiance revient avant même les mesures. Suivent des hausses d’impôts, surtout indirects, des économies, et la création d’une <strong>caisse autonome d’amortissement</strong> (août 1926) alimentée notamment par le monopole des tabacs, qui isole le remboursement de la dette des aléas du budget. Les capitaux rentrent, le franc remonte, et le gouvernement choisit de le <strong>stabiliser</strong> plutôt que de le ramener à sa valeur d’avant-guerre.</p>
+<p>La loi du <strong>25 juin 1928</strong> définit le nouveau franc à <strong>65,5 milligrammes d’or</strong>, contre 322,58 pour le franc germinal : c’est une <strong>dévaluation d’environ 80 %</strong>. Les conséquences se lisent dans les deux sens. Les rentiers et les porteurs d’emprunts d’État sont ruinés aux quatre cinquièmes, ce qui nourrit une rancune durable contre la République ; mais l’économie française, dotée d’une monnaie sous-évaluée, exporte, accumule de l’or et traverse les années 1928-1930 en pleine prospérité.</p>
+<p><strong>Fil rouge.</strong> Cette stabilisation réussie fait naître un dogme : le franc Poincaré devient intouchable, et l’on refusera de le dévaluer à nouveau quand la crise mondiale arrivera. Mais avant la crise, la même équipe tente de stabiliser l’Europe elle-même : c’est la diplomatie d’Aristide Briand.</p>
+`,
+    anecdote: `
+<p>À l’été 1926, un franc effondré transforme Paris en destination bon marché : les touristes étrangers, dollars et livres en poche, s’y offrent à peu de frais ce que les Parisiens ne peuvent plus payer. En juillet, au plus fort de la crise monétaire, des <strong>autocars de touristes sont pris à partie par la foule</strong> sur les grands boulevards. L’épisode dit l’essentiel : la monnaie n’est pas qu’un chiffre de marché, c’est une question d’amour-propre national — et c’est pourquoi la dévaluation restera, dix ans durant, un tabou politique. <!-- A VERIFIER : datation précise et ampleur des incidents contre les autocars de touristes, juillet 1926 --></p>
+`,
+    questions: [
+      {
+        enonce: "Qu’est-ce qui rend la majorité du Cartel des gauches fragile dès 1924 ?",
+        options: [
+          "La SFIO soutient le gouvernement sans y participer",
+          "Radicaux et socialistes s’opposent sur le prélèvement sur le capital",
+          "Le Cartel ne dispose pas de la majorité des sièges à la Chambre",
+          "Le Parti communiste participe au gouvernement et le radicalise"
+        ],
+        correctes: [0,1],
+        explication: "Le Cartel a bien une majorité, mais elle n’est pas gouvernementale : la SFIO refuse les portefeuilles, ce qui prive le cabinet de sa force parlementaire réelle. Surtout, les deux partenaires n’ont pas la même doctrine financière, si bien que la majorité ne peut trancher sur les recettes. Le PCF, issu de Tours, reste hors du Cartel et le combat."
+      },
+      {
+        enonce: "Pourquoi la dette à court terme rend-elle l’État vulnérable en 1925 ?",
+        options: [
+          "Les bons de la Défense nationale doivent être renouvelés en permanence par les épargnants",
+          "Un refus de renouvellement oblige le Trésor à recourir aux avances de la Banque de France, plafonnées par la loi",
+          "La dette est libellée en dollars, donc remboursable uniquement en or",
+          "Les bons ne peuvent être vendus qu’à des banques étrangères"
+        ],
+        correctes: [0,1],
+        explication: "Une dette à court terme transforme chaque échéance en vote de confiance des épargnants. Quand la rumeur d’un impôt sur le capital les fait fuir, le Trésor doit emprunter à la Banque de France, qui dépasse en secret son plafond légal. La révélation de cette irrégularité en 1925 fait tomber Herriot : le problème politique naît du mécanisme financier."
+      },
+      {
+        enonce: "Que dit l’historiographie, notamment Jean-Noël Jeanneney, de l’expression « mur d’argent » ?",
+        options: [
+          "Elle décrit une pression réelle des milieux financiers, mais pas un complot organisé",
+          "Elle masque en partie les contradictions internes du Cartel, incapable de choisir sa politique fiscale",
+          "Elle est une invention de la droite pour discréditer Herriot",
+          "Elle désigne le refus des banques étrangères de prêter à la France"
+        ],
+        correctes: [0,1],
+        explication: "L’expression vient de la gauche elle-même, et d’Herriot en particulier : ce n’est pas une invention de ses adversaires. Les travaux de Jeanneney montrent une hostilité bien réelle des milieux d’affaires, mais aussi le poids décisif du comportement des petits porteurs et l’incapacité du Cartel à arbitrer entre impôt sur le capital et rigueur budgétaire."
+      },
+      {
+        enonce: "En quoi consiste la stabilisation monétaire de 1928 ?",
+        options: [
+          "Le franc est défini à environ un cinquième de sa valeur-or d’avant 1914",
+          "Le franc retrouve sa parité de 1914, au prix d’une déflation sévère",
+          "La France renonce à toute convertibilité en or",
+          "La stabilisation entérine légalement une dévaluation d’environ 80 %"
+        ],
+        correctes: [0,3],
+        explication: "Poincaré choisit d’entériner la dépréciation plutôt que de tenter une revalorisation qui aurait exigé une déflation brutale : le franc passe de 322,58 à 65,5 milligrammes d’or. La convertibilité est au contraire rétablie, ce qui attire l’or à Paris. Les porteurs de rentes perdent l’essentiel de leur créance, tandis que l’économie exportatrice profite d’une monnaie sous-évaluée."
+      },
+      {
+        enonce: "Quelles conséquences politiques la séquence 1924-1928 laisse-t-elle ?",
+        options: [
+          "La gauche reste durablement soupçonnée d’incompétence financière",
+          "Le maintien du franc Poincaré devient un dogme qui rendra la dévaluation taboue dans les années 1930",
+          "Les rentiers ruinés nourrissent une rancune contre le régime parlementaire",
+          "Le pouvoir de renverser un gouvernement passe de la Chambre au Sénat de façon permanente"
+        ],
+        correctes: [0,1,2],
+        explication: "L’échec du Cartel forge une réputation durable, que la gauche traînera jusqu’en 1936 et au-delà. La réussite de Poincaré produit l’effet inverse mais tout aussi contraignant : elle sacralise la parité de 1928 et retarde de plusieurs années l’ajustement monétaire face à la crise. Le Sénat a renversé Herriot, mais il n’acquiert pas pour autant un monopole institutionnel."
+      }
+    ]
+  },
+
+  /* ---------- Cours 1, séance 3 ---------- */
+  {
+    numero: 3,
+    titre: "De l’esprit de Locarno à la Rhénanie (1925-1936)",
+    problematique: "Pourquoi la sécurité française, construite sur le droit et les alliances, s’effondre-t-elle sans qu’un seul coup de feu soit tiré ?",
+    contenu: `
+<h3>1. Après la Ruhr : la sécurité par la négociation</h3>
+<p>L’échec de 1923 a montré que la France ne pouvait plus contraindre seule l’Allemagne. <strong>Aristide Briand</strong>, ministre des Affaires étrangères presque sans interruption de 1925 à 1932, en tire la conséquence : puisque la force est hors de portée, il faut obtenir de l’Allemagne qu’elle accepte librement ce que le traité lui imposait.</p>
+<p>C’est le sens des accords de <strong>Locarno</strong>, paraphés le <strong>16 octobre 1925</strong> et signés à Londres le 1<sup>er</sup> décembre. L’Allemagne de <strong>Gustav Stresemann</strong> reconnaît définitivement ses frontières occidentales avec la France et la Belgique, ainsi que la <strong>démilitarisation de la Rhénanie</strong> ; le Royaume-Uni et l’Italie se portent garants. En 1926, l’Allemagne entre à la <strong>Société des Nations</strong> et Briand comme Stresemann reçoivent le prix Nobel de la paix.</p>
+
+<h3>2. Une garantie asymétrique</h3>
+<p>Locarno comporte pourtant un vice de construction : <strong>seules les frontières de l’Ouest sont garanties</strong>. À l’Est, l’Allemagne accepte seulement des traités d’arbitrage avec la <strong>Pologne</strong> et la <strong>Tchécoslovaquie</strong> — c’est-à-dire l’engagement de discuter, non celui de ne pas réviser. Stresemann ne s’en cache pas : la révision pacifique des frontières orientales reste son objectif.</p>
+<p>Or la France a signé une alliance avec la Pologne en 1921 et avec la Tchécoslovaquie en 1924. Pour les secourir, elle devrait attaquer l’Allemagne à l’ouest — et se retrouverait alors agresseur au regard de Locarno, contre la garantie britannique. Le système de sécurité français est donc, dès 1925, <strong>logiquement contradictoire</strong>. S’y ajoute la faiblesse des instruments : le <strong>pacte Briand-Kellogg</strong> du <strong>27 août 1928</strong>, signé par une soixantaine d’États, « condamne le recours à la guerre » mais ne prévoit <strong>aucune sanction</strong>. Le droit international de l’entre-deux-guerres proclame beaucoup et contraint peu.</p>
+
+<h3>3. Les concessions et le retournement</h3>
+<p>La détente se paie en concessions : le <strong>plan Young</strong> (1929) rééchelonne à nouveau les réparations, et la <strong>Rhénanie est évacuée en juin 1930</strong>, cinq ans avant la date prévue. La France perd son dernier gage matériel au moment même où la crise économique mondiale déstabilise l’Allemagne. Le projet d’<strong>union fédérale européenne</strong> proposé par Briand en 1930 reste lettre morte.</p>
+<p>La séquence s’accélère ensuite : <strong>Hitler</strong> chancelier le 30 janvier 1933, retrait allemand de la SDN en octobre 1933, rétablissement du <strong>service militaire obligatoire</strong> le <strong>16 mars 1935</strong> en violation ouverte de Versailles. La France répond par le <strong>front de Stresa</strong> avec Londres et Rome (avril 1935) et par le <strong>pacte franco-soviétique</strong> du 2 mai 1935. Mais l’agression italienne contre l’<strong>Éthiopie</strong>, en octobre 1935, oblige à choisir entre Mussolini et le droit : la France perd les deux, et Stresa s’effondre. Le <strong>plan Hoare-Laval</strong>, en décembre 1935, qui proposait de céder à Rome une large part de l’Éthiopie, est divulgué par la presse et provoque un tel scandale dans les opinions britannique et française qu’il doit être abandonné : les deux gouvernements en sortent discrédités sans avoir rien obtenu.</p>
+<p>Le pacte franco-soviétique souffre d’une faiblesse comparable : faute de <strong>convention militaire</strong>, aucun état-major ne prépare de manœuvre commune, et la Pologne refuse par avance tout passage de troupes soviétiques sur son territoire. Une alliance sans plan d’opérations n’est qu’une déclaration d’intention.</p>
+
+<h3>4. Le 7 mars 1936 : le point de bascule</h3>
+<p>Le <strong>7 mars 1936</strong>, la Wehrmacht réoccupe la <strong>Rhénanie démilitarisée</strong>. Militairement, l’opération est un bluff : les unités engagées sont faibles et ont ordre de se replier en cas de riposte. La France ne bouge pas. Les raisons sont cumulatives : un gouvernement intérimaire (Albert Sarraut) à deux mois des élections ; un état-major qui, ne disposant pas de forces d’intervention immédiate, réclame une <strong>mobilisation générale</strong> politiquement impensable ; un allié britannique qui juge que les Allemands ne font qu’« entrer dans leur propre jardin » ; et une opinion pacifiste marquée par 1914-1918.</p>
+<p>Les conséquences sont immenses. L’Allemagne peut fortifier sa frontière occidentale : la France ne pourra plus porter secours à ses alliés de l’Est, qui en tirent la leçon — la <strong>Belgique</strong> renonce à l’alliance française et proclame sa neutralité en octobre 1936. L’historiographie (Robert Frank, Martin Alexander) a montré que cette paralysie ne tient pas à une lâcheté des dirigeants, mais à l’articulation entre une <strong>doctrine militaire défensive</strong>, des finances exsangues et une dépendance à Londres.</p>
+<p><strong>Fil rouge.</strong> Pour comprendre cette impuissance, il faut regarder ce qui se passe à l’intérieur : depuis 1932, la France est entrée dans une crise économique et politique qui consomme ses gouvernements en quelques mois.</p>
+`,
+    anecdote: `
+<p>Le <strong>17 septembre 1926</strong>, Briand et Stresemann s’éclipsent pour déjeuner en tête-à-tête à <strong>Thoiry</strong>, un village de l’Ain, loin des délégations. Autour d’une table d’auberge, ils esquissent un règlement global : évacuation anticipée de la Rhénanie contre une mobilisation financière allemande. Rien n’aboutira — les opinions publiques et les ministères des Finances ne suivront pas —, mais l’épisode a donné son nom à l’« esprit de Thoiry » et montre à quel point la détente européenne reposait sur deux hommes plutôt que sur des institutions. Stresemann meurt en 1929, Briand en 1932.</p>
+`,
+    questions: [
+      {
+        enonce: "Quelle est la principale faiblesse des accords de Locarno (1925) du point de vue français ?",
+        options: [
+          "Ils ne garantissent que les frontières occidentales de l’Allemagne",
+          "Ils rendent les alliances françaises avec la Pologne et la Tchécoslovaquie difficiles à honorer",
+          "Ils annulent la démilitarisation de la Rhénanie",
+          "Ils excluent le Royaume-Uni de tout engagement"
+        ],
+        correctes: [0,1],
+        explication: "Locarno confirme au contraire la démilitarisation rhénane et repose sur la garantie britannique et italienne. Le problème est l’asymétrie : à l’Est, l’Allemagne ne promet que l’arbitrage. Secourir Varsovie ou Prague obligerait la France à attaquer à l’ouest, donc à se placer en agresseur contre la garantie même dont elle bénéficie."
+      },
+      {
+        enonce: "Pourquoi le pacte Briand-Kellogg (1928) a-t-il une portée limitée ?",
+        options: [
+          "Il condamne le recours à la guerre sans prévoir de sanctions contre les contrevenants",
+          "Il n’a été signé que par la France et les États-Unis",
+          "Il repose sur l’engagement moral des États signataires",
+          "Il autorise explicitement les guerres de révision des frontières"
+        ],
+        correctes: [0,2],
+        explication: "Le pacte est largement signé — une soixantaine d’États — et il met la guerre d’agression hors la loi ; il n’autorise rien de tel qu’une guerre de révision. Sa faiblesse est ailleurs : aucun mécanisme de contrainte n’accompagne le principe. Il illustre un trait de l’entre-deux-guerres : un droit international abondant, mais privé de force exécutoire."
+      },
+      {
+        enonce: "Qu’est-ce qui ruine le front de Stresa en 1935-1936 ?",
+        options: [
+          "L’agression italienne contre l’Éthiopie, qui oblige Paris et Londres à choisir entre Mussolini et la SDN",
+          "Le pacte franco-soviétique de mai 1935, que Rome juge inacceptable",
+          "Le refus allemand d’entrer dans le front de Stresa",
+          "La mort d’Aristide Briand, qui en était le négociateur"
+        ],
+        correctes: [0],
+        explication: "Stresa visait précisément à contenir l’Allemagne : celle-ci n’avait donc pas vocation à y entrer. Briand est mort en 1932, bien avant. C’est la guerre d’Éthiopie qui met la France devant un dilemme insoluble : sanctionner Mussolini au nom du droit, ou le ménager pour garder un allié contre Hitler. Le compromis boiteux lui fait perdre les deux."
+      },
+      {
+        enonce: "Pourquoi la France ne réagit-elle pas à la remilitarisation de la Rhénanie, le 7 mars 1936 ?",
+        options: [
+          "Le gouvernement Sarraut est intérimaire, à deux mois des élections législatives",
+          "La doctrine militaire française ne prévoit pas d’opération immédiate sans mobilisation générale",
+          "Le Royaume-Uni refuse de soutenir une riposte",
+          "L’armée française est numériquement inférieure aux forces engagées par Hitler ce jour-là"
+        ],
+        correctes: [0,1,2],
+        explication: "Militairement, la France est très supérieure : l’opération allemande est un bluff, avec ordre de repli en cas de riposte. Le blocage est politique et doctrinal — un gouvernement sans autorité électorale, un état-major conçu pour la défense et la couverture, un allié britannique qui refuse de bouger. La supériorité matérielle ne suffit pas quand aucun instrument ne permet d’en faire usage rapidement."
+      },
+      {
+        enonce: "Quelles conséquences la remilitarisation de la Rhénanie entraîne-t-elle ?",
+        options: [
+          "L’Allemagne peut fortifier sa frontière occidentale, ce qui rend improbable un secours français à l’Est",
+          "La Belgique renonce à son alliance avec la France et revient à la neutralité",
+          "La Société des Nations exclut l’Allemagne",
+          "La Pologne et la Tchécoslovaquie doutent de la valeur de la garantie française"
+        ],
+        correctes: [0,1,3],
+        explication: "Le verrou rhénan était la condition matérielle de toute intervention française à l’Est : sa disparition vide les alliances orientales de leur substance, ce que Varsovie et Prague comprennent aussitôt. Bruxelles en tire la conclusion en octobre 1936 en proclamant sa neutralité. L’Allemagne, elle, avait déjà quitté la SDN de son propre chef en octobre 1933 : elle ne pouvait plus en être exclue."
+      }
+    ]
+  },
+  /* ---------- Cours 1, séance 4 ---------- */
+  {
+    numero: 4,
+    titre: "La crise des années 1930 et le 6 février 1934",
+    problematique: "Pourquoi une crise économique plus tardive et moins brutale qu’ailleurs produit-elle en France une crise politique aussi profonde ?",
+    contenu: `
+<h3>1. Une crise tardive, atténuée… et interminable</h3>
+<p>La dépression née du krach de Wall Street en octobre 1929 n’atteint la France qu’en <strong>1931-1932</strong>. Le pays est protégé un temps par une économie moins ouverte, une population encore rurale pour un tiers, un système bancaire moins exposé et un <strong>franc sous-évalué</strong> depuis 1928. Mais la protection se retourne : quand la <strong>livre sterling</strong> se détache de l’or en septembre 1931, puis le <strong>dollar</strong> en 1933, le franc devient soudain la monnaie la plus chère du monde industriel. Les exportations françaises s’effondrent.</p>
+<p>Le choix monétaire commande tout le reste. Fidèle au <strong>franc Poincaré</strong> devenu dogme, la France s’enferme dans le <strong>bloc-or</strong> avec la Belgique, les Pays-Bas et la Suisse, et cherche à restaurer sa compétitivité par la <strong>déflation</strong> : baisse des prix, des salaires et des dépenses publiques. Les <strong>décrets-lois de Pierre Laval</strong>, en juillet 1935, amputent ainsi de 10 % les traitements des fonctionnaires et les pensions. Résultat : la crise française est moins profonde qu’en Allemagne ou aux États-Unis, mais beaucoup plus longue — la production de 1929 ne sera pas retrouvée avant la guerre.</p>
+
+<h3>2. Un régime qui s’use</h3>
+<p>Les élections de 1932 donnent une majorité de gauche, mais la SFIO refuse à nouveau de participer : entre juin 1932 et février 1934, <strong>six gouvernements</strong> se succèdent, incapables de faire adopter un plan financier. Herriot tombe en décembre 1932 parce qu’il veut honorer l’échéance de la <strong>dette américaine</strong> que la Chambre refuse de payer. L’instabilité n’est pas nouvelle sous la III<sup>e</sup> République ; ce qui est nouveau, c’est qu’elle se produit alors que la crise exige des décisions.</p>
+<p>Ce vide nourrit les <strong>ligues</strong> : l’<strong>Action française</strong> de Charles Maurras et ses Camelots du roi, les <strong>Jeunesses patriotes</strong>, la <strong>Solidarité française</strong> financée par le parfumeur François Coty, le <strong>Francisme</strong> de Marcel Bucard, et surtout les <strong>Croix-de-Feu</strong> du colonel de La Rocque, association d’anciens combattants devenue mouvement de masse. Leur nature fait l’objet d’un <strong>débat historiographique</strong> vif : <strong>René Rémond</strong> y voyait la survivance d’un nationalisme français autoritaire, distinct du fascisme ; <strong>Zeev Sternhell</strong> a soutenu au contraire l’existence d’une matrice fasciste française ; <strong>Robert Soucy</strong>, <strong>Brian Jenkins</strong> ou <strong>Kevin Passmore</strong> ont rouvert le dossier en insistant sur le caractère para-militaire des Croix-de-Feu. Le débat porte moins sur les faits que sur la définition du fascisme.</p>
+
+<h3>3. Stavisky, ou le scandale comme révélateur</h3>
+<p>En décembre 1933 éclate l’<strong>affaire Stavisky</strong> : un escroc, <strong>Alexandre Stavisky</strong>, a écoulé des bons du Crédit municipal de Bayonne grâce à des complicités politiques et judiciaires. Sa mort, le <strong>8 janvier 1934</strong> à Chamonix, officiellement un suicide, alimente la thèse d’un assassinat destiné à protéger des personnalités. Le scandale éclabousse le <strong>Parti radical</strong>, pivot du régime : le président du Conseil <strong>Camille Chautemps</strong> démissionne le 27 janvier 1934.</p>
+<p><strong>Édouard Daladier</strong> lui succède et commet l’erreur décisive : il déplace le préfet de police de Paris, <strong>Jean Chiappe</strong>, réputé bienveillant envers les ligues et très populaire à droite. Le geste est interprété comme une provocation.</p>
+
+<h3>4. Le 6 février 1934 et son onde de choc</h3>
+<p>Le soir du <strong>6 février 1934</strong>, jour de présentation du gouvernement Daladier, ligues et associations d’anciens combattants — y compris, par un autre itinéraire, l’organisation communiste ARAC — convergent vers la <strong>place de la Concorde</strong>, face au Palais-Bourbon. La police, débordée, tire : on compte une <strong>quinzaine de morts</strong> et plus d’un millier de blessés. Le lendemain, bien qu’ayant obtenu la confiance de la Chambre, Daladier démissionne. <strong>Gaston Doumergue</strong> forme un gouvernement d’union nationale.</p>
+<p>L’événement a été longtemps lu comme une tentative de coup d’État fasciste. L’historiographie, notamment <strong>Serge Berstein</strong>, a établi qu’il n’y eut ni plan concerté, ni volonté commune de renverser le régime : les cortèges étaient hétérogènes et sans commandement unique. Mais la <strong>perception</strong> a compté davantage que la réalité. Pour la gauche, la République a failli tomber : le 12 février 1934, une <strong>grève générale</strong> et des cortèges socialistes et communistes se rejoignent spontanément à la place de la Nation. Le 27 juillet 1934, SFIO et PCF signent un <strong>pacte d’unité d’action</strong>. Pour la première fois depuis Tours, la gauche se recompose.</p>
+<p>Il faut noter le paradoxe : un gouvernement renversé par la rue affaiblit le parlementarisme, mais l’émotion produite consolide l’attachement républicain d’une large partie de l’opinion. La crise des années 1930 en France n’a pas emporté le régime ; elle l’a durablement fragilisé.</p>
+<p><strong>Fil rouge.</strong> De cette peur commune naît une coalition inédite — communistes, socialistes, radicaux — qui va gagner les élections de 1936 et gouverner : le Front populaire.</p>
+`,
+    anecdote: `
+<p>La mort de Stavisky, tué d’une balle dans la tête au moment où la police investissait son chalet de Chamonix, fut officiellement classée comme un suicide. La presse d’opposition s’en gaussa longtemps : Stavisky, écrivit-on, « s’est suicidé d’un coup de revolver tiré à trois mètres ». La formule, souvent attribuée au <em>Canard enchaîné</em>, résume l’état d’esprit de 1934 : ce n’est pas tant la corruption qui scandalise que le soupçon d’une justice complaisante. <!-- A VERIFIER : attribution exacte et date de publication de la formule sur le suicide de Stavisky --></p>
+`,
+    questions: [
+      {
+        enonce: "Pourquoi la crise économique touche-t-elle la France plus tard, mais plus longtemps, que d’autres pays industriels ?",
+        options: [
+          "Une économie moins ouverte et encore largement rurale retarde le choc initial",
+          "Le franc dévalué de 1928 protège d’abord les exportations, puis devient surévalué quand la livre et le dollar décrochent",
+          "La politique de déflation menée pour rester dans le bloc-or prolonge la dépression",
+          "La France est le premier pays à dévaluer sa monnaie, dès 1931"
+        ],
+        correctes: [0,1,2],
+        explication: "Le même facteur explique le retard puis l’enlisement : la monnaie. Sous-évalué en 1928, le franc devient la devise la plus chère du monde industriel après les décrochages britannique (1931) et américain (1933). Refusant de dévaluer, les gouvernements tentent la déflation, qui comprime la demande et prolonge la crise jusqu’à la dévaluation de 1936."
+      },
+      {
+        enonce: "Quel enchaînement conduit à la journée du 6 février 1934 ?",
+        options: [
+          "L’affaire Stavisky compromet des personnalités liées au Parti radical",
+          "La démission de Chautemps amène Daladier, qui déplace le préfet de police Chiappe",
+          "Les ligues et des associations d’anciens combattants manifestent devant le Palais-Bourbon",
+          "Le Parti communiste s’allie officiellement aux ligues pour renverser la République"
+        ],
+        correctes: [0,1,2],
+        explication: "Le scandale financier atteint le parti pivot du régime, et le remaniement de la préfecture de police fournit le prétexte immédiat à la mobilisation. Les communistes manifestent le même soir, mais séparément et pour leurs propres mots d’ordre : il n’y a aucune alliance avec les ligues, que le PCF combat."
+      },
+      {
+        enonce: "Que dit l’historiographie récente du 6 février 1934 ?",
+        options: [
+          "Il n’y eut ni plan concerté ni commandement unique pour renverser le régime",
+          "L’événement fut néanmoins perçu à gauche comme une tentative fasciste, ce qui a des effets politiques majeurs",
+          "Les travaux de Serge Berstein ont établi la thèse du putsch organisé",
+          "Les cortèges étaient homogènes et tous membres des mêmes organisations"
+        ],
+        correctes: [0,1],
+        explication: "Les travaux de Berstein ont au contraire réfuté l’idée d’un putsch : les manifestants venaient d’organisations concurrentes, sans objectif commun de prise du pouvoir. Mais la perception d’un péril fasciste a produit des effets bien réels, puisqu’elle rend possible ce que Tours avait rendu impensable : la réunion des gauches."
+      },
+      {
+        enonce: "Sur quoi porte le débat historiographique concernant les ligues françaises des années 1930 ?",
+        options: [
+          "Sur la question de savoir si elles relèvent du fascisme ou d’une tradition nationaliste et autoritaire française",
+          "Sur l’existence même des ligues, contestée par les archives",
+          "Sur la définition du fascisme autant que sur les faits eux-mêmes",
+          "Sur le nombre exact des adhérents des Croix-de-Feu, seul point litigieux"
+        ],
+        correctes: [0,2],
+        explication: "René Rémond a défendu l’idée d’une « immunité » française, les ligues relevant d’une droite nationaliste ancienne ; Sternhell, Soucy, Jenkins ou Passmore ont contesté cette lecture, notamment à propos des Croix-de-Feu. Le désaccord tient largement au critère retenu pour définir un mouvement fasciste : projet totalitaire, para-militarisation, rapport au parlementarisme."
+      },
+      {
+        enonce: "Quelles conséquences politiques la journée du 6 février 1934 entraîne-t-elle ?",
+        options: [
+          "Daladier démissionne bien qu’ayant obtenu la confiance de la Chambre",
+          "La grève générale du 12 février rapproche socialistes et communistes",
+          "Un pacte d’unité d’action est signé entre la SFIO et le PCF en juillet 1934",
+          "Les ligues sont immédiatement dissoutes par le gouvernement Doumergue"
+        ],
+        correctes: [0,1,2],
+        explication: "Le départ de Daladier crée un précédent lourd : un gouvernement légalement soutenu cède devant la rue. À gauche, la riposte du 12 février enclenche une dynamique unitaire qui aboutit au pacte de juillet 1934, puis au Front populaire. La dissolution des ligues n’interviendra qu’en juin 1936, sous Blum, en application de la loi de janvier 1936."
+      }
+    ]
+  },
+
+  /* ---------- Cours 1, séance 5 ---------- */
+  {
+    numero: 5,
+    titre: "Le Front populaire (1934-1938)",
+    problematique: "Comment une coalition née de la peur du fascisme transforme-t-elle durablement la société française, tout en échouant sur le terrain économique ?",
+    contenu: `
+<h3>1. La fabrique d’une alliance</h3>
+<p>Le rapprochement des gauches n’a rien d’évident : depuis 1920, le PCF dénonce les socialistes comme « sociaux-traîtres ». Trois facteurs le rendent possible. La <strong>peur du fascisme</strong> après le 6 février 1934 ; le <strong>tournant de l’Internationale communiste</strong>, qui adopte à l’été 1935 la stratégie des fronts populaires antifascistes ; enfin le <strong>rapprochement diplomatique</strong> entre Paris et Moscou, scellé par le pacte du 2 mai 1935.</p>
+<p>Le 14 juillet 1935, un immense cortège réunit à Paris les trois partis et la CGT réunifiée : c’est le <strong>Rassemblement populaire</strong>. Son programme, publié en janvier 1936, reste modéré — « le pain, la paix, la liberté » —, écartant les nationalisations massives pour ne pas effrayer les radicaux. Aux élections des <strong>26 avril et 3 mai 1936</strong>, la coalition l’emporte : la <strong>SFIO devient le premier parti de la Chambre</strong> avec près de 150 élus, le <strong>PCF passe de 10 à 72 députés</strong> mais refuse de participer au gouvernement, et les radicaux reculent. Le 4 juin 1936, <strong>Léon Blum</strong> devient le premier socialiste — et le premier juif — président du Conseil.</p>
+
+<h3>2. Mai-juin 1936 : la grève qui précède la loi</h3>
+<p>Un fait capital : le mouvement social <strong>précède</strong> l’arrivée de Blum. Dès la mi-mai, des grèves <strong>avec occupation d’usines</strong> se déclenchent, forme inédite en France ; en juin, près de <strong>deux millions de grévistes</strong> cessent le travail dans une atmosphère souvent festive. Le patronat, craignant une révolution, accepte de négocier.</p>
+<p>Les <strong>accords Matignon</strong> du 7 au 8 juin 1936, signés à l’hôtel Matignon entre la CGT, la Confédération générale de la production française et le gouvernement, accordent des hausses de salaires de 7 à 15 %, la reconnaissance du droit syndical, des <strong>délégués du personnel</strong> et la généralisation des <strong>conventions collectives</strong>. Les lois suivent en quelques jours : <strong>40 heures</strong> hebdomadaires, <strong>deux semaines de congés payés</strong>, conventions collectives. S’y ajoutent la scolarité obligatoire jusqu’à 14 ans, la réforme du statut de la <strong>Banque de France</strong>, la nationalisation des industries de guerre, l’<strong>Office du blé</strong>, et la <strong>dissolution des ligues</strong>.</p>
+
+<h3>3. Les limites : le mur économique et le mur extérieur</h3>
+<p>L’économie sanctionne l’ordre des décisions. Le gouvernement augmente les salaires et réduit la durée du travail <strong>avant</strong> d’ajuster la monnaie : les prix montent, la hausse nominale des salaires est vite absorbée, et la production ne suit pas. La <strong>dévaluation</strong>, longtemps refusée pour des raisons politiques, n’intervient que le <strong>1<sup>er</sup> octobre 1936</strong> — trop tard pour produire l’effet de relance espéré. Les capitaux fuient ; en février 1937, Blum doit annoncer une <strong>« pause »</strong> dans les réformes.</p>
+<p>La <strong>guerre d’Espagne</strong>, commencée en juillet 1936, divise la majorité : Blum choisit la <strong>non-intervention</strong> par crainte d’un conflit européen et sous pression britannique, au prix d’une profonde déchirure à gauche. En juin 1937, le Sénat lui refuse les pleins pouvoirs financiers et il démissionne. Un second gouvernement Blum, en mars 1938, ne dure qu’un mois. Avec <strong>Édouard Daladier</strong>, revenu en avril 1938, les décrets-lois de Paul Reynaud détricotent les 40 heures à l’automne ; l’échec de la <strong>grève générale du 30 novembre 1938</strong> marque la fin de la séquence.</p>
+
+<h3>4. Bilan et controverses</h3>
+<p>Le bilan économique fut sévèrement jugé par l’économiste <strong>Alfred Sauvy</strong>, qui voyait dans les 40 heures une faute majeure au moment où il fallait réarmer. Les travaux ultérieurs, notamment de <strong>Julian Jackson</strong> et de <strong>Robert Frank</strong>, déplacent la critique : le problème tient moins au principe des réformes qu’à leur <strong>séquence</strong> — hausse des coûts sans dévaluation préalable ni modernisation de l’appareil productif — et à la rigidité de l’application des 40 heures dans les industries d’armement.</p>
+<p>Le bilan social et culturel, lui, est durable : congés payés, conventions collectives, délégués du personnel, billets de train à tarif réduit, auberges de jeunesse et politique des loisirs de <strong>Léo Lagrange</strong> font entrer les classes populaires dans des pratiques dont elles étaient exclues. Le Front populaire n’a pas résolu la crise ; il a modifié le rapport des Français à l’État et au travail.</p>
+<p><strong>Fil rouge.</strong> Deux institutions ont traversé toute cette période sans dépendre des majorités : l’armée et l’école. Elles engagent l’avenir plus sûrement qu’un décret-loi — et c’est là que la France joue, sans le savoir, l’année 1940.</p>
+`,
+    anecdote: `
+<p>Les congés payés ne suffisaient pas à faire partir les ouvriers : encore fallait-il pouvoir payer le train. À l’initiative de <strong>Léo Lagrange</strong>, sous-secrétaire d’État aux Sports et aux Loisirs, est créé en août 1936 un <strong>billet populaire de congé annuel</strong> offrant 40 % de réduction sur les chemins de fer. Plusieurs centaines de milliers de billets sont vendus dès l’été 1936. L’image des tandems sur les routes de Normandie doit beaucoup à la photographie de presse de l’époque, mais le tarif, lui, est une mesure administrative parfaitement documentée. <!-- A VERIFIER : nombre exact de billets populaires vendus durant l’été 1936 --></p>
+`,
+    questions: [
+      {
+        enonce: "Quels facteurs rendent possible l’alliance du Front populaire, impensable en 1930 ?",
+        options: [
+          "La peur d’un péril fasciste après le 6 février 1934",
+          "Le tournant antifasciste de l’Internationale communiste en 1935",
+          "Le rapprochement diplomatique franco-soviétique de 1935",
+          "La dissolution du Parti communiste, qui rejoint la SFIO"
+        ],
+        correctes: [0,1,2],
+        explication: "Trois logiques convergent : une peur intérieure, une décision stratégique du Komintern et un intérêt diplomatique soviétique à voir la France résister à l’Allemagne. Le PCF conserve son autonomie totale : il soutient Blum sans participer au gouvernement, position qui lui permettra de rompre en 1938."
+      },
+      {
+        enonce: "Qu’est-ce qui caractérise le mouvement social de mai-juin 1936 ?",
+        options: [
+          "Il commence avant la formation du gouvernement Blum",
+          "Il prend la forme inédite d’occupations d’usines",
+          "Il est déclenché sur ordre du gouvernement pour faire pression sur le patronat",
+          "Il conduit le patronat à négocier, aboutissant aux accords Matignon"
+        ],
+        correctes: [0,1,3],
+        explication: "Les grèves éclatent spontanément dès la mi-mai, avant l’investiture : le gouvernement subit l’événement autant qu’il l’accompagne. L’occupation des locaux, en paralysant l’outil de production sans violence, crée un rapport de force que le patronat préfère résoudre par la négociation."
+      },
+      {
+        enonce: "Quelles mesures relèvent directement des accords Matignon de juin 1936 ?",
+        options: [
+          "La reconnaissance du droit syndical et des délégués du personnel",
+          "Des hausses de salaires de l’ordre de 7 à 15 %",
+          "La semaine de 40 heures",
+          "Les deux semaines de congés payés"
+        ],
+        correctes: [0,1],
+        explication: "Matignon est un accord entre partenaires sociaux : il porte sur les salaires, le droit syndical, les délégués et les conventions collectives. Les 40 heures et les congés payés, eux, relèvent de lois votées dans les jours suivants — distinction utile, car elle montre l’articulation entre négociation sociale et intervention législative."
+      },
+      {
+        enonce: "Pourquoi la politique économique du Front populaire échoue-t-elle largement ?",
+        options: [
+          "La hausse des salaires précède la dévaluation, si bien que l’inflation absorbe les gains",
+          "La dévaluation d’octobre 1936 intervient trop tard pour relancer la production",
+          "La fuite des capitaux contraint Blum à annoncer une « pause » dès février 1937",
+          "Le gouvernement a nationalisé l’ensemble du secteur bancaire, ce qui a paralysé le crédit"
+        ],
+        correctes: [0,1,2],
+        explication: "C’est un problème de séquence : augmenter les coûts de production avant d’ajuster la monnaie revient à annuler soi-même l’effet de la relance. La Banque de France est réformée dans sa gouvernance, non nationalisée — elle ne le sera qu’en 1945 —, et le secteur bancaire reste privé."
+      },
+      {
+        enonce: "Comment l’historiographie apprécie-t-elle aujourd’hui le bilan du Front populaire ?",
+        options: [
+          "Alfred Sauvy a imputé l’échec économique surtout aux 40 heures",
+          "Julian Jackson et Robert Frank insistent davantage sur l’enchaînement des décisions et les rigidités d’application",
+          "Les acquis sociaux, eux, se sont révélés durables",
+          "Les historiens s’accordent à considérer l’expérience comme un succès économique"
+        ],
+        correctes: [0,1,2],
+        explication: "La critique de Sauvy, longtemps dominante, a été nuancée : la durée du travail a pesé, surtout dans l’armement, mais le calendrier monétaire et l’état de l’appareil productif comptent au moins autant. Aucun historien ne conclut à une réussite économique ; en revanche, congés payés et conventions collectives structurent encore le droit du travail."
+      }
+    ]
+  },
+
+  /* ---------- Cours 1, séance 6 ---------- */
+  {
+    numero: 6,
+    titre: "L’armée et l’école : deux institutions face à l’avenir",
+    problematique: "Que révèlent la ligne Maginot et la gratuité du secondaire sur la manière dont la France des années 1930 prépare — ou non — son avenir ?",
+    contenu: `
+<h3>1. Compter ses hommes : la contrainte démographique</h3>
+<p>Toute la politique militaire française part d’un chiffre : <strong>1,4 million de morts</strong> en 1914-1918, et surtout les <strong>« classes creuses »</strong>, ces générations nées pendant la guerre, deux fois moins nombreuses, qui atteignent l’âge du service vers 1935-1939. Face à une Allemagne de 65 millions d’habitants contre 41 millions de Français, la doctrine adopte une conclusion simple : <strong>économiser le sang</strong>, substituer la puissance de feu et le béton au nombre.</p>
+<p>La durée du <strong>service militaire</strong> raconte la même histoire. Ramenée de trois ans à <strong>dix-huit mois en 1923</strong>, puis à <strong>un an en 1928</strong>, elle laisse une armée d’active squelettique : l’essentiel de la force réside dans les réservistes, donc dans la <strong>mobilisation</strong>, qui demande plusieurs semaines. En mars 1935, face au réarmement allemand, le service est <strong>rétabli à deux ans</strong>.</p>
+
+<h3>2. La ligne Maginot : une logique, pas une lâcheté</h3>
+<p>Les crédits de fortification sont votés en janvier 1930, à l’initiative du ministre de la Guerre <strong>André Maginot</strong>. L’ouvrage n’a pas pour but de rendre la France invulnérable : il doit <strong>couvrir la mobilisation</strong>, protéger les régions industrielles de Lorraine et du Nord-Est reprises en 1918, et permettre de tenir la frontière avec peu d’hommes afin d’en libérer d’autres pour la manœuvre. <!-- A VERIFIER : date exacte et montant de la loi de crédits de 1930 --></p>
+<p>Deux failles, pourtant. La fortification ne se prolonge pas le long de la <strong>frontière belge</strong> : le coût est immense, le terrain peu favorable, la zone très industrialisée, et la Belgique est alors une alliée qu’on ne peut se résoudre à abandonner derrière un mur — elle redeviendra neutre en 1936. Ensuite, le massif des <strong>Ardennes</strong> est jugé difficilement praticable par les blindés, appréciation partagée par <strong>Philippe Pétain</strong>, qui en tire l’idée qu’il suffit de forces légères pour l’interdire. C’est précisément là que passera la percée allemande de mai 1940.</p>
+<p>La doctrine correspond à cette architecture : la <strong>« bataille méthodique »</strong>, héritée de 1918, privilégie le feu, la préparation d’artillerie et le contrôle étroit du mouvement. Les propositions de <strong>Charles de Gaulle</strong> dans <em>Vers l’armée de métier</em> (1934), reprises par le député <strong>Paul Reynaud</strong>, sont écartées : elles heurtent la tradition républicaine de la nation en armes, coûtent cher et supposent une armée de professionnels jugée politiquement suspecte. Les historiens (<strong>Robert Doughty</strong>, <strong>Martin Alexander</strong>) ont montré que 1940 s’explique moins par un manque de chars — la France en possède beaucoup — que par leur <strong>emploi dispersé</strong> et par la lenteur de la chaîne de commandement.</p>
+
+<h3>3. L’école : ouvrir sans unifier</h3>
+<p>L’école de la III<sup>e</sup> République est organisée en <strong>deux ordres parallèles</strong>, et non en degrés successifs : d’un côté l’enseignement <strong>primaire</strong>, gratuit, avec son prolongement (cours complémentaires, écoles primaires supérieures) menant à l’école normale ; de l’autre l’enseignement <strong>secondaire</strong>, payant, avec ses propres petites classes, menant au baccalauréat et à l’université. On ne passe pratiquement pas de l’un à l’autre : la barrière est sociale autant que pédagogique.</p>
+<p>La <strong>gratuité progressive du secondaire</strong>, mise en place classe après classe au tournant des années 1930, fait sauter l’obstacle financier. Mais elle ne supprime pas la dualité des filières, que les <strong>Compagnons de l’Université nouvelle</strong>, anciens combattants réformateurs, dénonçaient depuis 1918 en réclamant l’<strong>« école unique »</strong>. La conséquence est double : le nombre de lycéens augmente nettement, mais le recrutement social du baccalauréat se modifie lentement.</p>
+
+<h3>4. Jean Zay, ou la réforme interrompue</h3>
+<p>Ministre de l’Éducation nationale de juin 1936 à septembre 1939, <strong>Jean Zay</strong>, radical de 31 ans, porte le projet le plus cohérent de l’entre-deux-guerres. La loi du 9 août 1936 <strong>prolonge la scolarité obligatoire jusqu’à 14 ans</strong>. Il introduit des <strong>classes d’orientation</strong> expérimentales en sixième pour retarder le choix de filière, fait entrer le sport et les activités dirigées dans l’emploi du temps, soutient la recherche — dont sortira le CNRS en 1939 — et lance le projet d’un festival de cinéma à Cannes. Son projet global de réforme de l’enseignement n’aboutit pas : la guerre l’interrompt.</p>
+<p>Le destin de Zay dit aussi la violence du temps : arrêté en 1940, condamné par Vichy pour désertion à l’issue d’un procès politique, il est assassiné par des miliciens en juin 1944.</p>
+<p><strong>Fil rouge.</strong> Ce cours s’achève sur une France affaiblie mais non totalitaire : elle a connu la crise, l’instabilité et les ligues, sans que le régime parlementaire soit renversé. C’est cette différence qu’il faut désormais mesurer, en regardant comment, ailleurs en Europe, des régimes ont détruit le pluralisme — à commencer par l’URSS de Staline.</p>
+`,
+    anecdote: `
+<p>Le nom même de la ligne doit beaucoup au hasard : <strong>André Maginot</strong>, grièvement blessé à Verdun en 1914, était un ministre de la Guerre populaire, capable de faire voter les crédits par une Chambre économe. Il meurt en janvier 1932 — d’une fièvre typhoïde contractée, dit-on, après un repas d’huîtres — plusieurs années avant l’achèvement des ouvrages qui porteront son nom, et huit ans avant l’épreuve de 1940. <!-- A VERIFIER : circonstances précises du décès d’André Maginot (fièvre typhoïde, janvier 1932) --></p>
+`,
+    questions: [
+      {
+        enonce: "Quelles contraintes expliquent le choix d’une doctrine militaire défensive dans les années 1930 ?",
+        options: [
+          "Les « classes creuses » réduisent fortement les effectifs mobilisables à partir de 1935",
+          "L’écart démographique avec l’Allemagne impose d’économiser les hommes",
+          "La réduction du service militaire à un an en 1928 affaiblit l’armée d’active",
+          "La France manque de chars et d’artillerie moderne, ce qui interdit toute offensive"
+        ],
+        correctes: [0,1,2],
+        explication: "Le raisonnement est d’abord démographique : moins d’hommes disponibles, donc substitution du feu et du béton au nombre, et dépendance à l’égard d’une mobilisation lente. L’argument matériel ne tient pas : la France dispose en 1940 d’un parc de chars comparable à celui de l’adversaire, mais les emploie dispersés en appui de l’infanterie."
+      },
+      {
+        enonce: "Quelle est la fonction assignée à la ligne Maginot par ses concepteurs ?",
+        options: [
+          "Couvrir la mobilisation et protéger les régions industrielles du Nord-Est",
+          "Permettre de tenir la frontière avec peu d’hommes pour en libérer ailleurs",
+          "Rendre le territoire français totalement invulnérable à une invasion",
+          "Servir de base de départ à une offensive rapide en Rhénanie"
+        ],
+        correctes: [0,1],
+        explication: "La ligne est un instrument d’économie des forces, pas un bouclier intégral : elle doit gagner le temps nécessaire à la montée en puissance des réservistes. L’illusion d’invulnérabilité relève du mythe forgé après coup ; quant à l’offensive, la doctrine de la bataille méthodique la rendait précisément improbable."
+      },
+      {
+        enonce: "Pourquoi la fortification ne se prolonge-t-elle pas sur la frontière belge ?",
+        options: [
+          "Le coût financier en aurait été considérable",
+          "La Belgique est alors une alliée que l’on ne veut pas laisser hors du dispositif",
+          "Le massif des Ardennes est jugé difficilement praticable pour des blindés",
+          "Le traité de Locarno interdisait toute fortification au nord de la Meuse"
+        ],
+        correctes: [0,1,2],
+        explication: "Trois raisons se cumulent : budgétaire, diplomatique et technique. Aucune disposition de Locarno n’interdisait ces fortifications — la démilitarisation concernait la rive allemande du Rhin. L’appréciation portée sur les Ardennes, partagée par Pétain, sera démentie en mai 1940 par la percée de Sedan."
+      },
+      {
+        enonce: "Qu’est-ce qui caractérise l’organisation scolaire française avant les réformes des années 1930 ?",
+        options: [
+          "Primaire et secondaire forment deux ordres parallèles, et non deux degrés successifs",
+          "Le secondaire est payant et possède ses propres classes élémentaires",
+          "L’enseignement secondaire est déjà gratuit depuis les lois Ferry",
+          "Le passage du primaire au secondaire est massif et organisé"
+        ],
+        correctes: [0,1],
+        explication: "Les lois Ferry des années 1880 ont rendu gratuit et obligatoire le seul enseignement primaire. Le secondaire, payant, recrute dans ses propres petites classes : la barrière est donc à la fois financière et structurelle, ce qui explique que la gratuité progressive ne suffise pas à unifier le système."
+      },
+      {
+        enonce: "Que retient-on de l’action de Jean Zay au ministère de l’Éducation nationale ?",
+        options: [
+          "La prolongation de la scolarité obligatoire jusqu’à 14 ans en 1936",
+          "La création de classes d’orientation destinées à retarder le choix de filière",
+          "La réalisation complète de l’« école unique » réclamée depuis 1918",
+          "Un soutien à la recherche scientifique, d’où sortira le CNRS en 1939"
+        ],
+        correctes: [0,1,3],
+        explication: "Zay agit sur la durée de la scolarité, sur l’orientation et sur la recherche, mais son projet de réforme d’ensemble n’aboutit pas avant la guerre. L’unification des filières ne sera réalisée que bien plus tard, par étapes, du collège d’enseignement secondaire de 1963 au collège unique de 1975."
+      }
+    ]
+  }
+]
+},
+];
+
+/* =====================================================================
+   4. LOGIQUE DE L'APPLICATION
+   ---------------------------------------------------------------------
+   Sommaire :
+     4.1  Reglages et etat persistant (localStorage + export/import)
+     4.2  Fonctions de progression (seance disponible, cours en cours...)
+     4.3  Utilitaires d'affichage
+     4.4  Onglet Accueil
+     4.5  Onglet Cours (catalogue, fiche, lecture)
+     4.6  Moteur de QCM (construction, validation, correction)
+     4.7  Onglet Quiz (QCM de seance et quiz compose)
+     4.8  Navigation et evenements
+   ===================================================================== */
+
+/* ---------- 4.1  Reglages et etat persistant ---------- */
+
+/* Valeur par defaut du rythme : la seance suivante ne se debloque que le
+   lendemain. Modifiable dans les reglages de l'onglet Accueil. */
+const UNE_SEANCE_PAR_JOUR = true;
+
+/* Nombre de seances par cours, et donc duree d'une << semaine Clio >> :
+   une semaine se compte en seances, pas en jours de calendrier. */
+const SEANCES_PAR_COURS = 6;
+
+const CLE_STOCKAGE = "clio.progression.v1";
+
+/* Etat vierge. Toute lecture de l'etat passe par cet objet de reference,
+   ce qui evite les undefined lors d'une montee de version. */
+function etatVierge(){
+  return {
+    v: 1,
+    reglages: { uneSeanceParJour: UNE_SEANCE_PAR_JOUR },
+    cours: {},          // { idCours: { seances:{ "1":{...} }, termine:"AAAA-MM-JJ"|null } }
+    historique: [],     // [{ d, type, coursId, seance, justes, total }]
+    questions: {},      // { "idCours#seance#index": { r:ratees, j:reussies } }
+    dernier: null       // { coursId, seance } : derniere seance ouverte
+  };
+}
+
+let ETAT = chargerEtat();
+
+function chargerEtat(){
+  const base = etatVierge();
+  try{
+    const brut = localStorage.getItem(CLE_STOCKAGE);
+    if(!brut) return base;
+    const lu = JSON.parse(brut);
+    if(!lu || typeof lu !== "object") return base;
+    return fusionnerEtat(base, lu);
+  }catch(e){
+    // localStorage indisponible (navigation privee, fichier local bride...)
+    console.warn("Clio : progression illisible, on repart d'un etat vierge.", e);
+    return base;
+  }
+}
+
+function fusionnerEtat(base, lu){
+  const e = base;
+  if(lu.reglages && typeof lu.reglages === "object"){
+    e.reglages.uneSeanceParJour = lu.reglages.uneSeanceParJour !== false;
+  }
+  if(lu.cours && typeof lu.cours === "object") e.cours = lu.cours;
+  if(Array.isArray(lu.historique)) e.historique = lu.historique;
+  if(lu.questions && typeof lu.questions === "object") e.questions = lu.questions;
+  if(lu.dernier && typeof lu.dernier === "object") e.dernier = lu.dernier;
+  return e;
+}
+
+function sauverEtat(){
+  try{
+    localStorage.setItem(CLE_STOCKAGE, JSON.stringify(ETAT));
+    return true;
+  }catch(e){
+    console.warn("Clio : sauvegarde impossible.", e);
+    return false;
+  }
+}
+
+/* ---------- 4.2  Progression ---------- */
+
+function aujourdhui(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,"0");
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
+}
+
+function coursParId(id){ return COURS.find(c => c.id === id) || null; }
+
+function fiche(coursId){
+  if(!ETAT.cours[coursId]) ETAT.cours[coursId] = { seances:{}, termine:null };
+  return ETAT.cours[coursId];
+}
+
+function estFaite(coursId, numero){
+  const f = ETAT.cours[coursId];
+  return !!(f && f.seances && f.seances[numero]);
+}
+
+function nbFaites(coursId){
+  const f = ETAT.cours[coursId];
+  if(!f || !f.seances) return 0;
+  return Object.keys(f.seances).length;
+}
+
+/* Premiere seance non faite d'un cours ; null si le cours est termine. */
+function prochaineSeance(coursId){
+  const c = coursParId(coursId);
+  if(!c) return null;
+  for(const s of c.seances){ if(!estFaite(coursId, s.numero)) return s.numero; }
+  return null;
+}
+
+function coursTermine(coursId){ return prochaineSeance(coursId) === null; }
+function coursCommence(coursId){ return nbFaites(coursId) > 0; }
+
+/* Date de la derniere seance validee, tous cours confondus. */
+function dateDerniereSeance(){
+  let max = null;
+  for(const id in ETAT.cours){
+    const f = ETAT.cours[id];
+    if(!f || !f.seances) continue;
+    for(const n in f.seances){
+      const d = f.seances[n].date;
+      if(d && (!max || d > max)) max = d;
+    }
+  }
+  return max;
+}
+
+/* Verrou de rythme : vrai si une seance a deja ete validee aujourd'hui
+   et que le reglage << une seance par jour >> est actif. */
+function verrouDuJour(){
+  if(!ETAT.reglages.uneSeanceParJour) return false;
+  return dateDerniereSeance() === aujourdhui();
+}
+
+/* Cours actuellement suivi : le dernier ouvert s'il n'est pas termine,
+   sinon le premier cours commence et non termine, sinon le premier
+   cours jamais commence. */
+function coursEnCours(){
+  if(ETAT.dernier && ETAT.dernier.coursId){
+    const c = coursParId(ETAT.dernier.coursId);
+    if(c && !coursTermine(c.id)) return c;
+  }
+  const entame = COURS.find(c => coursCommence(c.id) && !coursTermine(c.id));
+  if(entame) return entame;
+  const neuf = COURS.find(c => !coursCommence(c.id));
+  return neuf || null;
+}
+
+/* Suggestion apres un cours termine : meme periode d'abord, puis
+   n'importe quel cours non commence. */
+function coursSuggere(apresId){
+  const ref = coursParId(apresId);
+  const libres = COURS.filter(c => c.id !== apresId && !coursCommence(c.id));
+  if(ref){
+    const memePeriode = libres.find(c => c.periode === ref.periode);
+    if(memePeriode) return memePeriode;
+  }
+  return libres[0] || null;
+}
+
+/* Etat d'une seance : "faite" | "disponible" | "demain" | "verrouillee" */
+function etatSeance(coursId, numero){
+  if(estFaite(coursId, numero)) return "faite";
+  const p = prochaineSeance(coursId);
+  if(p !== numero) return "verrouillee";
+  return verrouDuJour() ? "demain" : "disponible";
+}
+
+/* Score moyen, en pourcentage, sur tous les QCM enregistres. */
+function scoreMoyen(){
+  const h = ETAT.historique;
+  if(!h.length) return null;
+  let j = 0, t = 0;
+  h.forEach(x => { j += x.justes; t += x.total; });
+  return t ? Math.round(100*j/t) : null;
+}
+
+function cleQuestion(coursId, seance, index){ return coursId + "#" + seance + "#" + index; }
+
+/* ---------- 4.3  Utilitaires d'affichage ---------- */
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => (
+    {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]
+  ));
+}
+
+function filet(texte){
+  return texte ? `<div class="filet"><span>${esc(texte)}</span></div>`
+               : `<div class="filet"><span class="losange">&#9670;</span></div>`;
+}
+
+function jauge(fait, total){
+  const pc = total ? Math.round(100*fait/total) : 0;
+  return `<div class="jauge"><div style="width:${pc}%"></div></div>`;
+}
+
+function dateLisible(iso){
+  if(!iso) return "";
+  const [a,m,j] = iso.split("-");
+  return j + "/" + m + "/" + a;
+}
+
+function melanger(tab){
+  const t = tab.slice();
+  for(let i=t.length-1;i>0;i--){
+    const k = Math.floor(Math.random()*(i+1));
+    [t[i],t[k]] = [t[k],t[i]];
+  }
+  return t;
+}
+
+/* ---------- 4.4  Onglet Accueil ---------- */
+
+function rendreAccueil(){
+  const c = coursEnCours();
+  const parts = [];
+
+  /* -- Seance du jour -- */
+  parts.push(`<div class="filet"><span>Séance du jour</span></div>`);
+  if(!c){
+    parts.push(`<div class="carte"><h2>Tout est terminé</h2>
+      <p class="secondaire">Vous avez achevé tous les cours disponibles. Les quiz composés restent
+      accessibles pour réviser, et de nouveaux cours pourront être ajoutés dans la constante
+      <strong>COURS</strong>.</p></div>`);
+  }else{
+    const n = prochaineSeance(c.id);
+    const s = c.seances.find(x => x.numero === n);
+    const etat = etatSeance(c.id, n);
+    parts.push(`<div class="carte">
+      <p class="minuscule">${esc(c.periode)} &#8226; ${esc(c.dates)}</p>
+      <h2>${esc(c.titre)}</h2>
+      <p class="secondaire" style="margin-bottom:10px">Séance ${n} sur ${SEANCES_PAR_COURS} &#8212; ${esc(s.titre)}</p>
+      ${jauge(nbFaites(c.id), SEANCES_PAR_COURS)}
+      <p class="minuscule" style="margin-bottom:14px">${nbFaites(c.id)} séance(s) validée(s) &#8212; environ 10 minutes par séance</p>
+      ${ etat === "demain"
+        ? `<div class="avis">Vous avez déjà travaillé aujourd’hui. La séance suivante se débloque demain.
+             Ce rythme se règle plus bas, dans <strong>Réglages</strong>.</div>
+           <button class="bouton" disabled>Reprendre</button>`
+        : `<button class="bouton-plein" data-action="reprendre" data-cours="${esc(c.id)}" data-seance="${n}">Reprendre</button>`}
+    </div>`);
+  }
+
+  /* -- Progression -- */
+  const termines = COURS.filter(x => coursTermine(x.id));
+  const moy = scoreMoyen();
+  parts.push(filet("Progression"));
+  parts.push(`<div class="carte">
+    <div class="stats">
+      <div class="stat"><div class="v">${c ? nbFaites(c.id) + "/" + SEANCES_PAR_COURS : "&#8212;"}</div><div class="l">Cours en cours</div></div>
+      <div class="stat"><div class="v">${termines.length}</div><div class="l">Cours terminés</div></div>
+      <div class="stat"><div class="v">${moy === null ? "&#8212;" : moy + "%"}</div><div class="l">Score moyen</div></div>
+    </div>
+    <p class="minuscule" style="margin:12px 0 0">
+      ${ETAT.historique.length} QCM enregistré(s).
+      ${moy === null ? "Le score moyen apparaîtra après votre premier QCM." : ""}
+    </p>
+  </div>`);
+
+  /* -- Rythme -- */
+  const faitesCoursCourant = c ? nbFaites(c.id) : 0;
+  parts.push(`<div class="carte">
+    <h3>Rythme</h3>
+    <p class="secondaire" style="margin-bottom:8px">
+      Une semaine Clio se compte en séances, non en jours : <strong>${faitesCoursCourant} séance(s) sur ${SEANCES_PAR_COURS}</strong>
+      pour la semaine en cours. Un jour oublié ne se rattrape pas, on reprend simplement à la séance suivante.
+    </p>
+    ${jauge(faitesCoursCourant, SEANCES_PAR_COURS)}
+    <p class="minuscule">Dernière séance validée : ${dateDerniereSeance() ? dateLisible(dateDerniereSeance()) : "aucune"}</p>
+  </div>`);
+
+  /* -- Suggestion apres un cours termine -- */
+  if(termines.length){
+    const dernierTermine = termines[termines.length-1];
+    const sug = coursSuggere(dernierTermine.id);
+    if(sug){
+      parts.push(`<div class="carte">
+        <h3>Pour continuer</h3>
+        <p class="secondaire">Vous avez terminé <strong>${esc(dernierTermine.titre)}</strong>.
+        Dans la même période, ce cours prolonge naturellement la réflexion :</p>
+        <p style="margin-bottom:12px"><strong>${esc(sug.titre)}</strong> &#8212; <span class="secondaire">${esc(sug.problematique)}</span></p>
+        <button class="bouton" data-action="fiche" data-cours="${esc(sug.id)}">Ouvrir la fiche</button>
+      </div>`);
+    }
+  }
+
+  /* -- Derniers scores -- */
+  if(ETAT.historique.length){
+    const derniers = ETAT.historique.slice(-5).reverse();
+    parts.push(filet("Derniers QCM"));
+    parts.push(`<div class="carte"><ul class="liste">` + derniers.map(h => {
+      const co = coursParId(h.coursId);
+      const nom = h.type === "compose" ? "Quiz composé" :
+                  (co ? esc(co.titre) + " &#8212; séance " + h.seance : "Séance");
+      const pc = h.total ? Math.round(100*h.justes/h.total) : 0;
+      return `<li class="ligne" style="cursor:default">
+        <span class="num"><span>${pc}</span></span>
+        <span class="corps"><span class="t">${nom}</span>
+          <span class="minuscule">${h.justes}/${h.total} &#8226; ${dateLisible(h.d)}</span></span>
+      </li>`;
+    }).join("") + `</ul></div>`);
+  }
+
+  /* -- Reglages -- */
+  parts.push(filet("Réglages"));
+  parts.push(`<div class="carte">
+    <div class="champ">
+      <span class="txt"><strong>Une séance par jour</strong>
+        <small>Quand ce réglage est actif, la séance suivante ne se débloque que le lendemain.</small></span>
+      <button class="interrupteur" role="switch" data-action="bascule-rythme"
+        aria-checked="${ETAT.reglages.uneSeanceParJour ? "true" : "false"}"
+        aria-label="Une séance par jour"></button>
+    </div>
+    <div class="champ">
+      <span class="txt"><strong>Sauvegarde</strong>
+        <small>Exporter la progression dans un fichier JSON, ou la réimporter sur un autre appareil.</small></span>
+    </div>
+    <div class="rang-boutons" style="margin:4px 0 10px">
+      <button class="bouton petit" data-action="exporter">Exporter</button>
+      <button class="bouton petit" data-action="afficher-json">Afficher le JSON</button>
+      <button class="bouton petit" data-action="importer-fichier">Importer un fichier</button>
+      <button class="bouton petit" data-action="importer-texte">Coller un JSON</button>
+      <button class="bouton petit discret" data-action="effacer">Tout effacer</button>
+    </div>
+    <input type="file" id="champ-fichier" accept="application/json,.json" style="display:none">
+    <div id="zone-json"></div>
+  </div>`);
+
+  document.getElementById("vue-accueil").innerHTML = parts.join("");
+}
+
+/* ---------- 4.5  Onglet Cours ---------- */
+
+/* Ecran courant de l'onglet Cours. */
+let ECRAN = { nom:"catalogue", coursId:null, seance:null };
+let FILTRE = "Toutes";
+
+function rendreCours(){
+  const vue = document.getElementById("vue-cours");
+  if(ECRAN.nom === "fiche") return rendreFiche(vue);
+  if(ECRAN.nom === "lecture") return rendreLecture(vue);
+  return rendreCatalogue(vue);
+}
+
+function rendreCatalogue(vue){
+  const parts = [];
+  parts.push(`<div class="filet"><span>Catalogue</span></div>`);
+
+  /* Pastilles de periode : toutes les periodes restent visibles. */
+  const pastilles = ["Toutes"].concat(PERIODES);
+  parts.push(`<div class="pastilles">` + pastilles.map(p =>
+    `<button class="pastille" data-action="filtre" data-periode="${esc(p)}"
+      aria-pressed="${FILTRE === p ? "true" : "false"}">${esc(p)}</button>`
+  ).join("") + `</div>`);
+
+  const periodesAffichees = FILTRE === "Toutes" ? PERIODES : [FILTRE];
+  periodesAffichees.forEach(p => {
+    const liste = COURS.filter(c => c.periode === p);
+    parts.push(filet(p));
+    if(!liste.length){
+      parts.push(`<div class="carte"><p class="secondaire" style="margin:0">
+        Aucun cours pour l’instant. <span class="etiq bientot">bientôt</span></p></div>`);
+      return;
+    }
+    liste.forEach(c => {
+      const faites = nbFaites(c.id);
+      const fini = coursTermine(c.id);
+      parts.push(`<div class="carte">
+        <p class="minuscule">${esc(c.dates)}${c.note ? " &#8226; " + esc(c.note) : ""}</p>
+        <h3>${esc(c.titre)}</h3>
+        <p class="secondaire">${esc(c.problematique)}</p>
+        <p style="margin:0 0 10px">
+          <span class="etiq ${fini ? "faite" : "or"}">${fini ? "terminé" : faites + "/" + SEANCES_PAR_COURS}</span>
+          <span class="etiq">${SEANCES_PAR_COURS} séances</span>
+        </p>
+        <button class="bouton" data-action="fiche" data-cours="${esc(c.id)}">Ouvrir</button>
+      </div>`);
+    });
+  });
+
+  vue.innerHTML = parts.join("");
+}
+
+function rendreFiche(vue){
+  const c = coursParId(ECRAN.coursId);
+  if(!c){ ECRAN = {nom:"catalogue"}; return rendreCours(); }
+  const parts = [];
+  parts.push(`<div class="fil"><button class="bouton petit discret" data-action="catalogue">&#8592; Catalogue</button></div>`);
+  parts.push(`<div class="carte">
+    <p class="minuscule">${esc(c.periode)} &#8226; ${esc(c.dates)}${c.note ? " &#8226; " + esc(c.note) : ""}</p>
+    <h2>${esc(c.titre)}</h2>
+    <p class="secondaire" style="font-style:italic">${esc(c.problematique)}</p>
+    ${jauge(nbFaites(c.id), SEANCES_PAR_COURS)}
+    <p class="minuscule">${nbFaites(c.id)} séance(s) sur ${SEANCES_PAR_COURS}</p>
+  </div>`);
+
+  parts.push(filet("Les six séances"));
+  parts.push(`<ul class="liste">` + c.seances.map(s => {
+    const e = etatSeance(c.id, s.numero);
+    const cliquable = (e === "faite" || e === "disponible");
+    const note = estFaite(c.id, s.numero) ? fiche(c.id).seances[s.numero] : null;
+    const libelle = { faite:"faite", disponible:"à lire", demain:"demain", verrouillee:"verrouillée" }[e];
+    return `<li><button class="ligne ${e === "faite" ? "faite" : ""}"
+      ${cliquable ? `data-action="lire" data-cours="${esc(c.id)}" data-seance="${s.numero}"` : "disabled"}>
+      <span class="num"><span>${s.numero}</span></span>
+      <span class="corps"><span class="t">${esc(s.titre)}</span>
+        ${note ? `<span class="minuscule">${note.justes}/${note.total} &#8226; ${dateLisible(note.date)}</span>` : ""}
+      </span>
+      <span class="etat">${libelle}</span>
+    </button></li>`;
+  }).join("") + `</ul>`);
+
+  if(verrouDuJour()){
+    parts.push(`<div class="avis">Rythme : une séance par jour. La suivante se débloquera demain
+      (réglage modifiable dans l’onglet Accueil).</div>`);
+  }
+
+  parts.push(filet("Sources du cours"));
+  parts.push(`<div class="carte"><ul class="sources">` +
+    c.sources.map(s => `<li>${esc(s)}</li>`).join("") + `</ul>
+    <p class="minuscule">Ouvrages de référence utilisés pour la rédaction des séances.</p></div>`);
+
+  vue.innerHTML = parts.join("");
+}
+
+function rendreLecture(vue){
+  const c = coursParId(ECRAN.coursId);
+  const s = c ? c.seances.find(x => x.numero === ECRAN.seance) : null;
+  if(!s){ ECRAN = {nom:"catalogue"}; return rendreCours(); }
+
+  ETAT.dernier = { coursId:c.id, seance:s.numero };
+  sauverEtat();
+
+  const parts = [];
+  parts.push(`<div class="fil"><button class="bouton petit discret" data-action="fiche" data-cours="${esc(c.id)}">&#8592; ${esc(c.titre)}</button></div>`);
+  parts.push(`<div class="carte">
+    <p class="minuscule">Séance ${s.numero} sur ${SEANCES_PAR_COURS}</p>
+    <h2>${esc(s.titre)}</h2>
+  </div>`);
+  parts.push(`<div class="probleme"><strong>Problématique.</strong> ${esc(s.problematique)}</div>`);
+
+  /* Le cours en entier d'abord. */
+  parts.push(`<article class="lecture">${s.contenu}</article>`);
+
+  /* Puis l'anecdote, jamais evaluee. */
+  parts.push(`<div class="anecdote"><span class="titre">Anecdote &#8212; hors programme</span>${s.anecdote}</div>`);
+
+  /* Et seulement tout en bas, l'acces au QCM. */
+  parts.push(filet(""));
+  const rev = s.numero > 1 ? 10 : 5;
+  parts.push(`<div class="carte">
+    <h3>Vérifier sa compréhension</h3>
+    <p class="secondaire">${rev} questions : les 5 de cette séance${s.numero > 1 ? ", plus les 5 de la séance précédente en révision" : ""}.
+    Comptez environ trois minutes.</p>
+    <button class="bouton-plein" data-action="quiz-seance" data-cours="${esc(c.id)}" data-seance="${s.numero}">Accéder au QCM</button>
+  </div>`);
+
+  vue.innerHTML = parts.join("");
+}
+
+/* ---------- 4.6  Moteur de QCM ---------- */
+
+/* QUIZ courant :
+   { type, coursId, seance, items:[...], reponses:{i:[indices]}, corrige:bool, resultat:{} }
+   Chaque item : { coursId, seance, index, q, ordre }  (ordre = ordre
+   d'affichage melange des 4 propositions, pour eviter la memorisation
+   d'une position). */
+let QUIZ = null;
+
+function faireItem(coursId, seance, index, q){
+  return { coursId, seance, index, q, ordre: melanger([0,1,2,3]) };
+}
+
+/* QCM de seance : les 5 questions de la seance + les 5 de la precedente. */
+function construireQuizSeance(coursId, numero){
+  const c = coursParId(coursId);
+  const items = [];
+  const s = c.seances.find(x => x.numero === numero);
+  s.questions.forEach((q,i) => items.push(faireItem(coursId, numero, i, q)));
+  if(numero > 1){
+    const p = c.seances.find(x => x.numero === numero-1);
+    if(p) p.questions.forEach((q,i) => items.push(faireItem(coursId, numero-1, i, q)));
+  }
+  return { type:"seance", coursId, seance:numero, items, reponses:{}, corrige:false, resultat:null };
+}
+
+/* Quiz compose : tirage parmi les questions des cours coches.
+   Les questions deja ratees sont remontees en priorite. */
+function construireQuizCompose(ids, nombre, toutInclure){
+  let pool = [];
+  ids.forEach(id => {
+    const c = coursParId(id);
+    if(!c) return;
+    c.seances.forEach(s => {
+      if(!toutInclure && !estFaite(id, s.numero)) return;
+      s.questions.forEach((q,i) => pool.push(faireItem(id, s.numero, i, q)));
+    });
+  });
+  if(!pool.length) return null;
+
+  /* Priorite = (nombre d'echecs) - (nombre de reussites) sur la question.
+     Tri decroissant, avec un aleatoire pour departager les ex aequo. */
+  pool = pool.map(it => {
+    const st = ETAT.questions[cleQuestion(it.coursId, it.seance, it.index)] || {r:0,j:0};
+    return { it, p: (st.r||0) - (st.j||0), h: Math.random() };
+  }).sort((a,b) => (b.p - a.p) || (a.h - b.h)).map(x => x.it);
+
+  const n = (nombre === "toutes") ? pool.length : Math.min(Number(nombre), pool.length);
+  const choisies = melanger(pool.slice(0, n));
+  return { type:"compose", coursId:null, seance:null, items:choisies, reponses:{}, corrige:false, resultat:null };
+}
+
+function rendreQuizEnCours(){
+  const q = QUIZ;
+  const parts = [];
+  const titreQuiz = q.type === "seance"
+    ? esc(coursParId(q.coursId).titre) + " &#8212; séance " + q.seance
+    : "Quiz composé";
+
+  parts.push(`<div class="fil"><button class="bouton petit discret" data-action="quiz-abandonner">&#8592; Quitter</button></div>`);
+  parts.push(`<div class="carte">
+    <p class="minuscule">${q.items.length} questions</p>
+    <h2>${titreQuiz}</h2>
+    <p class="secondaire" style="margin:0">Chaque question peut appeler une ou plusieurs bonnes réponses.
+    Toutes les questions doivent recevoir au moins une coche.</p>
+  </div>`);
+
+  q.items.forEach((it,i) => {
+    const revision = (q.type === "seance" && it.seance !== q.seance);
+    const coches = q.reponses[i] || [];
+    parts.push(`<div class="question" id="q-${i}">
+      <p class="enonce">${i+1}. ${esc(it.q.enonce)}</p>
+      <p class="consigne">${revision ? "Révision &#8212; séance " + it.seance + " &#8226; " : ""}plusieurs réponses possibles</p>
+      ${it.ordre.map(oi => `<label class="option">
+          <input type="checkbox" data-question="${i}" data-option="${oi}" ${coches.indexOf(oi) >= 0 ? "checked" : ""}>
+          <span>${esc(it.q.options[oi])}</span>
+        </label>`).join("")}
+      <p class="erreur" id="err-${i}" style="display:none">Cochez au moins une proposition pour cette question.</p>
+    </div>`);
+  });
+
+  parts.push(`<div class="saut"></div>`);
+  parts.push(`<button class="bouton-plein" data-action="quiz-valider">Valider</button>`);
+  parts.push(`<div id="avis-validation"></div>`);
+  document.getElementById("vue-quiz").innerHTML = parts.join("");
+}
+
+/* Validation : refus si une question est sans reponse. */
+function validerQuiz(){
+  const q = QUIZ;
+  let premierManque = -1;
+  q.items.forEach((it,i) => {
+    const coches = q.reponses[i] || [];
+    const err = document.getElementById("err-"+i);
+    const bloc = document.getElementById("q-"+i);
+    if(!coches.length){
+      if(premierManque < 0) premierManque = i;
+      if(err) err.style.display = "block";
+      if(bloc) bloc.classList.add("en-erreur");
+    }else{
+      if(err) err.style.display = "none";
+      if(bloc) bloc.classList.remove("en-erreur");
+    }
+  });
+
+  if(premierManque >= 0){
+    const avis = document.getElementById("avis-validation");
+    if(avis) avis.innerHTML = `<div class="avis">Quiz incomplet : ${
+      q.items.filter((it,i) => !(q.reponses[i]||[]).length).length
+    } question(s) sans réponse.</div>`;
+    const cible = document.getElementById("q-"+premierManque);
+    if(cible) cible.scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+
+  /* Correction : une question n'est juste que si l'ensemble coche est
+     exactement l'ensemble correct. */
+  const details = q.items.map((it,i) => {
+    const coches = (q.reponses[i]||[]).slice().sort((a,b)=>a-b);
+    const bonnes = it.q.correctes.slice().sort((a,b)=>a-b);
+    const juste = coches.length === bonnes.length && coches.every((v,k) => v === bonnes[k]);
+    return { it, i, coches, bonnes, juste };
+  });
+
+  const justes = details.filter(d => d.juste).length;
+  q.corrige = true;
+  q.resultat = { justes, total: details.length, details };
+
+  enregistrerResultat(q);
+  rendreCorrection();
+}
+
+function enregistrerResultat(q){
+  const jour = aujourdhui();
+
+  /* Statistiques par question, pour remonter les ratees dans les quiz composes. */
+  q.resultat.details.forEach(d => {
+    const cle = cleQuestion(d.it.coursId, d.it.seance, d.it.index);
+    const st = ETAT.questions[cle] || {r:0,j:0};
+    if(d.juste) st.j = (st.j||0)+1; else st.r = (st.r||0)+1;
+    ETAT.questions[cle] = st;
+  });
+
+  if(q.type === "seance"){
+    /* Note de la seance : uniquement ses propres questions, hors revision. */
+    const propres = q.resultat.details.filter(d => d.it.seance === q.seance);
+    const j = propres.filter(d => d.juste).length;
+    const f = fiche(q.coursId);
+    const ancienne = f.seances[q.seance];
+    f.seances[q.seance] = {
+      date: jour,
+      justes: j,
+      total: propres.length,
+      tentatives: (ancienne && ancienne.tentatives ? ancienne.tentatives : 0) + 1,
+      meilleur: Math.max(j, ancienne && ancienne.meilleur ? ancienne.meilleur : 0)
+    };
+    if(coursTermine(q.coursId) && !f.termine) f.termine = jour;
+    ETAT.dernier = { coursId:q.coursId, seance:q.seance };
+  }
+
+  ETAT.historique.push({
+    d: jour, type: q.type, coursId: q.coursId, seance: q.seance,
+    justes: q.resultat.justes, total: q.resultat.total
+  });
+  if(ETAT.historique.length > 300) ETAT.historique = ETAT.historique.slice(-300);
+  sauverEtat();
+}
+
+function listeReponses(it, indices, classe){
+  if(!indices.length) return `<span class="rep ${classe}">aucune</span>`;
+  return indices.map(k => `<span class="rep ${classe}">${esc(it.q.options[k])}</span>`).join("");
+}
+
+function blocCorrection(d){
+  return `<div class="corr">
+    <p class="enonce">${d.i+1}. ${esc(d.it.q.enonce)}</p>
+    ${d.juste ? "" : `<p class="ligne-rep"><b>Vous avez coché</b>${listeReponses(d.it, d.coches, "faux")}</p>`}
+    <p class="ligne-rep"><b>${d.juste ? "Réponse" : "Bonne réponse"}</b>${listeReponses(d.it, d.bonnes, "juste")}</p>
+    <p class="expl">${esc(d.it.q.explication)}</p>
+  </div>`;
+}
+
+function rendreCorrection(){
+  const q = QUIZ, r = q.resultat;
+  const pc = r.total ? Math.round(100*r.justes/r.total) : 0;
+  const faux = r.details.filter(d => !d.juste);
+  const bons = r.details.filter(d => d.juste);
+  const parts = [];
+
+  parts.push(`<div class="score">
+    <div class="chiffre">${r.justes} / ${r.total}</div>
+    <p class="minuscule" style="margin:6px 0 0">${pc} % de réponses exactes</p>
+    <p class="secondaire" style="margin:8px 0 0">${
+      faux.length ? faux.length + " question(s) à revoir ci-dessous." : "Aucune erreur : tout est juste."
+    }</p>
+  </div>`);
+
+  if(q.type === "seance"){
+    const propres = r.details.filter(d => d.it.seance === q.seance);
+    const jp = propres.filter(d => d.juste).length;
+    parts.push(`<p class="minuscule" style="text-align:center;margin:-8px 0 16px">
+      Séance ${q.seance} : ${jp}/${propres.length}${
+        r.details.length > propres.length
+          ? " &#8226; révision séance " + (q.seance-1) + " : " + (r.justes-jp) + "/" + (r.details.length-propres.length)
+          : ""}
+    </p>`);
+  }
+
+  if(faux.length){
+    parts.push(filet("Ce qu’il faut reprendre"));
+    parts.push(faux.map(blocCorrection).join(""));
+  }
+  if(bons.length){
+    parts.push(`<details class="justes"><summary>Voir les ${bons.length} question(s) juste(s)</summary>
+      ${bons.map(blocCorrection).join("")}</details>`);
+  }
+
+  parts.push(`<div class="rang-boutons" style="margin-top:16px">
+    <button class="bouton-plein" data-action="quiz-terminer">Terminer</button>
+    <button class="bouton" data-action="quiz-menu">Nouveau quiz composé</button>
+  </div>`);
+
+  document.getElementById("vue-quiz").innerHTML = parts.join("");
+  window.scrollTo(0,0);
+}
+
+/* ---------- 4.7  Onglet Quiz : menu du quiz compose ---------- */
+
+let COMPOSE = { coches:[], nombre:"10", tout:false };
+
+function rendreQuiz(){
+  if(QUIZ && QUIZ.corrige) return rendreCorrection();
+  if(QUIZ) return rendreQuizEnCours();
+  return rendreMenuQuiz();
+}
+
+function rendreMenuQuiz(){
+  const parts = [];
+  const c = coursEnCours();
+
+  parts.push(`<div class="filet"><span>QCM de séance</span></div>`);
+  if(c){
+    const n = prochaineSeance(c.id);
+    const e = etatSeance(c.id, n);
+    parts.push(`<div class="carte">
+      <h3>${esc(c.titre)}</h3>
+      <p class="secondaire">Le QCM d’une séance s’ouvre à la fin de sa lecture : cinq questions de la séance,
+      et cinq de la précédente en révision.</p>
+      ${ e === "disponible"
+        ? `<button class="bouton" data-action="reprendre" data-cours="${esc(c.id)}" data-seance="${n}">Lire la séance ${n}</button>`
+        : `<p class="minuscule">${e === "demain" ? "Séance suivante disponible demain." : "Cours terminé."}</p>`}
+    </div>`);
+  }
+
+  /* Refaire le QCM d'une seance deja faite. */
+  const faites = [];
+  COURS.forEach(co => co.seances.forEach(s => {
+    if(estFaite(co.id, s.numero)) faites.push({co, s});
+  }));
+  if(faites.length){
+    parts.push(`<div class="carte">
+      <h3>Refaire un QCM de séance</h3>
+      <select id="sel-seance">
+        ${faites.map(f => `<option value="${esc(f.co.id)}|${f.s.numero}">${esc(f.co.titre)} &#8212; séance ${f.s.numero}</option>`).join("")}
+      </select>
+      <div class="saut"></div>
+      <button class="bouton" data-action="quiz-seance-choisie">Lancer ce QCM</button>
+    </div>`);
+  }
+
+  parts.push(filet("Quiz composé"));
+  parts.push(`<div class="carte">
+    <p class="secondaire">Cochez un ou plusieurs cours. Les questions sont tirées au hasard parmi ceux-ci,
+    en remontant en priorité celles que vous avez déjà ratées.</p>
+    ${COURS.map(co => {
+      const dispo = nbFaites(co.id);
+      return `<label class="coche">
+        <input type="checkbox" data-compose="${esc(co.id)}" ${COMPOSE.coches.indexOf(co.id) >= 0 ? "checked" : ""}>
+        <span>${esc(co.titre)}<br><span class="minuscule">${dispo} séance(s) faite(s) &#8226; ${co.seances.length*5} questions au total</span></span>
+      </label>`;
+    }).join("")}
+
+    <div class="champ">
+      <span class="txt"><strong>Nombre de questions</strong></span>
+    </div>
+    <select id="sel-nombre">
+      <option value="10" ${COMPOSE.nombre === "10" ? "selected" : ""}>10 questions</option>
+      <option value="20" ${COMPOSE.nombre === "20" ? "selected" : ""}>20 questions</option>
+      <option value="toutes" ${COMPOSE.nombre === "toutes" ? "selected" : ""}>Toutes les questions</option>
+    </select>
+
+    <label class="coche" style="margin-top:10px">
+      <input type="checkbox" id="compose-tout" ${COMPOSE.tout ? "checked" : ""}>
+      <span>Inclure tout<br><span class="minuscule">Par défaut, seules les séances déjà faites sont tirées.</span></span>
+    </label>
+
+    <div class="saut"></div>
+    <button class="bouton-plein" data-action="quiz-composer">Lancer le quiz</button>
+    <div id="avis-compose"></div>
+  </div>`);
+
+  /* Historique. */
+  if(ETAT.historique.length){
+    parts.push(filet("Historique"));
+    const h = ETAT.historique.slice(-12).reverse();
+    parts.push(`<div class="carte"><ul class="liste">` + h.map(x => {
+      const co = coursParId(x.coursId);
+      const nom = x.type === "compose" ? "Quiz composé" : (co ? esc(co.titre) + " &#8212; séance " + x.seance : "Séance");
+      const pc = x.total ? Math.round(100*x.justes/x.total) : 0;
+      return `<li class="ligne" style="cursor:default">
+        <span class="num"><span>${pc}</span></span>
+        <span class="corps"><span class="t">${nom}</span>
+        <span class="minuscule">${x.justes}/${x.total} &#8226; ${dateLisible(x.d)}</span></span></li>`;
+    }).join("") + `</ul></div>`);
+  }
+
+  document.getElementById("vue-quiz").innerHTML = parts.join("");
+}
+
+/* ---------- 4.8  Navigation et evenements ---------- */
+
+let ONGLET = "accueil";
+
+function rendre(){
+  document.body.dataset.onglet = ONGLET;   /* pilote l'en-tete compact */
+  if(ONGLET === "accueil") rendreAccueil();
+  else if(ONGLET === "cours") rendreCours();
+  else rendreQuiz();
+  document.querySelectorAll(".onglets button").forEach(b => {
+    if(b.dataset.onglet === ONGLET) b.setAttribute("aria-current","page");
+    else b.removeAttribute("aria-current");
+  });
+  document.querySelectorAll(".vue").forEach(v => v.classList.remove("active"));
+  document.getElementById("vue-" + ONGLET).classList.add("active");
+}
+
+function aller(onglet, haut){
+  ONGLET = onglet;
+  rendre();
+  if(haut !== false) window.scrollTo(0,0);
+}
+
+/* Ouvre la lecture d'une seance depuis n'importe quel onglet. */
+function ouvrirSeance(coursId, numero){
+  ECRAN = { nom:"lecture", coursId, seance:Number(numero) };
+  aller("cours");
+}
+
+document.addEventListener("click", function(ev){
+  const el = ev.target.closest("[data-action]");
+  if(!el) return;
+  const a = el.dataset.action;
+
+  /* -- Navigation dans les cours -- */
+  if(a === "catalogue"){ ECRAN = {nom:"catalogue"}; aller("cours"); }
+  else if(a === "filtre"){ FILTRE = el.dataset.periode; rendreCours(); }
+  else if(a === "fiche"){ ECRAN = {nom:"fiche", coursId:el.dataset.cours}; aller("cours"); }
+  else if(a === "lire" || a === "reprendre"){ ouvrirSeance(el.dataset.cours, el.dataset.seance); }
+
+  /* -- Quiz -- */
+  else if(a === "quiz-seance"){
+    QUIZ = construireQuizSeance(el.dataset.cours, Number(el.dataset.seance));
+    aller("quiz");
+  }
+  else if(a === "quiz-seance-choisie"){
+    const v = document.getElementById("sel-seance").value.split("|");
+    QUIZ = construireQuizSeance(v[0], Number(v[1]));
+    aller("quiz");
+  }
+  else if(a === "quiz-composer"){
+    const nombre = document.getElementById("sel-nombre").value;
+    const tout = document.getElementById("compose-tout").checked;
+    COMPOSE.nombre = nombre; COMPOSE.tout = tout;
+    if(!COMPOSE.coches.length){
+      document.getElementById("avis-compose").innerHTML =
+        `<div class="avis">Cochez au moins un cours.</div>`;
+      return;
+    }
+    const q = construireQuizCompose(COMPOSE.coches, nombre, tout);
+    if(!q){
+      document.getElementById("avis-compose").innerHTML =
+        `<div class="avis">Aucune question disponible : ces cours n’ont pas encore de séance faite.
+         Cochez « Inclure tout » pour tirer parmi toutes les séances.</div>`;
+      return;
+    }
+    QUIZ = q; aller("quiz");
+  }
+  else if(a === "quiz-valider"){ validerQuiz(); }
+  else if(a === "quiz-abandonner"){
+    if(QUIZ && !QUIZ.corrige && !confirm("Quitter ce quiz ? Les réponses seront perdues.")) return;
+    QUIZ = null; aller("quiz");
+  }
+  else if(a === "quiz-terminer"){ QUIZ = null; aller("accueil"); }
+  else if(a === "quiz-menu"){ QUIZ = null; aller("quiz"); }
+
+  /* -- Reglages -- */
+  else if(a === "bascule-rythme"){
+    ETAT.reglages.uneSeanceParJour = !ETAT.reglages.uneSeanceParJour;
+    sauverEtat(); rendreAccueil();
+  }
+  else if(a === "exporter"){ exporterFichier(); }
+  else if(a === "afficher-json"){ afficherJson(); }
+  else if(a === "importer-fichier"){ document.getElementById("champ-fichier").click(); }
+  else if(a === "importer-texte"){ zoneImportTexte(); }
+  else if(a === "valider-import-texte"){
+    const t = document.getElementById("json-import");
+    appliquerImport(t ? t.value : "");
+  }
+  else if(a === "effacer"){
+    if(confirm("Effacer toute la progression ? Cette action est définitive.") &&
+       confirm("Confirmez une seconde fois : toutes les séances et tous les scores seront perdus.")){
+      ETAT = etatVierge(); sauverEtat(); aller("accueil");
+    }
+  }
+});
+
+/* Cases a cocher : QCM et quiz compose. */
+document.addEventListener("change", function(ev){
+  const t = ev.target;
+  if(t.dataset && t.dataset.question !== undefined && QUIZ){
+    const i = Number(t.dataset.question), o = Number(t.dataset.option);
+    const l = QUIZ.reponses[i] || [];
+    const k = l.indexOf(o);
+    if(t.checked && k < 0) l.push(o);
+    if(!t.checked && k >= 0) l.splice(k,1);
+    QUIZ.reponses[i] = l;
+    /* Efface le message d'erreur des qu'une case est cochee. */
+    if(l.length){
+      const err = document.getElementById("err-"+i);
+      const bloc = document.getElementById("q-"+i);
+      if(err) err.style.display = "none";
+      if(bloc) bloc.classList.remove("en-erreur");
+    }
+  }
+  else if(t.dataset && t.dataset.compose !== undefined){
+    const id = t.dataset.compose;
+    const k = COMPOSE.coches.indexOf(id);
+    if(t.checked && k < 0) COMPOSE.coches.push(id);
+    if(!t.checked && k >= 0) COMPOSE.coches.splice(k,1);
+  }
+  else if(t.id === "champ-fichier" && t.files && t.files[0]){
+    const lecteur = new FileReader();
+    lecteur.onload = e => appliquerImport(e.target.result);
+    lecteur.readAsText(t.files[0]);
+  }
+});
+
+/* Onglets du bas. L'onglet Cours revient toujours au catalogue : la
+   lecture en cours se reprend depuis l'accueil, bouton << Reprendre >>. */
+document.querySelectorAll(".onglets button").forEach(b => {
+  b.addEventListener("click", () => {
+    if(b.dataset.onglet === "cours") ECRAN = {nom:"catalogue"};
+    aller(b.dataset.onglet);
+  });
+});
+
+/* ---------- Export / import ---------- */
+
+function paquetExport(){
+  return JSON.stringify({ app:"clio", version:1, exporte:new Date().toISOString(), etat:ETAT }, null, 2);
+}
+
+function exporterFichier(){
+  const texte = paquetExport();
+  try{
+    const blob = new Blob([texte], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "clio-progression-" + aujourdhui() + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    avisAccueil("Fichier exporté. S’il ne s’est pas téléchargé, utilisez « Afficher le JSON ».", true);
+  }catch(e){
+    afficherJson();
+  }
+}
+
+function afficherJson(){
+  const z = document.getElementById("zone-json");
+  if(!z) return;
+  z.innerHTML = `<p class="minuscule">Sélectionnez ce texte et copiez-le pour le conserver.</p>
+    <textarea readonly style="width:100%;min-height:170px;background:var(--noir-3);color:var(--creme);
+      border:1px solid var(--laiton);padding:10px;font-size:12px;font-family:monospace">${esc(paquetExport())}</textarea>`;
+}
+
+function zoneImportTexte(){
+  const z = document.getElementById("zone-json");
+  if(!z) return;
+  z.innerHTML = `<p class="minuscule">Collez ici un export Clio, puis validez.</p>
+    <textarea id="json-import" style="width:100%;min-height:150px;background:var(--noir-3);color:var(--creme);
+      border:1px solid var(--laiton);padding:10px;font-size:12px;font-family:monospace"></textarea>
+    <div class="saut"></div>
+    <button class="bouton petit" data-action="valider-import-texte">Importer ce JSON</button>`;
+}
+
+function appliquerImport(texte){
+  let lu;
+  try{ lu = JSON.parse(texte); }
+  catch(e){ return avisAccueil("Import impossible : ce n’est pas un JSON valide.", false); }
+  const donnees = (lu && lu.etat) ? lu.etat : lu;
+  if(!donnees || typeof donnees !== "object" || (!donnees.cours && !donnees.historique)){
+    return avisAccueil("Import impossible : ce fichier ne ressemble pas à une progression Clio.", false);
+  }
+  if(!confirm("Remplacer la progression actuelle par celle du fichier ?")) return;
+  ETAT = fusionnerEtat(etatVierge(), donnees);
+  sauverEtat();
+  aller("accueil");
+  avisAccueil("Progression importée.", true);
+}
+
+/* Petit message affiche en haut de l'onglet Accueil. */
+function avisAccueil(texte, ok){
+  if(ONGLET !== "accueil"){ aller("accueil"); }
+  const vue = document.getElementById("vue-accueil");
+  const d = document.createElement("div");
+  d.className = "avis" + (ok ? " ok" : "");
+  d.textContent = texte;
+  vue.insertBefore(d, vue.firstChild);
+  window.scrollTo(0,0);
+}
+
+/* ---------- Demarrage ---------- */
+rendre();
+</script>
+</body>
+</html>
