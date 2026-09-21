@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light">
 <meta name="description" content="Epok — culture historique quotidienne : mini-cours et QCM, hors ligne.">
 <title>Epok</title>
 
@@ -11,10 +11,10 @@
      plein ecran sans barre de navigateur, icone dediee. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Epok">
 <meta name="application-name" content="Epok">
-<meta name="theme-color" content="#0d0c0a">
+<meta name="theme-color" content="#efe3c8">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icone-512.png">
 
@@ -28,7 +28,7 @@
   systeme si le reseau est absent.
 
   Organisation du fichier :
-    1. CSS (charte Art deco)
+    1. CSS (charte XIXe siecle)
     2. Structure HTML des trois onglets
     3. const COURS  — TOUT le contenu pedagogique (cours, seances, QCM)
     4. Logique      — etat, progression, rendu, quiz, correction
@@ -40,64 +40,76 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" media="print" onload="this.media='all'"
-      href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
 
 <style>
 /* =====================================================================
-   1. CHARTE ART DECO — annees 1920
-   Noir profond, or/laiton, creme (papier ancien), accents bordeaux et
-   vert bouteille. Geometrie : eventails, chevrons, lignes rayonnantes.
+   1. CHARTE << XIXe SIECLE >> — papier, encre et dorure
+   ---------------------------------------------------------------------
+   Le modele n'est plus l'affiche, c'est le LIVRE : papier vergé jauni,
+   encre brune, filets graves, fleurons typographiques, lettrines. La
+   page se lit comme une revue illustree du second XIXe siecle.
+   Tout est nomme par son role (--fond, --texte...) et non par sa
+   couleur, pour qu'un changement de charte ne mente pas sur les noms.
    ===================================================================== */
 :root{
-  --noir:#0d0c0a;
-  --noir-2:#14120e;        /* fond des cartes */
-  --noir-3:#1c1913;        /* fond des elements actifs */
-  --or:#c9a227;
-  --or-clair:#e6c96f;
-  --laiton:#8a7233;
-  --creme:#f3e9d6;
-  --creme-2:#c8bda6;       /* texte secondaire */
-  --bordeaux:#8c2432;
-  --vert:#1f4a3c;
-  --rouge-faux:#e0665f;
-  --vert-juste:#7fc09b;
+  --fond:#efe3c8;           /* papier vergé, legerement jauni */
+  --fond-2:#f7efdb;         /* fond des cartes : feuillet plus clair */
+  --fond-3:#e7d9ba;         /* fond des elements en creux */
+  --texte:#332719;          /* encre brune */
+  --texte-2:#6d5b41;        /* texte secondaire, encre delavee */
+  --or:#7d5e18;             /* dorure lisible sur papier (texte) */
+  --or-vif:#a8801f;         /* dorure pour les aplats et ornements */
+  --laiton:#b39a5e;         /* filets discrets */
+  --bordeaux:#7d1d26;       /* maroquin : accent principal */
+  --bordeaux-pale:#a85560;
+  --vert:#2c4a33;           /* vert bouteille : gardes du livre */
+  --rouge-faux:#9e2b1e;
+  --vert-juste:#2f6b45;
 
-  --police-titre:'Poiret One','Josefin Sans','Century Gothic',
-                 'Futura','Trebuchet MS',sans-serif;
-  --police-texte:'Playfair Display','Libre Baskerville',Georgia,
-                 'Times New Roman',serif;
+  --police-titre:'Playfair Display','Didot','Bodoni MT','Big Caslon',
+                 Georgia,serif;
+  --police-texte:'Libre Baskerville','Baskerville','Hoefler Text',
+                 Georgia,'Times New Roman',serif;
 
-  --rayon:2px;             /* l'Art deco aime les angles nets */
+  --rayon:2px;
   --large:min(100%,720px);
-  --barre:62px;            /* hauteur de la barre d'onglets */
+  --barre:62px;             /* hauteur de la barre d'onglets */
 }
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
   margin:0;
-  background:var(--noir);
-  color:var(--creme);
+  background:var(--fond);
+  color:var(--texte);
   font-family:var(--police-texte);
-  font-size:17px;
-  line-height:1.72;
+  font-size:16.5px;
+  line-height:1.74;
   min-height:100vh;
   position:relative;
 }
-/* Rayonnement discret derriere l'en-tete, facon affiche 1925. Le degrade
-   de masque evite toute limite franche en bas des rayons. */
+/* Papier verge : les vergeures (fines lignes rapprochees laissees par
+   la forme du papetier) et les pontuseaux (chainettes plus espacees,
+   perpendiculaires). Deux degrades repetes suffisent, sans aucun
+   fichier ni requete. Purement decoratif, donc insensible au toucher. */
 body::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:300px;z-index:-1;
-  pointer-events:none;
-  background:repeating-conic-gradient(from 180deg at 50% 0%,
-    rgba(201,162,39,.075) 0deg 2.5deg, transparent 2.5deg 9deg);
-  -webkit-mask-image:linear-gradient(#000 10%,transparent 100%);
-  mask-image:linear-gradient(#000 10%,transparent 100%);
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg,
+      rgba(116,88,44,.07) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg,
+      rgba(116,88,44,.06) 0 1px, transparent 1px 27px);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 38%,
+             transparent 52%, rgba(94,68,32,.13) 100%);
 }
 img{max-width:100%}
-h1,h2,h3,h4{font-family:var(--police-titre);font-weight:400;line-height:1.25;margin:0}
+h1,h2,h3,h4{font-family:var(--police-titre);font-weight:700;line-height:1.24;margin:0}
 p{margin:0 0 1em}
-a{color:var(--or-clair)}
+a{color:var(--bordeaux)}
 button{font:inherit;color:inherit}
 
 /* --- Ossature ------------------------------------------------------ */
@@ -105,179 +117,194 @@ button{font:inherit;color:inherit}
 .vue{display:none}
 .vue.active{display:block}
 
-/* --- En-tete facon affiche / journal -------------------------------- */
-.entete{text-align:center;padding:22px 0 14px;position:relative}
-.entete .filet-haut{height:3px;background:var(--or);opacity:.85}
-.entete .filet-bas{height:1px;background:var(--laiton);margin-top:3px}
+/* --- Filets graves ---------------------------------------------------
+   Le filet double — un trait gras, un trait maigre — est l'ornement de
+   base de la typographie du XIXe. Il revient partout. */
+.filet-double{height:0;border-top:2.5px solid var(--bordeaux);
+  border-bottom:1px solid var(--laiton);padding-bottom:3px}
+.filet-double.bas{border-top-width:1px;border-bottom:2.5px solid var(--bordeaux);
+  border-bottom-width:2.5px;padding-bottom:0;padding-top:3px;
+  border-top-color:var(--laiton)}
+
+/* --- En-tete facon page de titre ------------------------------------ */
+.entete{text-align:center;padding:20px 0 12px;position:relative}
 .entete h1{
-  font-size:clamp(38px,13vw,58px);letter-spacing:.22em;
-  text-indent:.22em;color:var(--or);margin:10px 0 2px;
-  text-shadow:0 0 18px rgba(201,162,39,.18);
+  font-size:clamp(40px,13.5vw,62px);font-weight:900;letter-spacing:.10em;
+  text-indent:.10em;color:var(--bordeaux);margin:8px 0 2px;
+  text-shadow:0 1px 0 rgba(255,250,235,.7);
 }
 .entete .sous{
-  font-family:var(--police-titre);font-size:11px;letter-spacing:.34em;
-  text-transform:uppercase;color:var(--creme-2);margin:0 0 10px;
+  font-family:var(--police-titre);font-style:italic;font-weight:400;
+  font-size:13.5px;letter-spacing:.06em;color:var(--texte-2);margin:0 0 10px;
 }
-.eventail{
-  height:26px;margin:0 auto 8px;width:132px;
-  background:repeating-conic-gradient(from 180deg at 50% 100%,
-    var(--or) 0deg 1.2deg, transparent 1.2deg 7deg);
-  -webkit-mask-image:linear-gradient(to top,#000 20%,transparent 100%);
-  mask-image:linear-gradient(to top,#000 20%,transparent 100%);
-  opacity:.9;
+/* Fleuron central : l'ornement typographique du livre ancien. */
+.vignette{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  color:var(--or-vif);font-size:20px;line-height:1;margin:6px 0 2px;
+}
+.vignette::before,.vignette::after{
+  content:"";width:64px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--laiton),transparent);
 }
 
 /* En-tete compact hors de l'accueil : la lecture doit commencer haut. */
 body[data-onglet="cours"] .entete,
-body[data-onglet="quiz"] .entete{padding:10px 0 8px}
+body[data-onglet="quiz"] .entete{padding:8px 0 6px}
 body[data-onglet="cours"] .entete h1,
-body[data-onglet="quiz"] .entete h1{font-size:clamp(24px,7vw,32px);margin:6px 0 0}
+body[data-onglet="quiz"] .entete h1{font-size:clamp(24px,7vw,32px);margin:4px 0 0}
 body[data-onglet="cours"] .entete .sous,
 body[data-onglet="quiz"] .entete .sous{display:none}
-body[data-onglet="cours"] .eventail,
-body[data-onglet="quiz"] .eventail{height:13px;width:84px;margin-bottom:2px}
-body[data-onglet="cours"] .entete>div[style],
-body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
+body[data-onglet="cours"] .vignette,
+body[data-onglet="quiz"] .vignette{font-size:11px;margin:2px 0 0}
+body[data-onglet="cours"] .vignette::before,
+body[data-onglet="quiz"] .vignette::after,
+body[data-onglet="cours"] .vignette::after,
+body[data-onglet="quiz"] .vignette::before{width:38px}
 
-/* Filet dore avec losange central : separateur recurrent */
-.filet{display:flex;align-items:center;gap:10px;margin:22px 0 14px}
-.filet::before,.filet::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--laiton),transparent)}
+/* Separateur de section, avec fleuron et titre en petites capitales. */
+.filet{display:flex;align-items:center;gap:12px;margin:24px 0 14px}
+.filet::before,.filet::after{content:"";flex:1;height:0;
+  border-top:1px solid var(--laiton);border-bottom:1px solid rgba(179,154,94,.45);
+  padding-bottom:2px}
 .filet span{
-  font-family:var(--police-titre);font-size:12px;letter-spacing:.3em;
-  text-transform:uppercase;color:var(--or);white-space:nowrap;
+  font-family:var(--police-titre);font-size:12.5px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--bordeaux);white-space:nowrap;font-weight:700;
 }
-.losange{color:var(--or);opacity:.8}
+.losange{color:var(--or-vif);opacity:.95;font-size:14px}
 
-/* --- Cartes --------------------------------------------------------- */
+/* --- Cartes : un feuillet contrecollé -------------------------------- */
 .carte{
-  background:var(--noir-2);
-  border:1px solid rgba(138,114,51,.5);
+  background:var(--fond-2);
+  border:1px solid var(--laiton);
   border-radius:var(--rayon);
-  padding:16px;margin:0 0 14px;position:relative;
+  padding:16px;margin:0 0 16px;position:relative;
+  box-shadow:0 0 0 3px var(--fond-2), 0 0 0 4px rgba(125,29,38,.30),
+             0 2px 6px rgba(70,48,22,.10);
 }
-.carte::before{ /* chevrons discrets en haut de carte */
-  content:"";position:absolute;inset:0 0 auto 0;height:4px;
-  background:repeating-linear-gradient(135deg,
-    rgba(201,162,39,.45) 0 2px, transparent 2px 7px);
-}
-.carte h2,.carte h3{color:var(--or-clair)}
-.carte h2{font-size:24px;letter-spacing:.06em;margin-bottom:6px}
-.carte h3{font-size:19px;letter-spacing:.05em;margin-bottom:6px}
-.secondaire{color:var(--creme-2);font-size:15px}
-.minuscule{font-size:13px;color:var(--creme-2);letter-spacing:.04em}
+.carte h2,.carte h3{color:var(--bordeaux)}
+.carte h2{font-size:25px;letter-spacing:.01em;margin-bottom:6px}
+.carte h3{font-size:19.5px;letter-spacing:.01em;margin-bottom:6px}
+.secondaire{color:var(--texte-2);font-size:15px}
+.minuscule{font-size:13px;color:var(--texte-2);letter-spacing:.02em}
 
-/* --- Boutons -------------------------------------------------------- */
+/* --- Boutons : le cachet imprime ------------------------------------- */
 .bouton,.bouton-plein{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   min-height:48px;padding:10px 20px;width:100%;
-  font-family:var(--police-titre);font-size:16px;letter-spacing:.16em;
+  font-family:var(--police-titre);font-size:15px;letter-spacing:.14em;
   text-transform:uppercase;cursor:pointer;border-radius:var(--rayon);
-  background:transparent;border:1px solid var(--or);color:var(--or-clair);
-  text-align:center;
+  background:var(--fond-2);border:1px solid var(--bordeaux);color:var(--bordeaux);
+  text-align:center;font-weight:700;
 }
-.bouton-plein{background:var(--or);border-color:var(--or);color:#17140c;font-weight:700}
+.bouton-plein{background:var(--bordeaux);border-color:var(--bordeaux);color:#f7efdb}
 .bouton:active,.bouton-plein:active{transform:translateY(1px)}
 .bouton[disabled],.bouton-plein[disabled]{opacity:.42;cursor:not-allowed}
-.bouton.petit,.bouton-plein.petit{width:auto;min-height:40px;padding:6px 14px;font-size:13px;letter-spacing:.12em}
-.bouton.discret{border-color:var(--laiton);color:var(--creme-2)}
+.bouton.petit,.bouton-plein.petit{width:auto;min-height:40px;padding:6px 14px;font-size:12.5px;letter-spacing:.1em}
+.bouton.discret{border-color:var(--laiton);color:var(--texte-2);background:transparent}
 .rang-boutons{display:flex;flex-wrap:wrap;gap:8px}
 
 /* --- Pastilles (filtres de periode) --------------------------------- */
 .pastilles{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
 .pastille{
-  font-family:var(--police-titre);font-size:13px;letter-spacing:.1em;
-  text-transform:uppercase;padding:8px 14px;min-height:40px;
-  border:1px solid var(--laiton);color:var(--creme-2);
-  background:transparent;border-radius:999px;cursor:pointer;
+  font-family:var(--police-titre);font-size:12.5px;letter-spacing:.07em;
+  text-transform:uppercase;padding:8px 14px;min-height:40px;font-weight:700;
+  border:1px solid var(--laiton);color:var(--texte-2);
+  background:var(--fond-2);border-radius:999px;cursor:pointer;
 }
-.pastille[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#17140c;font-weight:700}
+.pastille[aria-pressed="true"]{background:var(--bordeaux);border-color:var(--bordeaux);color:#f7efdb}
 
 /* --- Etiquettes ----------------------------------------------------- */
 .etiq{
   display:inline-block;font-family:var(--police-titre);font-size:11px;
-  letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;
-  border:1px solid var(--laiton);color:var(--creme-2);border-radius:999px;
-  vertical-align:middle;
+  letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;font-weight:700;
+  border:1px solid var(--laiton);color:var(--texte-2);border-radius:999px;
+  vertical-align:middle;background:var(--fond-2);
 }
-.etiq.or{border-color:var(--or);color:var(--or-clair)}
+.etiq.or{border-color:var(--or-vif);color:var(--or)}
 .etiq.faite{border-color:var(--vert-juste);color:var(--vert-juste)}
-.etiq.bientot{border-color:var(--bordeaux);color:#e5a3ab}
+.etiq.bientot{border-color:var(--bordeaux-pale);color:var(--bordeaux)}
 
 /* --- Liste des seances / cours -------------------------------------- */
 .liste{list-style:none;margin:0;padding:0}
 .ligne{
   display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  padding:13px 12px;margin:0 0 8px;background:var(--noir-3);
-  border:1px solid rgba(138,114,51,.38);border-radius:var(--rayon);
-  cursor:pointer;color:var(--creme);font-family:var(--police-texte);
-  font-size:16px;line-height:1.4;
+  padding:13px 12px;margin:0 0 8px;background:var(--fond-2);
+  border:1px solid var(--laiton);border-radius:var(--rayon);
+  cursor:pointer;color:var(--texte);font-family:var(--police-texte);
+  font-size:15.5px;line-height:1.45;
 }
 .ligne[disabled]{cursor:not-allowed;opacity:.5}
+/* Medaillon grave, a la place du losange Art deco. */
 .ligne .num{
-  flex:0 0 34px;height:34px;display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--or);color:var(--or);font-family:var(--police-titre);
-  font-size:15px;transform:rotate(45deg);
+  flex:0 0 36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--bordeaux);box-shadow:0 0 0 2px var(--fond-2),0 0 0 3px rgba(179,154,94,.65);
+  color:var(--bordeaux);font-family:var(--police-titre);font-weight:700;font-size:15px;
 }
-.ligne .num span{transform:rotate(-45deg)}
 .ligne .corps{flex:1;min-width:0}
 .ligne .corps .t{display:block}
 .ligne.faite .num{border-color:var(--vert-juste);color:var(--vert-juste)}
-.ligne .etat{flex:0 0 auto;font-size:12px;color:var(--creme-2);letter-spacing:.08em;font-family:var(--police-titre);text-transform:uppercase}
+.ligne .etat{flex:0 0 auto;font-size:11.5px;color:var(--texte-2);letter-spacing:.06em;font-family:var(--police-titre);text-transform:uppercase;font-weight:700}
 
 /* --- Lecture d'une seance ------------------------------------------- */
-.lecture{font-size:17.5px}
+.lecture{font-size:17px}
 .lecture h3{
-  font-size:21px;color:var(--or-clair);margin:26px 0 8px;letter-spacing:.04em;
-  padding-bottom:5px;border-bottom:1px solid rgba(138,114,51,.45);
+  font-size:21px;color:var(--bordeaux);margin:30px 0 10px;letter-spacing:.005em;
+  padding-bottom:6px;
+  border-bottom:1px solid var(--laiton);
+  box-shadow:0 3px 0 -2px rgba(179,154,94,.5);
 }
 .lecture p{margin:0 0 1.05em;text-align:left}
-.lecture ul{margin:0 0 1.1em;padding-left:1.1em}
+/* Lettrine sur le premier paragraphe : l'ouverture d'un chapitre. */
+.lecture h3:first-of-type + p::first-letter{
+  float:left;font-family:var(--police-titre);font-weight:900;
+  font-size:3.2em;line-height:.82;margin:.04em .09em 0 0;
+  color:var(--bordeaux);
+}
+.lecture ul{margin:0 0 1.1em;padding-left:1.2em}
 .lecture li{margin:0 0 .5em}
-.lecture strong{color:var(--or-clair);font-weight:700}
+.lecture li::marker{color:var(--or-vif)}
+.lecture strong{color:var(--bordeaux);font-weight:700}
 .lecture blockquote{
-  margin:1.2em 0;padding:2px 0 2px 16px;border-left:3px solid var(--bordeaux);
-  font-style:italic;color:var(--creme-2);
+  margin:1.3em 0;padding:4px 0 4px 18px;
+  border-left:3px double var(--bordeaux);
+  font-style:italic;color:var(--texte-2);
 }
 
 /* --- Ecran d'ouverture ----------------------------------------------
-   Fond brun chaud, logo en fondu montant, puis effacement de l'ecran.
-   Tout est en CSS : si le JavaScript tarde, le fondu se joue quand meme.
-   pointer-events:none garantit qu'un ecran reste inoffensif meme si le
-   retrait par script echouait. */
+   Plat de reliure : maroquin sombre et dorure. Le logo monte en fondu,
+   puis l'ecran s'efface. Tout est en CSS, donc joue meme si le script
+   tarde ; pointer-events:none garantit qu'il ne bloque jamais un geste. */
 #ouverture{
   position:fixed;inset:0;z-index:200;pointer-events:none;
   display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 50% 44%,
-              #4e3822 0%, #3a2a19 46%, #241a10 100%);
+  background:radial-gradient(ellipse at 50% 42%,
+              #5a3f22 0%, #402c17 44%, #24180c 100%);
   animation:ouv-sortie .6s ease-in 1.3s forwards;
 }
 #ouverture svg{
-  width:min(72vw,320px);height:auto;
+  width:min(74vw,330px);height:auto;
   animation:ouv-entree .8s cubic-bezier(.2,.75,.3,1) both;
 }
 @keyframes ouv-entree{
-  from{opacity:0;transform:scale(.9) translateY(10px)}
+  from{opacity:0;transform:scale(.92) translateY(10px)}
   to  {opacity:1;transform:scale(1) translateY(0)}
 }
 @keyframes ouv-sortie{ to{opacity:0;visibility:hidden} }
-/* Mouvement reduit : on garde le fondu, on supprime le deplacement. */
 @media (prefers-reduced-motion:reduce){
   #ouverture{animation:ouv-sortie .3s linear .3s forwards}
-  #ouverture svg{animation:ouv-entree .3s linear both}
-  @keyframes ouv-entree{from{opacity:0}to{opacity:1}}
+  #ouverture svg{animation:ouv-fondu .3s linear both}
+  @keyframes ouv-fondu{from{opacity:0}to{opacity:1}}
 }
 
 /* --- Croquis : cartes et schemas (SVG inline) ------------------------
-   Figure encadree, fond parchemin, qui tranche volontairement sur le
-   theme sombre : effet << carte depliee sur la table >>. Le trace est
-   schematique (jamais une projection exacte) pour rester lisible a
-   petite taille sur telephone. Palette commune : --cr-terre (sol),
-   --cr-mer (eau), --cr-encre (traits et texte), --cr-a / --cr-b (deux
-   camps opposes, bordeaux et vert), --cr-or (axe principal ou avancee
-   decisive), --cr-n (element neutre ou anterieur).
-   Les marqueurs de fleche et les hachures sont definis UNE SEULE FOIS
-   dans #croquis-defs (juste apres <body>) et partages par tous les
-   croquis : chaque figure n'a donc pas besoin de son propre <defs>. */
+   Planche gravee contrecollee dans la page : double filet, fond de
+   papier plus clair, legende en italique. Le trace est schematique
+   (jamais une projection exacte) pour rester lisible sur telephone.
+   Palette : --cr-terre (sol), --cr-mer (eau), --cr-encre (traits et
+   texte), --cr-a / --cr-b (deux camps opposes), --cr-or (axe decisif),
+   --cr-n (neutre ou anterieur). Les fleches et les hachures sont
+   definies UNE SEULE FOIS dans #croquis-defs, au debut du <body>. */
 :root{
   --cr-fond:#ece1c4; --cr-terre:#e4d6ae; --cr-terre-2:#d8c896;
   --cr-terre-3:#cdbc8a; --cr-mer:#aac0c2; --cr-encre:#3a3020;
@@ -285,21 +312,23 @@ body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
 }
 #croquis-defs{position:absolute;width:0;height:0;overflow:hidden}
 .lecture figure.croquis{
-  /* Pleine largeur sur telephone, mais borne sur grand ecran : au-dela,
-     un croquis etire devient plus grand que le texte qu'il illustre. */
-  margin:24px auto;max-width:540px;
-  padding:12px 12px 10px;background:var(--cr-fond);
-  border:1px solid var(--or);border-radius:var(--rayon);
-  box-shadow:0 6px 18px rgba(0,0,0,.35);
+  /* Pleine largeur sur telephone, bornee sur grand ecran : au-dela, un
+     croquis etire devient plus grand que le texte qu'il illustre. */
+  margin:26px auto;max-width:540px;
+  padding:10px 10px 8px;background:var(--fond-2);
+  border:1px solid var(--laiton);border-radius:var(--rayon);
+  box-shadow:0 0 0 3px var(--fond-2), 0 0 0 4px rgba(125,29,38,.32),
+             0 3px 8px rgba(70,48,22,.14);
 }
-.lecture figure.croquis svg{display:block;width:100%;height:auto}
+.lecture figure.croquis svg{display:block;width:100%;height:auto;
+  border:1px solid rgba(58,48,32,.35)}
 .lecture figure.croquis figcaption{
-  font-family:var(--police-titre);font-size:13px;letter-spacing:.04em;
-  color:#4a3d22;text-align:center;margin-top:9px;line-height:1.5;
-  padding-top:8px;border-top:1px solid rgba(58,48,32,.25);
+  font-family:var(--police-texte);font-style:italic;font-size:13px;
+  color:var(--texte-2);text-align:center;margin-top:9px;line-height:1.5;
+  padding-top:8px;border-top:1px solid rgba(179,154,94,.6);
 }
-.lecture figure.croquis figcaption b{color:#2f2614}
-/* Classes de texte pour les croquis : evite de repeter font-family. */
+.lecture figure.croquis figcaption b{color:var(--texte);font-style:normal}
+/* Classes de texte des croquis : evite de repeter font-family. */
 .lecture figure.croquis text{font-family:Georgia,"Times New Roman",serif;fill:var(--cr-encre)}
 .cr-pays{font-size:12px;letter-spacing:2px}
 .cr-region{font-size:11px;letter-spacing:1.2px;font-weight:700}
@@ -307,109 +336,119 @@ body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
 .cr-eau{font-size:9.5px;font-style:italic;fill:#4b6066}
 .cr-leg{font-size:8.5px}
 .cr-note{font-size:9px;font-style:italic}
+
+/* --- Problematique et anecdote --------------------------------------- */
 .probleme{
-  border:1px solid var(--or);border-left-width:5px;padding:12px 14px;
-  margin:0 0 20px;background:rgba(201,162,39,.06);font-style:italic;
+  border:1px solid var(--laiton);border-left:4px solid var(--bordeaux);
+  padding:12px 14px;margin:0 0 20px;background:var(--fond-2);font-style:italic;
 }
+.probleme strong{font-style:normal;color:var(--bordeaux)}
 .anecdote{
-  border:1px solid var(--vert);border-left-width:5px;background:rgba(31,74,60,.28);
-  padding:14px;margin:26px 0 8px;
+  border:1px solid var(--vert);border-left-width:4px;
+  background:rgba(44,74,51,.07);
+  padding:14px;margin:28px 0 8px;
 }
 .anecdote .titre{
-  font-family:var(--police-titre);font-size:12px;letter-spacing:.3em;
-  text-transform:uppercase;color:var(--or-clair);display:block;margin-bottom:6px;
+  font-family:var(--police-titre);font-size:12px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--vert);display:block;margin-bottom:6px;
+  font-weight:700;
 }
-.anecdote p{margin:0;font-size:16.5px}
+.anecdote p{margin:0;font-size:16px}
 
 /* --- QCM ------------------------------------------------------------ */
-.question{border:1px solid rgba(138,114,51,.45);background:var(--noir-2);padding:14px;margin:0 0 14px}
-.question .enonce{font-weight:600;margin:0 0 4px}
-.question .consigne{font-family:var(--police-titre);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--creme-2);margin:0 0 10px}
+.question{border:1px solid var(--laiton);background:var(--fond-2);padding:14px;margin:0 0 14px;border-radius:var(--rayon)}
+.question .enonce{font-weight:700;margin:0 0 4px}
+.question .consigne{font-family:var(--police-titre);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--texte-2);margin:0 0 10px;font-weight:700}
 .option{
   display:flex;gap:11px;align-items:flex-start;padding:11px 10px;margin:0 0 7px;
-  border:1px solid rgba(138,114,51,.35);cursor:pointer;background:rgba(0,0,0,.18);
+  border:1px solid rgba(179,154,94,.75);cursor:pointer;background:rgba(255,250,235,.55);
+  border-radius:var(--rayon);
 }
-.option:has(input:checked){border-color:var(--or);background:rgba(201,162,39,.10)}
+.option:has(input:checked){border-color:var(--bordeaux);background:rgba(125,29,38,.07)}
 .option input{
   appearance:none;-webkit-appearance:none;margin:2px 0 0;flex:0 0 20px;height:20px;
-  border:1px solid var(--or);background:transparent;cursor:pointer;position:relative;
+  border:1px solid var(--bordeaux);background:var(--fond-2);cursor:pointer;position:relative;
 }
-.option input:checked::after{
-  content:"";position:absolute;inset:3px;background:var(--or);
-}
-.option input:focus-visible{outline:2px solid var(--or-clair);outline-offset:2px}
+.option input:checked::after{content:"";position:absolute;inset:3px;background:var(--bordeaux)}
+.option input:focus-visible{outline:2px solid var(--or-vif);outline-offset:2px}
 .erreur{color:var(--rouge-faux);font-size:14.5px;margin:8px 0 0;font-style:italic}
 .question.en-erreur{border-color:var(--rouge-faux)}
 
 /* --- Correction ----------------------------------------------------- */
 .score{
-  text-align:center;border:1px solid var(--or);padding:16px;margin:0 0 18px;
-  background:rgba(201,162,39,.07);
+  text-align:center;border:1px solid var(--laiton);padding:16px;margin:0 0 18px;
+  background:var(--fond-2);
+  box-shadow:0 0 0 3px var(--fond-2), 0 0 0 4px rgba(125,29,38,.3);
 }
-.score .chiffre{font-family:var(--police-titre);font-size:46px;color:var(--or);line-height:1}
-.corr{border-left:4px solid var(--rouge-faux);background:var(--noir-2);padding:13px 14px;margin:0 0 13px}
+.score .chiffre{font-family:var(--police-titre);font-size:48px;font-weight:900;color:var(--bordeaux);line-height:1}
+.corr{border:1px solid var(--laiton);border-left:4px solid var(--rouge-faux);background:var(--fond-2);padding:13px 14px;margin:0 0 13px}
 .corr .ligne-rep{margin:0 0 4px;font-size:15.5px}
-.corr .ligne-rep b{font-family:var(--police-titre);letter-spacing:.1em;font-size:12px;text-transform:uppercase;color:var(--creme-2);display:block}
+.corr .ligne-rep b{font-family:var(--police-titre);letter-spacing:.1em;font-size:11.5px;text-transform:uppercase;color:var(--texte-2);display:block;font-weight:700}
 .corr .rep{display:block;padding-left:16px;position:relative;margin:2px 0}
-.corr .rep::before{content:"\25C6";position:absolute;left:0;font-size:9px;top:.45em;opacity:.8}
+/* Tiret cadratin : les ornements de la table Dingbats manquent a Georgia
+   comme a Baskerville et s'affichent alors en carre de code. */
+.corr .rep::before{content:"\2014";position:absolute;left:0;font-size:13px;top:-.06em;opacity:.85;color:var(--or-vif)}
 .corr .faux{color:var(--rouge-faux)}
 .corr .juste{color:var(--vert-juste)}
-.corr .expl{margin:9px 0 0;font-size:16px;border-top:1px solid rgba(138,114,51,.4);padding-top:9px}
-details.justes{border:1px solid rgba(138,114,51,.4);padding:10px 12px;margin:18px 0}
-details.justes summary{cursor:pointer;font-family:var(--police-titre);letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--vert-juste)}
+.corr .expl{margin:9px 0 0;font-size:15.5px;border-top:1px solid rgba(179,154,94,.6);padding-top:9px}
+details.justes{border:1px solid var(--laiton);padding:10px 12px;margin:18px 0;background:var(--fond-2)}
+details.justes summary{cursor:pointer;font-family:var(--police-titre);letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;color:var(--vert-juste);font-weight:700}
 details.justes .corr{border-left-color:var(--vert-juste);margin-top:12px}
 
 /* --- Formulaires (reglages, quiz compose) --------------------------- */
-.champ{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(138,114,51,.25)}
+.champ{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(179,154,94,.55)}
 .champ:last-child{border-bottom:0}
 .champ .txt{flex:1}
-.champ .txt small{display:block;color:var(--creme-2);font-size:13.5px;line-height:1.45}
-.interrupteur{flex:0 0 auto;width:54px;height:30px;border:1px solid var(--or);background:transparent;cursor:pointer;position:relative;border-radius:999px}
+.champ .txt small{display:block;color:var(--texte-2);font-size:13.5px;line-height:1.45}
+.interrupteur{flex:0 0 auto;width:54px;height:30px;border:1px solid var(--bordeaux);background:var(--fond-3);cursor:pointer;position:relative;border-radius:999px}
 .interrupteur::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:var(--laiton);border-radius:50%;transition:left .15s,background .15s}
-.interrupteur[aria-checked="true"]::after{left:27px;background:var(--or)}
-.coche{display:flex;gap:11px;align-items:flex-start;padding:11px 8px;border:1px solid rgba(138,114,51,.35);margin:0 0 7px;cursor:pointer;background:rgba(0,0,0,.18)}
-.coche input{appearance:none;-webkit-appearance:none;margin:3px 0 0;flex:0 0 20px;height:20px;border:1px solid var(--or);background:transparent;position:relative;cursor:pointer}
-.coche input:checked::after{content:"";position:absolute;inset:3px;background:var(--or)}
-.coche:has(input:checked){border-color:var(--or);background:rgba(201,162,39,.10)}
-select,input[type=file]{font:inherit;color:var(--creme);background:var(--noir-3);border:1px solid var(--laiton);padding:10px;border-radius:var(--rayon);min-height:44px}
+.interrupteur[aria-checked="true"]{background:rgba(125,29,38,.12)}
+.interrupteur[aria-checked="true"]::after{left:27px;background:var(--bordeaux)}
+.coche{display:flex;gap:11px;align-items:flex-start;padding:11px 8px;border:1px solid rgba(179,154,94,.75);margin:0 0 7px;cursor:pointer;background:rgba(255,250,235,.55)}
+.coche input{appearance:none;-webkit-appearance:none;margin:3px 0 0;flex:0 0 20px;height:20px;border:1px solid var(--bordeaux);background:var(--fond-2);position:relative;cursor:pointer}
+.coche input:checked::after{content:"";position:absolute;inset:3px;background:var(--bordeaux)}
+.coche:has(input:checked){border-color:var(--bordeaux);background:rgba(125,29,38,.07)}
+select,input[type=file]{font:inherit;color:var(--texte);background:var(--fond-2);border:1px solid var(--laiton);padding:10px;border-radius:var(--rayon);min-height:44px}
 select{width:100%}
 
 /* --- Tableau de progression ----------------------------------------- */
 .stats{display:flex;gap:10px;flex-wrap:wrap}
-.stat{flex:1 1 30%;min-width:96px;border:1px solid rgba(138,114,51,.45);padding:11px 8px;text-align:center;background:rgba(0,0,0,.2)}
-.stat .v{font-family:var(--police-titre);font-size:28px;color:var(--or);line-height:1.1}
-.stat .l{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--creme-2);font-family:var(--police-titre)}
-.jauge{height:8px;background:rgba(0,0,0,.45);border:1px solid rgba(138,114,51,.5);margin:10px 0 4px}
-.jauge div{height:100%;background:linear-gradient(90deg,var(--laiton),var(--or))}
+.stat{flex:1 1 30%;min-width:96px;border:1px solid var(--laiton);padding:11px 8px;text-align:center;background:var(--fond-2)}
+.stat .v{font-family:var(--police-titre);font-size:29px;font-weight:900;color:var(--bordeaux);line-height:1.1}
+.stat .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--texte-2);font-family:var(--police-titre);font-weight:700}
+.jauge{height:9px;background:var(--fond-3);border:1px solid var(--laiton);margin:10px 0 4px}
+.jauge div{height:100%;background:linear-gradient(90deg,var(--or-vif),var(--bordeaux))}
 
-/* --- Barre d'onglets ------------------------------------------------- */
+/* --- Barre d'onglets : le bas de reliure ----------------------------- */
 .onglets{
   position:fixed;left:0;right:0;bottom:0;z-index:20;
-  display:flex;background:rgba(10,9,7,.97);
-  border-top:1px solid var(--or);
+  display:flex;background:rgba(239,227,200,.97);
+  border-top:2.5px solid var(--bordeaux);
+  box-shadow:0 -3px 0 -1px var(--laiton);
   padding-bottom:env(safe-area-inset-bottom);
   backdrop-filter:blur(6px);
 }
 .onglets button{
   flex:1;background:transparent;border:0;padding:9px 4px 11px;cursor:pointer;
-  font-family:var(--police-titre);font-size:12px;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--creme-2);
+  font-family:var(--police-titre);font-size:11.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--texte-2);font-weight:700;
 }
-.onglets button .ic{display:block;font-size:17px;line-height:1.5;color:var(--laiton)}
-.onglets button[aria-current="page"]{color:var(--or)}
-.onglets button[aria-current="page"] .ic{color:var(--or)}
+.onglets button .ic{display:block;font-size:16px;line-height:1.5;color:var(--laiton)}
+.onglets button[aria-current="page"]{color:var(--bordeaux)}
+.onglets button[aria-current="page"] .ic{color:var(--or-vif)}
 
 /* --- Divers ---------------------------------------------------------- */
 .fil{display:flex;align-items:center;gap:10px;margin:14px 0 10px}
 .fil .bouton{width:auto}
-.vide{text-align:center;color:var(--creme-2);padding:26px 10px;font-style:italic}
-.avis{border:1px solid var(--bordeaux);background:rgba(140,36,50,.15);padding:11px 13px;margin:0 0 14px;font-size:15.5px}
-.avis.ok{border-color:var(--vert-juste);background:rgba(127,192,155,.1)}
-.sources li{margin-bottom:.45em;font-size:15.5px}
-.pied{text-align:center;color:var(--creme-2);font-size:12.5px;letter-spacing:.1em;padding:22px 0 6px}
+.vide{text-align:center;color:var(--texte-2);padding:26px 10px;font-style:italic}
+.avis{border:1px solid var(--bordeaux);background:rgba(125,29,38,.08);padding:11px 13px;margin:0 0 14px;font-size:15.5px}
+.avis.ok{border-color:var(--vert-juste);background:rgba(47,107,69,.09)}
+.sources li{margin-bottom:.5em;font-size:15px}
+.sources li::marker{color:var(--or-vif)}
+.pied{text-align:center;color:var(--texte-2);font-size:13px;letter-spacing:.06em;padding:22px 0 6px;font-family:var(--police-titre);font-style:italic}
 .saut{height:10px}
 @media (min-width:640px){
-  body{font-size:18px}
+  body{font-size:17.5px}
   .app{padding-bottom:calc(var(--barre) + 40px)}
   .stat{flex:1 1 0}
   /* Sur grand ecran, la barre d'onglets reste alignee sur la colonne de texte. */
@@ -444,50 +483,31 @@ select{width:100%}
      insensible au toucher ; il est retire du DOM une fois joue. -->
 <div id="ouverture" aria-hidden="true">
   <svg viewBox="0 0 512 512" focusable="false">
-    <defs>
-      <!-- Demi-disque : l'eventail s'arrete net sur sa base, jamais sur le
-           bord du cadre. -->
-      <clipPath id="ouv-demi-disque">
-        <path d="M146,410 A110,110 0 0 1 366,410 Z"/>
-      </clipPath>
-    </defs>
-    <g clip-path="url(#ouv-demi-disque)">
-      <path d="M256,410 L56.1,403.0 L59.9,370.5 Z" fill="#c9a227" opacity="0.38"/>
-      <path d="M256,410 L63.5,355.9 L74.9,325.2 Z" fill="#c9a227" opacity="0.2"/>
-      <path d="M256,410 L81.8,311.8 L100.1,284.7 Z" fill="#c9a227" opacity="0.38"/>
-      <path d="M256,410 L110.0,273.3 L134.2,251.3 Z" fill="#c9a227" opacity="0.2"/>
-      <path d="M256,410 L146.5,242.6 L175.3,227.0 Z" fill="#c9a227" opacity="0.38"/>
-      <path d="M256,410 L189.2,221.5 L220.9,213.1 Z" fill="#c9a227" opacity="0.2"/>
-      <path d="M256,410 L235.8,211.0 L268.6,210.4 Z" fill="#c9a227" opacity="0.38"/>
-      <path d="M256,410 L283.5,211.9 L315.5,219.0 Z" fill="#c9a227" opacity="0.2"/>
-      <path d="M256,410 L329.6,224.0 L359.0,238.6 Z" fill="#c9a227" opacity="0.38"/>
-      <path d="M256,410 L371.6,246.8 L396.7,267.8 Z" fill="#c9a227" opacity="0.2"/>
-      <path d="M256,410 L406.9,278.8 L426.3,305.2 Z" fill="#c9a227" opacity="0.38"/>
-      <path d="M256,410 L433.7,318.3 L446.3,348.5 Z" fill="#c9a227" opacity="0.2"/>
-      <path d="M256,410 L450.4,363.0 L455.5,395.4 Z" fill="#c9a227" opacity="0.38"/>
-      <circle cx="256" cy="410" r="40" fill="none" stroke="#c9a227" stroke-width="1.8" opacity=".45"/>
-      <circle cx="256" cy="410" r="70" fill="none" stroke="#c9a227" stroke-width="1.8" opacity=".45"/>
-      <circle cx="256" cy="410" r="100" fill="none" stroke="#c9a227" stroke-width="1.8" opacity=".45"/>
-    </g>
-    <rect x="78" y="90" width="356" height="4" fill="#c9a227"/>
-    <rect x="78" y="102" width="356" height="1.6" fill="#c9a227" opacity=".7"/>
-    <rect x="78" y="408" width="356" height="1.6" fill="#c9a227" opacity=".7"/>
-    <rect x="78" y="416" width="356" height="4" fill="#c9a227"/>
-    <text x="256" y="142" text-anchor="middle" font-family="Georgia,serif" font-size="26" fill="#c9a227">&#9670;</text>
-    <text x="249" y="252" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="118" letter-spacing="14" fill="#f3e9d6">EPOK</text>
-    <text x="252" y="298" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#f3e9d6" opacity=".85">HISTOIRE</text>
+    <rect x="86" y="86" width="340" height="340" fill="none" stroke="#9a7a30" stroke-width="1.4"/>
+    <rect x="96" y="96" width="320" height="320" fill="none" stroke="#d8b463" stroke-width="3"/>
+    <rect x="104" y="104" width="304" height="304" fill="none" stroke="#9a7a30" stroke-width="1"/>
+    <path d="M104,130 L104,112 q0,-8 8,-8 L130,104" fill="none" stroke="#d8b463" stroke-width="2.4"/><circle cx="113" cy="113" r="2.6" fill="#d8b463"/><path d="M408,130 L408,112 q0,-8 -8,-8 L382,104" fill="none" stroke="#d8b463" stroke-width="2.4"/><circle cx="399" cy="113" r="2.6" fill="#d8b463"/><path d="M104,382 L104,400 q0,8 8,8 L130,408" fill="none" stroke="#d8b463" stroke-width="2.4"/><circle cx="113" cy="399" r="2.6" fill="#d8b463"/><path d="M408,382 L408,400 q0,8 -8,8 L382,408" fill="none" stroke="#d8b463" stroke-width="2.4"/><circle cx="399" cy="399" r="2.6" fill="#d8b463"/>
+    <text x="256" y="176" text-anchor="middle" font-family="Georgia,serif" font-size="30" fill="#d8b463">&#10086;</text>
+    <path d="M150,198 H362" stroke="#9a7a30" stroke-width="1"/>
+    <path d="M168,204 H344" stroke="#d8b463" stroke-width="2.2"/>
+    <text x="251" y="292" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="84" font-weight="700" letter-spacing="10" fill="#f7efdb">EPOK</text>
+    <path d="M168,320 H344" stroke="#d8b463" stroke-width="2.2"/>
+    <path d="M150,326 H362" stroke="#9a7a30" stroke-width="1"/>
+    <text x="254" y="358" text-anchor="middle" font-family="Georgia,serif" font-style="italic"
+          font-size="27" letter-spacing="5" fill="#d8b463">Histoire</text>
+    <path d="M236,392 q-18,-13 -38,-16" fill="none" stroke="#c9a961" stroke-width="1.6"/><ellipse cx="226.7" cy="391.3" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 226.7 391.3)"/><ellipse cx="226.7" cy="382.3" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 226.7 382.3)"/><ellipse cx="220.3" cy="386.8" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 220.3 386.8)"/><ellipse cx="220.3" cy="377.8" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 220.3 377.8)"/><ellipse cx="214.0" cy="383.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 214.0 383.5)"/><ellipse cx="214.0" cy="374.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 214.0 374.5)"/><ellipse cx="207.7" cy="381.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 207.7 381.5)"/><ellipse cx="207.7" cy="372.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 207.7 372.5)"/><ellipse cx="201.3" cy="380.7" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 201.3 380.7)"/><ellipse cx="201.3" cy="371.7" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 201.3 371.7)"/><path d="M276,392 q18,-13 38,-16" fill="none" stroke="#c9a961" stroke-width="1.6"/><ellipse cx="285.3" cy="391.3" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 285.3 391.3)"/><ellipse cx="285.3" cy="382.3" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 285.3 382.3)"/><ellipse cx="291.7" cy="386.8" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 291.7 386.8)"/><ellipse cx="291.7" cy="377.8" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 291.7 377.8)"/><ellipse cx="298.0" cy="383.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 298.0 383.5)"/><ellipse cx="298.0" cy="374.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 298.0 374.5)"/><ellipse cx="304.3" cy="381.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 304.3 381.5)"/><ellipse cx="304.3" cy="372.5" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 304.3 372.5)"/><ellipse cx="310.7" cy="380.7" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(-28 310.7 380.7)"/><ellipse cx="310.7" cy="371.7" rx="5.4" ry="2.5" fill="#c9a961" opacity=".85" transform="rotate(28 310.7 371.7)"/>
+    <text x="256" y="400" text-anchor="middle" font-family="Georgia,serif" font-size="17" fill="#d8b463">&#10087;</text>
   </svg>
 </div>
 
 <div class="app">
 
   <header class="entete">
-    <div class="filet-haut"></div><div class="filet-bas"></div>
-    <div style="height:14px"></div>
-    <div class="eventail" aria-hidden="true"></div>
+    <div class="filet-double"></div>
+    <div class="vignette" aria-hidden="true">&#10086;</div>
     <h1>EPOK</h1>
-    <p class="sous">Culture historique &#8226; une séance par jour</p>
-    <div class="filet-bas"></div>
+    <p class="sous">Culture historique &#8212; une séance par jour</p>
+    <div class="filet-double bas"></div>
   </header>
 
   <!-- ================= ONGLET 1 : ACCUEIL ================= -->
@@ -499,7 +519,7 @@ select{width:100%}
   <!-- ================= ONGLET 3 : QUIZ ==================== -->
   <main id="vue-quiz" class="vue" role="tabpanel" aria-label="Quiz"></main>
 
-  <p class="pied">&#9670; EPOK &#9670;</p>
+  <p class="pied">&#10086;&#8195;EPOK&#8195;&#10087;</p>
 </div>
 
 <nav class="onglets" role="tablist" aria-label="Navigation principale">
@@ -9245,7 +9265,9 @@ function rendreFiche(vue){
       ${cliquable ? `data-action="lire" data-cours="${esc(c.id)}" data-seance="${s.numero}"` : "disabled"}>
       <span class="num"><span>${s.numero}</span></span>
       <span class="corps"><span class="t">${tx(s.titre)}</span>
-        ${note ? `<span class="minuscule">${note.justes}/${note.total} &#8226; ${dateLisible(note.date)}</span>` : ""}
+        ${note && typeof note.justes === "number" && typeof note.total === "number"
+          ? `<span class="minuscule">${note.justes}/${note.total}${note.date ? " &#8226; " + dateLisible(note.date) : ""}</span>`
+          : ""}
       </span>
       <span class="etat">${libelle}</span>
     </button></li>`;
