@@ -246,7 +246,10 @@ body[data-onglet="quiz"] .entete>div[style]{height:6px!important}
 }
 #croquis-defs{position:absolute;width:0;height:0;overflow:hidden}
 .lecture figure.croquis{
-  margin:24px 0;padding:12px 12px 10px;background:var(--cr-fond);
+  /* Pleine largeur sur telephone, mais borne sur grand ecran : au-dela,
+     un croquis etire devient plus grand que le texte qu'il illustre. */
+  margin:24px auto;max-width:540px;
+  padding:12px 12px 10px;background:var(--cr-fond);
   border:1px solid var(--or);border-radius:var(--rayon);
   box-shadow:0 6px 18px rgba(0,0,0,.35);
 }
@@ -6802,6 +6805,47 @@ const COURS = [
     contenu: `
 <h3>1. De la défaite à l'État français</h3>
 <p>Après la débâcle de juin 1940, l'<strong>armistice</strong> signé le 22 juin divise la France en une <strong>zone occupée</strong> au nord et à l'ouest, et une <strong>zone libre</strong> au sud, laissée à l'administration française. Réunie à Vichy, ville thermale choisie pour sa capacité hôtelière, l'Assemblée nationale vote le <strong>10 juillet 1940</strong>, par 569 voix contre 80, les pleins pouvoirs constituants au maréchal <strong>Philippe Pétain</strong>, mettant fin de fait à la III<sup>e</sup> République. Les <strong>quatre-vingts</strong> parlementaires qui refusent ce vote, dont Léon Blum, deviendront un symbole tardif de résistance parlementaire à la dérive autoritaire.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 306" role="img" aria-label="Carte de la France divisée par l'armistice de juin 1940">
+  <rect width="360" height="306" fill="#ece1c4"/>
+  <path d="M110,22 L176,14 L246,34 L284,28 L310,72 L302,146 L264,200 L202,240 L138,230 L84,186 L66,114 L82,56 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1.2"/>
+  <path d="M110,22 L176,14 L246,34 L284,28 L296,54 L272,112 L212,166 L152,182 L104,190 L84,186 L66,114 L82,56 Z" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1"/>
+  <path d="M176,14 L246,34 L284,28 L296,54 L258,64 L214,44 L186,34 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.3"/>
+  <path d="M272,44 L298,40 L306,72 L280,78 Z" fill="url(#p-a)" stroke="#8c2432" stroke-width="1.3"/>
+  <path d="M278,148 L294,144 L288,176 L270,170 Z" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1.3"/>
+  <path d="M104,190 Q160,182 212,166 Q256,140 276,106" fill="none" stroke="#8c2432" stroke-width="3.4" stroke-dasharray="9,4"/>
+  <text class="cr-ville" x="112" y="96" font-size="9" letter-spacing="1" font-weight="700">ZONE OCCUPÉE</text>
+  <text class="cr-ville" x="146" y="214" font-size="9" letter-spacing="1" font-weight="700">ZONE LIBRE</text>
+  <text class="cr-ville" x="200" y="28" font-size="7.5" font-weight="700" fill="#6d1b26">zone interdite</text>
+  <text class="cr-ville" x="352" y="34" font-size="7.5" font-weight="700" fill="#6d1b26" text-anchor="end">Alsace-Moselle</text>
+  <path d="M312,40 L300,52" fill="none" stroke="#6d1b26" stroke-width=".9"/>
+  <text class="cr-ville" x="352" y="138" font-size="7.5" font-weight="700" fill="#14382c" text-anchor="end">zone italienne</text>
+  <path d="M304,142 L290,154" fill="none" stroke="#14382c" stroke-width=".9"/>
+  <circle cx="176" cy="70" r="3.2" fill="#3a3020"/><text class="cr-ville" x="182" y="68">Paris</text>
+  <circle cx="204" cy="164" r="3" fill="#3a3020"/><text class="cr-ville" x="172" y="160" font-weight="700">Vichy</text>
+  <circle cx="110" cy="178" r="2.4" fill="#3a3020"/><text class="cr-ville" x="70" y="176" font-size="8">Bordeaux</text>
+  <circle cx="240" cy="176" r="2.4" fill="#3a3020"/><text class="cr-ville" x="246" y="180" font-size="8">Lyon</text>
+  <circle cx="242" cy="222" r="2.4" fill="#3a3020"/><text class="cr-ville" x="248" y="226" font-size="8">Marseille</text>
+  <circle cx="284" cy="60" r="2.4" fill="#3a3020"/><text class="cr-ville" x="228" y="94" font-size="8">Strasbourg</text>
+  <path d="M236,88 L278,64" fill="none" stroke="#3a3020" stroke-width=".9"/>
+  <g transform="translate(6,246)">
+    <rect x="0" y="0" width="348" height="56" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="15" height="9" fill="url(#h-n)" stroke="#6b5a34" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="14">Zone occupée par l'Allemagne</text>
+    <rect x="8" y="20" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="28">Zone interdite au retour des réfugiés</text>
+    <rect x="8" y="34" width="15" height="9" fill="url(#p-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="42">Alsace-Moselle annexée de fait au Reich</text>
+    <path d="M8,50 L26,50" stroke="#8c2432" stroke-width="3" stroke-dasharray="5,3"/>
+    <text class="cr-leg" x="28" y="53">Ligne de démarcation</text>
+    <rect x="200" y="6" width="15" height="9" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1"/>
+    <text class="cr-leg" x="220" y="14">Zone d'occupation italienne</text>
+    <text class="cr-leg" x="196" y="42" font-size="7.5">Zone libre envahie le 11 novembre 1942,</text>
+    <text class="cr-leg" x="196" y="52" font-size="7.5">après le débarquement en Afrique du Nord.</text>
+  </g>
+</svg>
+<figcaption><b>La France de l'armistice, juin 1940.</b> Le territoire est morcelé : zone occupée, zone interdite au nord-est, Alsace-Moselle annexée de fait, zone libre au sud d'une ligne de démarcation que l'occupant peut fermer à volonté. Cette géographie fait de l'accès à son propre pays un moyen de pression permanent sur Vichy.</figcaption>
+</figure>
 <p>La <strong>République française</strong> cède la place à l'<strong>« État français »</strong>, dont la devise, <em>Travail, Famille, Patrie</em>, remplace ostensiblement <em>Liberté, Égalité, Fraternité</em>. Le nouveau régime, présenté comme une <strong>« Révolution nationale »</strong>, rejette l'héritage parlementaire, promeut un ordre moral traditionaliste, corporatiste et autoritaire, et désigne comme responsables de la défaite un ensemble d'ennemis intérieurs — francs-maçons, communistes, et, très vite, les Juifs de France.</p>
 
 <h3>2. Une collaboration voulue, non seulement subie</h3>
@@ -6981,6 +7025,48 @@ const COURS = [
 <h3>2. Les camps d'extermination : une logique distincte des camps de concentration</h3>
 <p>À partir de 1942 s'ouvrent, principalement sur le territoire polonais occupé, des <strong>camps d'extermination</strong> à proprement parler — Chełmno, Bełżec, Sobibor et Treblinka, construits dans le cadre de l'<strong>« Aktion Reinhard »</strong> —, dont la fonction unique, à la différence des camps de concentration destinés à l'exploitation par le travail forcé, est la mise à mort immédiate par gazage de la quasi-totalité des déportés dès leur arrivée. Le complexe d'<strong>Auschwitz-Birkenau</strong>, en Haute-Silésie, combine les deux logiques, servant à la fois de camp de travail forcé et de centre d'extermination massif, ce qui en fait le lieu le plus meurtrier de l'ensemble du dispositif génocidaire, avec plus d'un million de victimes.</p>
 
+<figure class="croquis">
+<svg viewBox="0 0 360 286" role="img" aria-label="Carte des centres de mise à mort ouverts en Pologne occupée et des principales routes de déportation">
+  <rect width="360" height="286" fill="#ece1c4"/>
+  <path d="M30,60 L96,34 L170,26 L250,32 L318,50 L330,120 L296,176 L226,206 L142,204 L74,176 L36,120 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <path d="M176,52 L248,46 L268,108 L206,134 L160,104 Z" fill="#dccda2" stroke="#3a3020" stroke-width="1.2"/>
+  <text class="cr-ville" x="158" y="152" font-size="8.5" letter-spacing="1" font-weight="700">POLOGNE OCCUPÉE</text>
+  <text class="cr-ville" x="42" y="86" font-size="8" letter-spacing="1">FRANCE</text>
+  <text class="cr-ville" x="96" y="44" font-size="8" letter-spacing="1">PAYS-BAS</text>
+  <text class="cr-ville" x="128" y="74" font-size="8" letter-spacing="1">REICH</text>
+  <text class="cr-ville" x="268" y="162" font-size="8" letter-spacing="1">HONGRIE</text>
+  <text class="cr-ville" x="172" y="196" font-size="8" letter-spacing="1">GRÈCE</text>
+  <text class="cr-ville" x="300" y="78" font-size="8" letter-spacing="1">URSS</text>
+  <g fill="none" stroke="#6d1b26" stroke-width="2.4">
+    <path d="M60,94 Q116,98 166,96" marker-end="url(#f-a)"/>
+    <path d="M118,50 Q146,50 170,58" marker-end="url(#f-a)"/>
+    <path d="M276,156 Q252,138 242,116" marker-end="url(#f-a)"/>
+    <path d="M182,188 Q192,160 198,140" marker-end="url(#f-a)"/>
+    <path d="M300,98 Q276,100 254,98" marker-end="url(#f-a)"/>
+  </g>
+  <g fill="#3a3020">
+    <rect x="176" y="70" width="8" height="8"/><rect x="216" y="60" width="8" height="8"/>
+    <rect x="238" y="78" width="8" height="8"/><rect x="226" y="100" width="8" height="8"/>
+    <rect x="206" y="114" width="8" height="8"/><rect x="184" y="102" width="8" height="8"/>
+  </g>
+  <g class="cr-ville" font-size="7.5">
+    <text x="140" y="68">Chelmno</text><text x="206" y="54">Treblinka</text>
+    <text x="250" y="78">Sobibor</text><text x="238" y="106">Majdanek</text>
+    <text x="178" y="122">Belzec</text><text x="96" y="130">Auschwitz-Birkenau</text>
+  </g>
+  <path d="M166,128 L182,110" fill="none" stroke="#3a3020" stroke-width=".8"/>
+  <g transform="translate(6,226)">
+    <rect x="0" y="0" width="348" height="54" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="9" y="7" width="8" height="8" fill="#3a3020"/>
+    <text class="cr-leg" x="26" y="14">Centre de mise à mort</text>
+    <path d="M8,26 L26,26" stroke="#6d1b26" stroke-width="2.4" marker-end="url(#f-a)"/>
+    <text class="cr-leg" x="32" y="29">Principales routes de déportation</text>
+    <text class="cr-leg" x="8" y="42" font-size="7.5">Auschwitz-Birkenau et Majdanek associent camp de concentration et centre de mise à mort ;</text>
+    <text class="cr-leg" x="8" y="51" font-size="7.5">les quatre autres, relevant de l'« Aktion Reinhard », n'ont pas d'autre fonction.</text>
+  </g>
+</svg>
+<figcaption><b>Les centres de mise à mort, 1941-1944.</b> Tous sont implantés en Pologne occupée, à l'écart des regards et au cœur du plus grand foyer de peuplement juif d'Europe, reliés au continent par le réseau ferroviaire. La localisation n'est pas fortuite : elle organise l'assassinat à l'échelle industrielle et à distance des sociétés d'Europe occidentale.</figcaption>
+</figure>
 <p>Le processus de mise à mort industrielle repose sur une chaîne administrative complexe et volontairement compartimentée, impliquant des dizaines de milliers de fonctionnaires, de cheminots et d'employés à travers toute l'Europe occupée, dont la plupart n'ont jamais directement assisté aux exécutions elles-mêmes : c'est précisément cette division bureaucratique des tâches, analysée notamment par Raul Hilberg dans son œuvre fondatrice, qui permet de comprendre comment un crime d'une telle ampleur a pu être mis en œuvre avec la participation, à des degrés très divers de conscience et de responsabilité, d'un nombre considérable d'acteurs ordinaires.</p>
 
 <h3>3. La France complice : la rafle du Vel d'Hiv et les déportations</h3>
@@ -7440,6 +7526,47 @@ const COURS = [
 <p>L'organisation atlantique se dote rapidement d'un commandement militaire intégré, confié dès 1950 au général américain Dwight Eisenhower, futur président des États-Unis, structure destinée à coordonner efficacement les forces de ses membres face à une éventuelle offensive soviétique en Europe occidentale, dont la crainte, bien réelle à cette époque, domine les préoccupations stratégiques de l'ensemble des chancelleries occidentales.</p>
 
 <h3>4. La naissance de deux Allemagnes</h3>
+<figure class="croquis">
+<svg viewBox="0 0 360 300" role="img" aria-label="Carte de l'Europe partagée entre les deux blocs après 1949">
+  <rect width="360" height="300" fill="#ece1c4"/>
+  <path d="M40,30 L120,14 L168,18 L160,70 L172,120 L186,170 L176,214 L120,212 L60,170 L28,100 Z" fill="url(#h-b)" stroke="#3a3020" stroke-width="1"/>
+  <path d="M168,18 L210,10 L300,24 L340,70 L330,140 L286,196 L200,224 L176,214 L186,170 L172,120 L160,70 Z" fill="url(#h-a)" stroke="#3a3020" stroke-width="1"/>
+  <path d="M136,114 L158,110 L160,128 L138,132 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <path d="M160,110 L184,114 L182,132 L160,128 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <path d="M182,138 L212,142 L208,176 L180,170 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.4"/>
+  <path d="M168,18 L160,70 L172,120 L186,170 L176,214" fill="none" stroke="#3a3020" stroke-width="4.4"/>
+  <circle cx="198" cy="58" r="3.4" fill="#f3ead2" stroke="#3a3020" stroke-width="1.6"/>
+  <text class="cr-ville" x="204" y="56" font-size="8" font-weight="700">Berlin</text>
+  <text class="cr-ville" x="126" y="58" font-size="8" font-weight="700">RFA</text>
+  <text class="cr-ville" x="180" y="42" font-size="8" font-weight="700">RDA</text>
+  <text class="cr-ville" x="64" y="118" font-size="8" letter-spacing="1">FRANCE</text>
+  <text class="cr-ville" x="58" y="44" font-size="8" letter-spacing="1">R.-UNI</text>
+  <text class="cr-ville" x="226" y="46" font-size="8" letter-spacing="1">POLOGNE</text>
+  <text class="cr-ville" x="300" y="80" font-size="8" letter-spacing="1">URSS</text>
+  <text class="cr-ville" x="132" y="166" font-size="8" letter-spacing="1">ITALIE</text>
+  <text class="cr-ville" x="120" y="146" font-size="7">Suisse</text>
+  <text class="cr-ville" x="188" y="104" font-size="7">Autriche</text>
+  <path d="M146,142 L148,130" fill="none" stroke="#3a3020" stroke-width=".8"/>
+  <path d="M192,108 L176,118" fill="none" stroke="#3a3020" stroke-width=".8"/>
+  <text class="cr-ville" x="216" y="160" font-size="7">Yougoslavie</text>
+  <path d="M214,160 L206,158" fill="none" stroke="#3a3020" stroke-width=".8"/>
+  <g transform="translate(6,246)">
+    <rect x="0" y="0" width="348" height="50" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="15" height="9" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="14">Bloc de l'Ouest, OTAN à partir d'avril 1949</text>
+    <rect x="8" y="20" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="28">Bloc de l'Est, pacte de Varsovie en 1955</text>
+    <rect x="8" y="34" width="15" height="9" fill="url(#h-or)" stroke="#a9761f" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="42">Yougoslavie, exclue du Kominform en 1948</text>
+    <path d="M206,12 L224,12" stroke="#3a3020" stroke-width="4.4"/>
+    <text class="cr-leg" x="230" y="15">Rideau de fer</text>
+    <rect x="206" y="22" width="15" height="9" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+    <text class="cr-leg" x="230" y="30">États neutres</text>
+    <text class="cr-leg" x="206" y="42">Berlin : enclave à quatre secteurs</text>
+  </g>
+</svg>
+<figcaption><b>L'Europe des deux blocs.</b> À la division politique s'ajoutent deux architectures parallèles : Kominform puis Comecon à l'Est, plan Marshall puis OTAN à l'Ouest. Berlin, enclave quadripartite au cœur de la zone soviétique, devient le point de friction permanent de cette géographie.</figcaption>
+</figure>
 <p>C'est en Allemagne que cette division prend sa forme la plus concrète et la plus durable. Les trois zones d'occupation occidentales, fusionnées progressivement, donnent naissance le <strong>23 mai 1949</strong> à la <strong>République fédérale d'Allemagne</strong> (RFA), État démocratique et fédéral aligné sur le camp occidental. L'URSS réplique en proclamant, le <strong>7 octobre 1949</strong>, la <strong>République démocratique allemande</strong> (RDA) dans sa propre zone d'occupation, régime communiste satellite de Moscou.</p>
 <p>Cette partition, initialement conçue par certains acteurs comme provisoire, en attendant une réunification éventuelle du pays, s'installe au contraire dans la durée pour plus de quarante ans, l'Allemagne devenant le symbole même, et souvent le terrain d'affrontement le plus tendu, de la division du continent européen tout entier en deux blocs politiques, économiques et militaires désormais institutionnellement figés.</p>
 <p>Cette double institutionnalisation, économique et militaire, de part et d'autre du rideau de fer, achève ainsi de transformer une rupture d'abord idéologique en une architecture géopolitique durable, dont les contours resteront remarquablement stables pendant plus de quatre décennies.</p>
@@ -7524,6 +7651,50 @@ const COURS = [
 
 <h3>3. Le pont aérien : ravitailler une ville par les airs</h3>
 <p>Plutôt que de céder à cette pression ou de risquer un affrontement militaire direct en forçant le blocus terrestre, les Occidentaux, sous impulsion américaine, choisissent une réponse d'une ampleur logistique inédite : le <strong>pont aérien de Berlin</strong>. Pendant près d'onze mois, des avions de transport américains, britanniques et de leurs alliés acheminent par les airs, dans les trois couloirs aériens garantis par les accords antérieurs et que l'URSS ne peut légalement bloquer, l'ensemble des vivres, du charbon et des fournitures nécessaires à la survie de plus de deux millions de Berlinois de l'Ouest, à raison de plusieurs milliers de tonnes livrées quotidiennement à son apogée, un avion se posant parfois toutes les quatre-vingt-dix secondes sur les aérodromes berlinois.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 272" role="img" aria-label="Croquis du blocus de Berlin et des trois couloirs aériens du pont aérien de 1948-1949">
+  <rect width="360" height="272" fill="#e4d6ae"/>
+  <text class="cr-ville" x="14" y="22" font-size="8.5" letter-spacing="1">ZONE D'OCCUPATION SOVIÉTIQUE</text>
+  <g fill="url(#h-or)" stroke="#a9761f" stroke-width="1">
+    <path d="M0,26 L188,96 L188,110 L0,42 Z"/>
+    <path d="M0,118 L186,124 L186,138 L0,134 Z"/>
+    <path d="M0,212 L188,150 L188,164 L0,228 Z"/>
+  </g>
+  <text class="cr-note" x="6" y="60" font-size="8" fill="#7a5514">couloir de Hambourg</text>
+  <text class="cr-note" x="6" y="114" font-size="8" fill="#7a5514">couloir de Hanovre</text>
+  <text class="cr-note" x="6" y="204" font-size="8" fill="#7a5514">couloir de Francfort</text>
+  <path d="M0,174 L176,144" fill="none" stroke="#8c2432" stroke-width="3" stroke-dasharray="8,4"/>
+  <g stroke="#8c2432" stroke-width="3.4" stroke-linecap="round">
+    <path d="M82,155 L98,149"/><path d="M84,145 L96,159"/>
+  </g>
+  <text class="cr-note" x="42" y="184" font-size="8" fill="#6d1b26">routes et voies ferrées coupées</text>
+  <ellipse cx="248" cy="130" rx="62" ry="46" fill="none" stroke="#3a3020" stroke-width="1.4"/>
+  <path d="M248,84 A62,46 0 0 0 248,176 Z" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1.4"/>
+  <path d="M248,84 A62,46 0 0 1 248,176 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.4"/>
+  <text class="cr-ville" x="172" y="196" font-size="8" font-weight="700" fill="#14382c">BERLIN-OUEST</text>
+  <text class="cr-ville" x="276" y="196" font-size="8" font-weight="700" fill="#6d1b26">BERLIN-EST</text>
+  <text class="cr-ville" x="172" y="206" font-size="7">trois secteurs alliés</text>
+  <text class="cr-ville" x="276" y="206" font-size="7">secteur soviétique</text>
+  <g fill="#3a3020">
+    <circle cx="212" cy="112" r="2.8"/><circle cx="216" cy="140" r="2.8"/><circle cx="232" cy="156" r="2.8"/>
+  </g>
+  <text class="cr-ville" x="186" y="106" font-size="7">Tegel</text>
+  <text class="cr-ville" x="186" y="142" font-size="7">Gatow</text>
+  <text class="cr-ville" x="214" y="170" font-size="7">Tempelhof</text>
+  <g transform="translate(6,226)">
+    <rect x="0" y="0" width="348" height="42" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="15" height="9" fill="url(#h-or)" stroke="#a9761f" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="14">Couloirs aériens garantis par les accords de 1945</text>
+    <path d="M8,26 L26,26" stroke="#8c2432" stroke-width="3" stroke-dasharray="5,3"/>
+    <text class="cr-leg" x="32" y="29">Accès terrestres coupés, 24 juin 1948</text>
+    <circle cx="16" cy="37" r="2.8" fill="#3a3020"/>
+    <text class="cr-leg" x="32" y="40">Aérodromes de Berlin-Ouest</text>
+    <text class="cr-leg" x="212" y="29">Le pont aérien dure du 26 juin 1948</text>
+    <text class="cr-leg" x="212" y="40">au 30 septembre 1949.</text>
+  </g>
+</svg>
+<figcaption><b>Berlin, 1948-1949.</b> Les accords interalliés avaient garanti l'accès aérien par trois couloirs, mais rien par voie terrestre : c'est cette lacune juridique que le blocus exploite, et c'est elle qui rend le pont aérien possible sans franchir d'obstacle au sol.</figcaption>
+</figure>
 <p>Cette opération, surnommée familièrement par les Berlinois les <em>« bombardiers à raisins secs »</em> (<em>Rosinenbomber</em>) en référence aux friandises que certains pilotes larguaient par de petits parachutes de fortune à l'attention des enfants de la ville, transforme profondément l'image des anciens occupants occidentaux, désormais perçus par une large partie de la population berlinoise comme des protecteurs plutôt que comme des vainqueurs de guerre.</p>
 
 <p>Le coût humain et matériel de cette opération reste considérable : plusieurs dizaines de pilotes et de personnels au sol perdent la vie dans des accidents liés à l'intensité extrême du trafic aérien, tandis que le coût financier de l'opération, supporté conjointement par les puissances occidentales, atteint des sommes considérables, justifiées cependant par l'enjeu politique et symbolique majeur que représentait, aux yeux de Washington, le maintien de la présence occidentale au cœur même du territoire soviétique.</p>
@@ -7609,6 +7780,55 @@ const COURS = [
 <p>Le <strong>25 juin 1950</strong>, les forces nord-coréennes franchissent le 38<sup>e</sup> parallèle par surprise et envahissent massivement le Sud, dont l'armée, mal préparée, recule rapidement jusqu'à ne plus contrôler qu'une petite poche autour de la ville de <strong>Pusan</strong>. Profitant de l'<strong>absence</strong> — largement fortuite — du délégué soviétique au Conseil de sécurité de l'ONU, qui en boycottait alors les séances pour protester contre la non-admission de la Chine communiste, les États-Unis obtiennent un vote autorisant une intervention militaire sous mandat des Nations unies, dirigée dans les faits par le général américain <strong>Douglas MacArthur</strong>.</p>
 <p>Le débarquement audacieux d'<strong>Incheon</strong>, en septembre 1950, loin derrière les lignes nord-coréennes, renverse spectaculairement la situation : les forces de l'ONU reprennent Séoul puis repoussent l'armée nord-coréenne bien au-delà du 38<sup>e</sup> parallèle initial, jusqu'à approcher dangereusement du fleuve <strong>Yalou</strong>, frontière avec la Chine communiste.</p>
 
+<figure class="croquis">
+<svg viewBox="0 0 360 206" role="img" aria-label="Quatre cartes des mouvements du front en Corée entre 1950 et 1953">
+  <rect width="360" height="206" fill="#ece1c4"/>
+  <g class="cr-leg" text-anchor="middle" font-size="9" font-weight="700">
+    <text x="48" y="18">Juin 1950</text><text x="136" y="18">Septembre 1950</text>
+    <text x="224" y="18">Novembre 1950</text><text x="312" y="18">Juillet 1953</text>
+  </g>
+  <g transform="translate(12,34)" stroke="#3a3020" stroke-width="1">
+    <path d="M20,6 L48,4 L60,20 L56,56 L44,84 L34,104 L22,94 L26,64 L14,38 Z" fill="url(#h-b)"/>
+    <path d="M20,6 L48,4 L60,20 L58,40 L18,44 L14,38 Z" fill="url(#h-a)"/>
+    <path d="M40,44 L40,68" fill="none" stroke="#8c2432" stroke-width="2.4" marker-end="url(#f-a)"/>
+    <text class="cr-ville" x="62" y="36" font-size="7" stroke="none" text-anchor="end">38e parallèle</text>
+  </g>
+  <g transform="translate(100,34)" stroke="#3a3020" stroke-width="1">
+    <path d="M20,6 L48,4 L60,20 L56,56 L44,84 L34,104 L22,94 L26,64 L14,38 Z" fill="url(#h-b)"/>
+    <path d="M20,6 L48,4 L60,20 L56,56 L46,74 L38,76 L26,96 L22,94 L26,64 L14,38 Z" fill="url(#h-a)"/>
+    <path d="M18,52 L40,58" fill="none" stroke="#1f4a3c" stroke-width="2.4" marker-end="url(#f-b)"/>
+    <text class="cr-ville" x="4" y="50" font-size="7" stroke="none">Incheon</text>
+    <text class="cr-ville" x="48" y="100" font-size="7" stroke="none">Pusan</text>
+  </g>
+  <g transform="translate(188,34)" stroke="#3a3020" stroke-width="1">
+    <path d="M20,6 L48,4 L60,20 L56,56 L44,84 L34,104 L22,94 L26,64 L14,38 Z" fill="url(#h-b)"/>
+    <path d="M20,6 L44,4 L46,12 L20,14 Z" fill="url(#h-a)"/>
+    <path d="M32,-10 L32,14" fill="none" stroke="#8c2432" stroke-width="2.4" marker-end="url(#f-a)"/>
+    <text class="cr-ville" x="0" y="-8" font-size="7" stroke="none">Chine</text>
+    <text class="cr-ville" x="62" y="16" font-size="7" stroke="none" text-anchor="end">Yalou</text>
+  </g>
+  <g transform="translate(276,34)" stroke="#3a3020" stroke-width="1">
+    <path d="M20,6 L48,4 L60,20 L56,56 L44,84 L34,104 L22,94 L26,64 L14,38 Z" fill="url(#h-b)"/>
+    <path d="M20,6 L48,4 L60,20 L58,34 L16,46 L14,38 Z" fill="url(#h-a)"/>
+    <path d="M14,44 L58,32" fill="none" stroke="#3a3020" stroke-width="2.6"/>
+    <text class="cr-ville" x="62" y="58" font-size="7" stroke="none" text-anchor="end">armistice</text>
+    <text class="cr-ville" x="62" y="66" font-size="7" stroke="none" text-anchor="end">27 juillet</text>
+  </g>
+  <g transform="translate(6,152)">
+    <rect x="0" y="0" width="348" height="48" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="14">Territoire tenu par le Nord et ses alliés</text>
+    <rect x="8" y="20" width="15" height="9" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="28">Territoire tenu par le Sud et l'ONU</text>
+    <path d="M8,39 L26,39" stroke="#3a3020" stroke-width="2.6"/>
+    <text class="cr-leg" x="32" y="42">Ligne d'armistice de Panmunjom</text>
+    <text class="cr-leg" x="200" y="14">Trois ans de guerre pour revenir,</text>
+    <text class="cr-leg" x="200" y="26">à quelques kilomètres près, à la ligne</text>
+    <text class="cr-leg" x="200" y="38">de partage de 1945.</text>
+  </g>
+</svg>
+<figcaption><b>La Corée, 1950-1953.</b> Le front descend jusqu'à Pusan, remonte jusqu'au Yalou après le débarquement d'Incheon, redescend sous la poussée des « volontaires » chinois, puis se fige près du 38e parallèle : la guerre s'achève sur un armistice, jamais sur un traité de paix.</figcaption>
+</figure>
 <p>Ce retournement spectaculaire de situation, obtenu en quelques semaines à peine grâce à l'audace tactique de MacArthur, nourrit alors chez le commandement américain un optimisme excessif quant à la possibilité de réunifier l'ensemble de la péninsule sous un régime favorable à l'Occident, optimisme qui sera brutalement douché par l'intervention chinoise survenant peu après.</p>
 
 <h3>3. L'intervention chinoise : la guerre s'internationalise encore</h3>
@@ -7889,6 +8109,49 @@ const COURS = [
 
 <h3>3. La nuit du 13 août 1961</h3>
 <p>Face à l'aggravation continue de l'exode, qui atteint des proportions catastrophiques durant l'été 1961 — des milliers de personnes franchissant quotidiennement la frontière encore ouverte à Berlin —, les autorités est-allemandes, avec l'aval explicite de Moscou, prennent une décision radicale : dans la nuit du <strong>12 au 13 août 1961</strong>, les forces est-allemandes scellent en quelques heures, par surprise, l'intégralité de la frontière entre les secteurs est et ouest de Berlin, d'abord au moyen de barbelés et de tranchées, rapidement remplacés par un véritable <strong>mur de béton</strong> renforcé de miradors et de zones de tir.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 300" role="img" aria-label="Plan schématique de Berlin et du tracé du mur construit à partir du 13 août 1961">
+  <rect width="360" height="300" fill="#e4d6ae"/>
+  <text class="cr-ville" x="12" y="22" font-size="8.5" letter-spacing="1">RÉPUBLIQUE DÉMOCRATIQUE ALLEMANDE</text>
+  <path d="M60,60 L150,38 L226,58 L246,110 L222,170 L140,196 L70,168 L44,112 Z" fill="none" stroke="#3a3020" stroke-width="1.4"/>
+  <path d="M150,38 L168,96 L156,148 L140,196 L70,168 L44,112 L60,60 Z" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1.2"/>
+  <path d="M150,38 L226,58 L246,110 L222,170 L140,196 L156,148 L168,96 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.2"/>
+  <path d="M150,38 L168,96 L156,148 L140,196 L70,168 L44,112 L60,60 Z" fill="none" stroke="#3a3020" stroke-width="3.6"/>
+  <text class="cr-ville" x="72" y="120" font-size="9" font-weight="700" fill="#14382c">BERLIN-OUEST</text>
+  <text class="cr-ville" x="72" y="132" font-size="7.5" fill="#14382c">secteurs américain,</text>
+  <text class="cr-ville" x="72" y="142" font-size="7.5" fill="#14382c">britannique et français</text>
+  <text class="cr-ville" x="190" y="120" font-size="9" font-weight="700" fill="#6d1b26">BERLIN-EST</text>
+  <text class="cr-ville" x="190" y="132" font-size="7.5" fill="#6d1b26">secteur soviétique,</text>
+  <text class="cr-ville" x="190" y="142" font-size="7.5" fill="#6d1b26">capitale de la RDA</text>
+  <circle cx="160" cy="92" r="3" fill="#3a3020"/>
+  <text class="cr-ville" x="176" y="82" font-size="7.5">Porte de Brandebourg</text>
+  <path d="M174,86 L164,90" fill="none" stroke="#3a3020" stroke-width=".8"/>
+  <circle cx="158" cy="138" r="3" fill="#3a3020"/>
+  <text class="cr-ville" x="170" y="160" font-size="7.5">Checkpoint Charlie</text>
+  <path d="M168,156 L160,142" fill="none" stroke="#3a3020" stroke-width=".8"/>
+  <path d="M292,66 L302,66" fill="none" stroke="#3a3020" stroke-width="3.6"/>
+  <text class="cr-note" x="262" y="52" font-size="8">Le mur suit la limite</text>
+  <text class="cr-note" x="262" y="62" font-size="8">des secteurs et encercle</text>
+  <text class="cr-note" x="262" y="72" font-size="8">entièrement Berlin-Ouest.</text>
+  <g fill="none" stroke="#1f4a3c" stroke-width="2.4" stroke-dasharray="6,3">
+    <path d="M196,214 Q170,204 146,196" marker-end="url(#f-b)"/>
+  </g>
+  <text class="cr-note" x="152" y="226" font-size="8" fill="#14382c">Avant 1961, Berlin-Ouest était la principale voie</text>
+  <text class="cr-note" x="152" y="236" font-size="8" fill="#14382c">de fuite des Allemands de l'Est vers l'Ouest.</text>
+  <g transform="translate(6,250)">
+    <rect x="0" y="0" width="348" height="44" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <path d="M8,12 L26,12" stroke="#3a3020" stroke-width="3.6"/>
+    <text class="cr-leg" x="32" y="15">Tracé du mur, élevé dans la nuit du 12 au 13 août 1961</text>
+    <circle cx="16" cy="28" r="3" fill="#3a3020"/>
+    <text class="cr-leg" x="32" y="31">Points de passage entre les deux moitiés de la ville</text>
+    <rect x="8" y="36" width="15" height="6" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1"/>
+    <text class="cr-leg" x="32" y="42">Secteurs occidentaux</text>
+    <rect x="196" y="36" width="15" height="6" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="220" y="42">Secteur soviétique</text>
+  </g>
+</svg>
+<figcaption><b>Le mur de Berlin, à partir du 13 août 1961.</b> Le mur ne sépare pas deux pays : il enferme Berlin-Ouest à l'intérieur de la RDA. Ce que l'ouvrage arrête n'est pas une invasion mais un départ — celui des Est-Allemands qui, jusque-là, passaient à l'Ouest en prenant simplement le métro.</figcaption>
+</figure>
 <p>Cette opération, planifiée dans le plus grand secret pour éviter toute fuite d'information qui aurait permis une accélération massive de dernière minute des départs, surprend totalement tant la population berlinoise que les puissances occidentales elles-mêmes, qui, faute de moyen légal ou militaire d'intervention sur un territoire relevant de la souveraineté est-allemande reconnue de fait, se contentent de protestations diplomatiques sans jamais remettre sérieusement en question la construction elle-même.</p>
 
 <h3>4. Un symbole durable de la division</h3>
@@ -7975,6 +8238,47 @@ const COURS = [
 
 <h3>3. La découverte des missiles et la crise d'octobre</h3>
 <p>C'est dans ce contexte que l'URSS, cherchant à la fois à protéger son nouvel allié cubain d'une invasion américaine jugée désormais probable et à compenser rapidement son infériorité stratégique face aux missiles américains déjà déployés en Turquie, aux portes mêmes du territoire soviétique, installe secrètement à Cuba des <strong>missiles nucléaires à portée intermédiaire</strong>, capables d'atteindre une large partie du territoire américain en quelques minutes seulement.</p>
+<figure class="croquis">
+<svg viewBox="0 0 360 272" role="img" aria-label="Carte de la crise des missiles de Cuba en octobre 1962">
+  <rect width="360" height="272" fill="#aac0c2"/>
+  <path d="M0,0 H250 L236,44 L196,72 L140,90 L92,120 L40,132 L0,124 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-pays" x="40" y="46" font-size="11">ÉTATS-UNIS</text>
+  <path d="M0,150 L44,140 L76,150 L70,196 L20,206 L0,190 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="10" y="176" font-size="8" letter-spacing="1">MEXIQUE</text>
+  <path d="M150,132 L214,128 L246,142 L230,160 L176,158 L146,146 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.6"/>
+  <text class="cr-ville" x="176" y="150" font-weight="700" fill="#6d1b26">CUBA</text>
+  <path d="M244,180 L300,172 L322,200 L272,216 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <text class="cr-ville" x="256" y="200" font-size="8">Antilles</text>
+  <circle cx="196" cy="144" r="88" fill="none" stroke="#8c2432" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text class="cr-note" x="110" y="228" font-size="8" fill="#6d1b26" transform="rotate(-24 110 228)">portée des missiles installés</text>
+  <circle cx="196" cy="144" r="118" fill="none" stroke="#1f4a3c" stroke-width="2.6" stroke-dasharray="10,5"/>
+  <text class="cr-note" x="350" y="76" font-size="8" fill="#14382c" text-anchor="end">« quarantaine » navale</text>
+  <text class="cr-note" x="350" y="86" font-size="8" fill="#14382c" text-anchor="end">décrétée le 22 octobre</text>
+  <g fill="#8c2432">
+    <path d="M178,138 L184,132 L190,138 L184,144 Z"/><path d="M204,136 L210,130 L216,136 L210,142 Z"/>
+    <path d="M192,150 L198,144 L204,150 L198,156 Z"/>
+  </g>
+  <circle cx="116" cy="60" r="2.8" fill="#3a3020"/><text class="cr-ville" x="120" y="58" font-size="8">Washington</text>
+  <circle cx="160" cy="112" r="2.6" fill="#3a3020"/><text class="cr-ville" x="120" y="110" font-size="8">Miami</text>
+  <circle cx="198" cy="146" r="2.6" fill="#3a3020"/><text class="cr-ville" x="200" y="164" font-size="8">La Havane</text>
+  <g fill="none" stroke="#1f4a3c" stroke-width="2.6">
+    <path d="M286,140 L246,142" marker-end="url(#f-b)"/>
+    <path d="M204,236 L200,206" marker-end="url(#f-b)"/>
+  </g>
+  <path d="M340,206 Q322,182 310,158" fill="none" stroke="#8c2432" stroke-width="2.6" stroke-dasharray="7,4" marker-end="url(#f-a)"/>
+  <text class="cr-note" x="346" y="224" font-size="8" fill="#6d1b26" text-anchor="end">cargos soviétiques</text>
+  <g transform="translate(6,240)">
+    <rect x="0" y="0" width="348" height="28" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <path d="M8,11 L26,11" stroke="#1f4a3c" stroke-width="2.6" stroke-dasharray="6,3"/>
+    <text class="cr-leg" x="32" y="14">Ligne de quarantaine imposée par la marine américaine</text>
+    <path d="M8,23 L26,23" stroke="#8c2432" stroke-width="1.6" stroke-dasharray="4,3"/>
+    <text class="cr-leg" x="32" y="26">Portée approximative des missiles déployés à Cuba</text>
+    <path d="M230,20 L236,14 L242,20 L236,26 Z" fill="#8c2432"/>
+    <text class="cr-leg" x="250" y="24">Sites de lancement</text>
+  </g>
+</svg>
+<figcaption><b>Cuba, octobre 1962.</b> Des missiles installés à quatre-vingts miles des côtes américaines réduisent à quelques minutes le temps d'alerte de Washington. Kennedy choisit une riposte intermédiaire — un blocus naval qualifié de « quarantaine » pour ne pas le nommer acte de guerre — qui laisse à Khrouchtchev le temps de reculer.</figcaption>
+</figure>
 <p>Détectés le <strong>14 octobre 1962</strong> par des vols de reconnaissance américains à haute altitude, ces missiles déclenchent une crise majeure : le président Kennedy, réuni en session permanente avec ses plus proches conseillers au sein d'un groupe restreint désigné sous le nom d'<em>ExComm</em>, écarte l'option d'une frappe militaire immédiate, jugée trop risquée, au profit d'un <strong>blocus naval</strong> — pudiquement rebaptisé « quarantaine » pour des raisons de droit international, un blocus constituant techniquement un acte de guerre —, annoncé publiquement le 22 octobre 1962.</p>
 
 <h3>4. La résolution et ses leçons durables</h3>
@@ -8058,6 +8362,46 @@ const COURS = [
 <h3>2. L'engagement américain croissant</h3>
 <p>L'implication américaine, d'abord limitée à l'envoi de conseillers militaires et d'une aide économique sous les administrations Eisenhower puis Kennedy, s'intensifie brutalement après l'<strong>incident du golfe du Tonkin</strong>, en août 1964 : des accrochages navals, dont l'ampleur et même la réalité exacte du second épisode restent aujourd'hui fortement contestées par les historiens à la lumière des archives ultérieurement déclassifiées, servent de prétexte à une résolution du Congrès américain autorisant le président <strong>Lyndon Johnson</strong> à intervenir militairement sans déclaration de guerre formelle. S'ensuit un engorgement rapide et considérable des troupes américaines au sol, accompagné d'une campagne de bombardement massive et prolongée du Nord-Vietnam, l'opération <em>Rolling Thunder</em>.</p>
 
+<figure class="croquis">
+<svg viewBox="0 0 360 292" role="img" aria-label="Carte du Vietnam divisé, de la piste Hô Chi Minh et de la guerre américaine">
+  <rect width="360" height="292" fill="#aac0c2"/>
+  <path d="M120,10 L196,16 L204,60 L188,96 L206,140 L196,190 L168,230 L134,246 L112,228 L128,186 L142,140 L128,96 L106,58 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1.2"/>
+  <path d="M106,58 L128,96 L142,140 L128,186 L112,228 L74,214 L58,166 L62,110 L82,70 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1.2"/>
+  <path d="M120,10 L196,16 L204,60 L188,96 L128,96 L106,58 Z" fill="url(#h-a)" stroke="#8c2432" stroke-width="1.4"/>
+  <path d="M188,96 L206,140 L196,190 L168,230 L134,246 L112,228 L128,186 L142,140 L128,96 Z" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1.4"/>
+  <path d="M128,96 L188,96" fill="none" stroke="#3a3020" stroke-width="3.4"/>
+  <text class="cr-ville" x="212" y="94" font-size="8" font-weight="700">17e parallèle</text>
+  <text class="cr-ville" x="212" y="104" font-size="7.5">partage de 1954</text>
+  <text class="cr-ville" x="140" y="48" font-size="8.5" font-weight="700" fill="#6d1b26">NORD-</text>
+  <text class="cr-ville" x="140" y="60" font-size="8.5" font-weight="700" fill="#6d1b26">VIETNAM</text>
+  <text class="cr-ville" x="152" y="180" font-size="8.5" font-weight="700" fill="#14382c">SUD-</text>
+  <text class="cr-ville" x="152" y="192" font-size="8.5" font-weight="700" fill="#14382c">VIETNAM</text>
+  <text class="cr-ville" x="70" y="120" font-size="8">LAOS</text>
+  <text class="cr-ville" x="74" y="196" font-size="8">CAMBODGE</text>
+  <text class="cr-eau" x="250" y="170" font-size="9">Mer de Chine</text>
+  <path d="M142,72 Q102,110 96,158 Q104,196 140,210" fill="none" stroke="#a9761f" stroke-width="3.2" stroke-dasharray="9,4" marker-end="url(#f-or)"/>
+  <text class="cr-note" x="14" y="150" font-size="8" fill="#7a5514">piste</text>
+  <text class="cr-note" x="14" y="160" font-size="8" fill="#7a5514">Hô Chi Minh</text>
+  <path d="M60,154 L88,152" fill="none" stroke="#7a5514" stroke-width=".9"/>
+  <path d="M286,52 Q238,52 210,48" fill="none" stroke="#1f4a3c" stroke-width="2.8" marker-end="url(#f-b)"/>
+  <text class="cr-note" x="352" y="42" font-size="8" fill="#14382c" text-anchor="end">bombardements américains</text>
+  <text class="cr-note" x="352" y="52" font-size="8" fill="#14382c" text-anchor="end">sur le Nord (1965-1968)</text>
+  <circle cx="158" cy="36" r="2.8" fill="#3a3020"/><text class="cr-ville" x="162" y="34" font-size="8">Hanoï</text>
+  <circle cx="176" cy="122" r="2.4" fill="#3a3020"/><text class="cr-ville" x="180" y="120" font-size="8">Hué</text>
+  <circle cx="160" cy="220" r="2.8" fill="#3a3020"/><text class="cr-ville" x="166" y="226" font-size="8">Saïgon</text>
+  <circle cx="160" cy="220" r="10" fill="none" stroke="#8c2432" stroke-width="1.8" stroke-dasharray="4,3"/>
+  <text class="cr-note" x="196" y="248" font-size="8" fill="#6d1b26">offensive du Têt,</text>
+  <text class="cr-note" x="196" y="258" font-size="8" fill="#6d1b26">janvier 1968</text>
+  <g transform="translate(6,262)">
+    <rect x="0" y="0" width="182" height="26" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <path d="M8,10 L26,10" stroke="#a9761f" stroke-width="3" stroke-dasharray="6,3"/>
+    <text class="cr-leg" x="32" y="13">Piste Hô Chi Minh</text>
+    <path d="M8,21 L26,21" stroke="#3a3020" stroke-width="3.4"/>
+    <text class="cr-leg" x="32" y="24">Ligne de démarcation de 1954</text>
+  </g>
+</svg>
+<figcaption><b>Le Vietnam divisé.</b> Le 17e parallèle, conçu en 1954 comme une ligne provisoire, devient une frontière. La piste Hô Chi Minh, qui passe par le Laos et le Cambodge, rend la coupure poreuse : c'est elle que les bombardements américains ne parviennent pas à couper.</figcaption>
+</figure>
 <p>Au plus fort de l'engagement, en 1968-1969, plus de cinq cent mille soldats américains sont déployés sur le sol vietnamien, soutenus par une puissance de feu aérienne sans précédent dans l'histoire militaire, larguant sur ce petit pays un tonnage de bombes supérieur, selon plusieurs estimations, à celui déversé sur l'ensemble des théâtres de la Seconde Guerre mondiale réunis.</p>
 
 <h3>3. L'offensive du Têt : la défaite militaire qui devient une victoire politique</h3>
