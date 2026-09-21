@@ -332,6 +332,9 @@ select{width:100%}
   body{font-size:18px}
   .app{padding-bottom:calc(var(--barre) + 40px)}
   .stat{flex:1 1 0}
+  /* Sur grand ecran, la barre d'onglets reste alignee sur la colonne de texte. */
+  .onglets{justify-content:center}
+  .onglets button{max-width:200px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -3342,8 +3345,21 @@ function esc(s){
   ));
 }
 
+/* Typographie francaise : espace insecable a l'interieur des guillemets
+   et devant les ponctuations doubles, pour eviter qu'un << ; >> ou un
+   guillemet fermant ne se retrouve seul en debut de ligne. */
+function typo(s){
+  return String(s)
+    .replace(/« /g, "\u00AB\u00A0")
+    .replace(/ »/g, "\u00A0\u00BB")
+    .replace(/ ([;:?!])/g, "\u00A0$1");
+}
+
+/* Texte destine a l'affichage : typographie puis echappement. */
+function tx(s){ return esc(typo(s)); }
+
 function filet(texte){
-  return texte ? `<div class="filet"><span>${esc(texte)}</span></div>`
+  return texte ? `<div class="filet"><span>${tx(texte)}</span></div>`
                : `<div class="filet"><span class="losange">&#9670;</span></div>`;
 }
 
@@ -3385,9 +3401,9 @@ function rendreAccueil(){
     const s = c.seances.find(x => x.numero === n);
     const etat = etatSeance(c.id, n);
     parts.push(`<div class="carte">
-      <p class="minuscule">${esc(c.periode)} &#8226; ${esc(c.dates)}</p>
-      <h2>${esc(c.titre)}</h2>
-      <p class="secondaire" style="margin-bottom:10px">Séance ${n} sur ${SEANCES_PAR_COURS} &#8212; ${esc(s.titre)}</p>
+      <p class="minuscule">${tx(c.periode)} &#8226; ${tx(c.dates)}</p>
+      <h2>${tx(c.titre)}</h2>
+      <p class="secondaire" style="margin-bottom:10px">Séance ${n} sur ${SEANCES_PAR_COURS} &#8212; ${tx(s.titre)}</p>
       ${jauge(nbFaites(c.id), SEANCES_PAR_COURS)}
       <p class="minuscule" style="margin-bottom:14px">${nbFaites(c.id)} séance(s) validée(s) &#8212; environ 10 minutes par séance</p>
       ${ etat === "demain"
@@ -3433,9 +3449,9 @@ function rendreAccueil(){
     if(sug){
       parts.push(`<div class="carte">
         <h3>Pour continuer</h3>
-        <p class="secondaire">Vous avez terminé <strong>${esc(dernierTermine.titre)}</strong>.
+        <p class="secondaire">Vous avez terminé <strong>${tx(dernierTermine.titre)}</strong>.
         Dans la même période, ce cours prolonge naturellement la réflexion :</p>
-        <p style="margin-bottom:12px"><strong>${esc(sug.titre)}</strong> &#8212; <span class="secondaire">${esc(sug.problematique)}</span></p>
+        <p style="margin-bottom:12px"><strong>${tx(sug.titre)}</strong> &#8212; <span class="secondaire">${tx(sug.problematique)}</span></p>
         <button class="bouton" data-action="fiche" data-cours="${esc(sug.id)}">Ouvrir la fiche</button>
       </div>`);
     }
@@ -3448,7 +3464,7 @@ function rendreAccueil(){
     parts.push(`<div class="carte"><ul class="liste">` + derniers.map(h => {
       const co = coursParId(h.coursId);
       const nom = h.type === "compose" ? "Quiz composé" :
-                  (co ? esc(co.titre) + " &#8212; séance " + h.seance : "Séance");
+                  (co ? tx(co.titre) + " &#8212; séance " + h.seance : "Séance");
       const pc = h.total ? Math.round(100*h.justes/h.total) : 0;
       return `<li class="ligne" style="cursor:default">
         <span class="num"><span>${pc}</span></span>
@@ -3523,9 +3539,9 @@ function rendreCatalogue(vue){
       const faites = nbFaites(c.id);
       const fini = coursTermine(c.id);
       parts.push(`<div class="carte">
-        <p class="minuscule">${esc(c.dates)}${c.note ? " &#8226; " + esc(c.note) : ""}</p>
-        <h3>${esc(c.titre)}</h3>
-        <p class="secondaire">${esc(c.problematique)}</p>
+        <p class="minuscule">${tx(c.dates)}${c.note ? " &#8226; " + tx(c.note) : ""}</p>
+        <h3>${tx(c.titre)}</h3>
+        <p class="secondaire">${tx(c.problematique)}</p>
         <p style="margin:0 0 10px">
           <span class="etiq ${fini ? "faite" : "or"}">${fini ? "terminé" : faites + "/" + SEANCES_PAR_COURS}</span>
           <span class="etiq">${SEANCES_PAR_COURS} séances</span>
@@ -3544,9 +3560,9 @@ function rendreFiche(vue){
   const parts = [];
   parts.push(`<div class="fil"><button class="bouton petit discret" data-action="catalogue">&#8592; Catalogue</button></div>`);
   parts.push(`<div class="carte">
-    <p class="minuscule">${esc(c.periode)} &#8226; ${esc(c.dates)}${c.note ? " &#8226; " + esc(c.note) : ""}</p>
-    <h2>${esc(c.titre)}</h2>
-    <p class="secondaire" style="font-style:italic">${esc(c.problematique)}</p>
+    <p class="minuscule">${tx(c.periode)} &#8226; ${tx(c.dates)}${c.note ? " &#8226; " + tx(c.note) : ""}</p>
+    <h2>${tx(c.titre)}</h2>
+    <p class="secondaire" style="font-style:italic">${tx(c.problematique)}</p>
     ${jauge(nbFaites(c.id), SEANCES_PAR_COURS)}
     <p class="minuscule">${nbFaites(c.id)} séance(s) sur ${SEANCES_PAR_COURS}</p>
   </div>`);
@@ -3560,7 +3576,7 @@ function rendreFiche(vue){
     return `<li><button class="ligne ${e === "faite" ? "faite" : ""}"
       ${cliquable ? `data-action="lire" data-cours="${esc(c.id)}" data-seance="${s.numero}"` : "disabled"}>
       <span class="num"><span>${s.numero}</span></span>
-      <span class="corps"><span class="t">${esc(s.titre)}</span>
+      <span class="corps"><span class="t">${tx(s.titre)}</span>
         ${note ? `<span class="minuscule">${note.justes}/${note.total} &#8226; ${dateLisible(note.date)}</span>` : ""}
       </span>
       <span class="etat">${libelle}</span>
@@ -3574,7 +3590,7 @@ function rendreFiche(vue){
 
   parts.push(filet("Sources du cours"));
   parts.push(`<div class="carte"><ul class="sources">` +
-    c.sources.map(s => `<li>${esc(s)}</li>`).join("") + `</ul>
+    c.sources.map(s => `<li>${tx(s)}</li>`).join("") + `</ul>
     <p class="minuscule">Ouvrages de référence utilisés pour la rédaction des séances.</p></div>`);
 
   vue.innerHTML = parts.join("");
@@ -3589,18 +3605,18 @@ function rendreLecture(vue){
   sauverEtat();
 
   const parts = [];
-  parts.push(`<div class="fil"><button class="bouton petit discret" data-action="fiche" data-cours="${esc(c.id)}">&#8592; ${esc(c.titre)}</button></div>`);
+  parts.push(`<div class="fil"><button class="bouton petit discret" data-action="fiche" data-cours="${esc(c.id)}">&#8592; ${tx(c.titre)}</button></div>`);
   parts.push(`<div class="carte">
     <p class="minuscule">Séance ${s.numero} sur ${SEANCES_PAR_COURS}</p>
-    <h2>${esc(s.titre)}</h2>
+    <h2>${tx(s.titre)}</h2>
   </div>`);
-  parts.push(`<div class="probleme"><strong>Problématique.</strong> ${esc(s.problematique)}</div>`);
+  parts.push(`<div class="probleme"><strong>Problématique.</strong> ${tx(s.problematique)}</div>`);
 
   /* Le cours en entier d'abord. */
-  parts.push(`<article class="lecture">${s.contenu}</article>`);
+  parts.push(`<article class="lecture">${typo(s.contenu)}</article>`);
 
   /* Puis l'anecdote, jamais evaluee. */
-  parts.push(`<div class="anecdote"><span class="titre">Anecdote &#8212; hors programme</span>${s.anecdote}</div>`);
+  parts.push(`<div class="anecdote"><span class="titre">Anecdote &#8212; hors programme</span>${typo(s.anecdote)}</div>`);
 
   /* Et seulement tout en bas, l'acces au QCM. */
   parts.push(filet(""));
@@ -3671,7 +3687,7 @@ function rendreQuizEnCours(){
   const q = QUIZ;
   const parts = [];
   const titreQuiz = q.type === "seance"
-    ? esc(coursParId(q.coursId).titre) + " &#8212; séance " + q.seance
+    ? tx(coursParId(q.coursId).titre) + " &#8212; séance " + q.seance
     : "Quiz composé";
 
   parts.push(`<div class="fil"><button class="bouton petit discret" data-action="quiz-abandonner">&#8592; Quitter</button></div>`);
@@ -3686,11 +3702,11 @@ function rendreQuizEnCours(){
     const revision = (q.type === "seance" && it.seance !== q.seance);
     const coches = q.reponses[i] || [];
     parts.push(`<div class="question" id="q-${i}">
-      <p class="enonce">${i+1}. ${esc(it.q.enonce)}</p>
+      <p class="enonce">${i+1}. ${tx(it.q.enonce)}</p>
       <p class="consigne">${revision ? "Révision &#8212; séance " + it.seance + " &#8226; " : ""}plusieurs réponses possibles</p>
       ${it.ordre.map(oi => `<label class="option">
           <input type="checkbox" data-question="${i}" data-option="${oi}" ${coches.indexOf(oi) >= 0 ? "checked" : ""}>
-          <span>${esc(it.q.options[oi])}</span>
+          <span>${tx(it.q.options[oi])}</span>
         </label>`).join("")}
       <p class="erreur" id="err-${i}" style="display:none">Cochez au moins une proposition pour cette question.</p>
     </div>`);
@@ -3785,15 +3801,15 @@ function enregistrerResultat(q){
 
 function listeReponses(it, indices, classe){
   if(!indices.length) return `<span class="rep ${classe}">aucune</span>`;
-  return indices.map(k => `<span class="rep ${classe}">${esc(it.q.options[k])}</span>`).join("");
+  return indices.map(k => `<span class="rep ${classe}">${tx(it.q.options[k])}</span>`).join("");
 }
 
 function blocCorrection(d){
   return `<div class="corr">
-    <p class="enonce">${d.i+1}. ${esc(d.it.q.enonce)}</p>
+    <p class="enonce">${d.i+1}. ${tx(d.it.q.enonce)}</p>
     ${d.juste ? "" : `<p class="ligne-rep"><b>Vous avez coché</b>${listeReponses(d.it, d.coches, "faux")}</p>`}
     <p class="ligne-rep"><b>${d.juste ? "Réponse" : "Bonne réponse"}</b>${listeReponses(d.it, d.bonnes, "juste")}</p>
-    <p class="expl">${esc(d.it.q.explication)}</p>
+    <p class="expl">${tx(d.it.q.explication)}</p>
   </div>`;
 }
 
@@ -3860,7 +3876,7 @@ function rendreMenuQuiz(){
     const n = prochaineSeance(c.id);
     const e = etatSeance(c.id, n);
     parts.push(`<div class="carte">
-      <h3>${esc(c.titre)}</h3>
+      <h3>${tx(c.titre)}</h3>
       <p class="secondaire">Le QCM d’une séance s’ouvre à la fin de sa lecture : cinq questions de la séance,
       et cinq de la précédente en révision.</p>
       ${ e === "disponible"
@@ -3878,7 +3894,7 @@ function rendreMenuQuiz(){
     parts.push(`<div class="carte">
       <h3>Refaire un QCM de séance</h3>
       <select id="sel-seance">
-        ${faites.map(f => `<option value="${esc(f.co.id)}|${f.s.numero}">${esc(f.co.titre)} &#8212; séance ${f.s.numero}</option>`).join("")}
+        ${faites.map(f => `<option value="${esc(f.co.id)}|${f.s.numero}">${tx(f.co.titre)} &#8212; séance ${f.s.numero}</option>`).join("")}
       </select>
       <div class="saut"></div>
       <button class="bouton" data-action="quiz-seance-choisie">Lancer ce QCM</button>
@@ -3893,7 +3909,7 @@ function rendreMenuQuiz(){
       const dispo = nbFaites(co.id);
       return `<label class="coche">
         <input type="checkbox" data-compose="${esc(co.id)}" ${COMPOSE.coches.indexOf(co.id) >= 0 ? "checked" : ""}>
-        <span>${esc(co.titre)}<br><span class="minuscule">${dispo} séance(s) faite(s) &#8226; ${co.seances.length*5} questions au total</span></span>
+        <span>${tx(co.titre)}<br><span class="minuscule">${dispo} séance(s) faite(s) &#8226; ${co.seances.length*5} questions au total</span></span>
       </label>`;
     }).join("")}
 
@@ -3922,7 +3938,7 @@ function rendreMenuQuiz(){
     const h = ETAT.historique.slice(-12).reverse();
     parts.push(`<div class="carte"><ul class="liste">` + h.map(x => {
       const co = coursParId(x.coursId);
-      const nom = x.type === "compose" ? "Quiz composé" : (co ? esc(co.titre) + " &#8212; séance " + x.seance : "Séance");
+      const nom = x.type === "compose" ? "Quiz composé" : (co ? tx(co.titre) + " &#8212; séance " + x.seance : "Séance");
       const pc = x.total ? Math.round(100*x.justes/x.total) : 0;
       return `<li class="ligne" style="cursor:default">
         <span class="num"><span>${pc}</span></span>
@@ -4059,6 +4075,8 @@ document.addEventListener("change", function(ev){
     const lecteur = new FileReader();
     lecteur.onload = e => appliquerImport(e.target.result);
     lecteur.readAsText(t.files[0]);
+    /* Remis a zero pour pouvoir reimporter deux fois le meme fichier. */
+    t.value = "";
   }
 });
 
