@@ -234,7 +234,7 @@ body[data-onglet="quiz"] .vignette::before{width:38px}
   font-size:15.5px;line-height:1.45;
 }
 .ligne[disabled]{cursor:not-allowed;opacity:.5}
-/* Medaillon grave, a la place du losange Art deco. */
+/* Medaillon grave : le numero de seance, comme un chiffre de tomaison. */
 .ligne .num{
   flex:0 0 36px;height:36px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -301,15 +301,15 @@ body[data-onglet="quiz"] .vignette::before{width:38px}
    Planche gravee contrecollee dans la page : double filet, fond de
    papier plus clair, legende en italique. Le trace est schematique
    (jamais une projection exacte) pour rester lisible sur telephone.
-   Palette : --cr-terre (sol), --cr-mer (eau), --cr-encre (traits et
-   texte), --cr-a / --cr-b (deux camps opposes), --cr-or (axe decisif),
-   --cr-n (neutre ou anterieur). Les fleches et les hachures sont
-   definies UNE SEULE FOIS dans #croquis-defs, au debut du <body>. */
-:root{
-  --cr-fond:#ece1c4; --cr-terre:#e4d6ae; --cr-terre-2:#d8c896;
-  --cr-terre-3:#cdbc8a; --cr-mer:#aac0c2; --cr-encre:#3a3020;
-  --cr-a:#8c2432; --cr-b:#1f4a3c; --cr-or:#a9761f; --cr-n:#6b5a34;
-}
+
+   Les couleurs d'un croquis sont ecrites en clair dans son SVG, et non
+   en variables : une figure doit rester lisible hors de cette page, et
+   une variable que le dessin n'utilise pas ferait croire qu'on peut
+   reteindre les cartes en la changeant. Le nuancier est donne dans le
+   commentaire en tete de COURS. Seule --cr-encre sert ici, pour la
+   couleur par defaut des textes du SVG. Les fleches et les hachures
+   sont definies UNE SEULE FOIS dans #croquis-defs, au debut du <body>. */
+:root{ --cr-encre:#3a3020; }
 #croquis-defs{position:absolute;width:0;height:0;overflow:hidden}
 .lecture figure.croquis{
   /* Pleine largeur sur telephone, bornee sur grand ecran : au-dela, un
@@ -582,7 +582,7 @@ select{width:100%}
 
    Regles :
    - trace schematique, a main levee, jamais une projection exacte ;
-     des polygones a facettes suffisent et s'accordent au style Art deco ;
+     des polygones a facettes suffisent, a la maniere d'une gravure ;
    - largeur de reference 360 unites, hauteur libre (200 a 260) ;
    - couleurs : #ece1c4 fond, #e4d6ae / #d8c896 / #cdbc8a les sols,
      #aac0c2 l'eau, #3a3020 l'encre, #8c2432 le camp A, #1f4a3c le
@@ -9048,7 +9048,7 @@ function tx(s){ return esc(typo(s)); }
 
 function filet(texte){
   return texte ? `<div class="filet"><span>${tx(texte)}</span></div>`
-               : `<div class="filet"><span class="losange">&#9670;</span></div>`;
+               : `<div class="filet"><span class="losange">&#10086;</span></div>`;
 }
 
 function jauge(fait, total){
