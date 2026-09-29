@@ -306,7 +306,12 @@ body[data-anim="off"] .sea{animation:none}
 .sw-evt-n{font-weight:500}
 .sw-slot{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--bg2)}
 .sw-slot:first-of-type{border-top:none}
-.sw-slot-time{font-size:11px;color:var(--ink4);font-weight:600;width:52px;flex-shrink:0}
+/* Deux lignes : l'horaire, puis la salle. La colonne fait 52 px fixes —
+   y loger la salle ne prend rien au nom de la sequence, qui est ce
+   qu'on vient lire. */
+.sw-slot-time{font-size:11px;color:var(--ink4);font-weight:600;width:52px;flex-shrink:0;
+  display:flex;flex-direction:column;gap:1px}
+.sw-slot-salle{font-size:10px;font-weight:700;color:var(--accent2);letter-spacing:.02em}
 .sw-slot-class{font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:6px;
   border:1.5px solid;background:var(--card2);flex-shrink:0}
 .sw-slot-seq{font-size:11.5px;color:var(--ink2);line-height:1.25;min-width:0}
@@ -321,6 +326,22 @@ body[data-anim="off"] .sea{animation:none}
 /* vue d'ensemble */
 .en-note{padding:0 16px 12px;font-size:12px;color:var(--ink4)}
 .en-grid{padding:0 16px}
+/* Anniversaires — un paragraphe par mois, de septembre à août. */
+.anv-wrap{padding:0 16px}
+.anv-mois{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);margin:16px 2px 8px}
+.anv-mois:first-child{margin-top:2px}
+.anv-l{display:flex;align-items:baseline;gap:10px;padding:8px 10px;border-radius:8px;
+  font-size:13px;color:var(--ink2);border-bottom:1px solid var(--line)}
+.anv-l:last-child{border-bottom:0}
+.anv-j{width:26px;flex-shrink:0;text-align:right;font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums}
+.anv-n{flex:1;min-width:0;line-height:1.35}
+.anv-n b{color:var(--ink)}
+.anv-c{color:var(--ink4);font-size:11.5px}
+.anv-a{flex-shrink:0;font-size:11.5px;color:var(--ink4);font-variant-numeric:tabular-nums}
+/* Le jour même : la seule ligne qu'on cherche vraiment en ouvrant l'onglet. */
+.anv-l.auj{background:var(--card2);border-bottom-color:transparent}
+.anv-l.auj .anv-j,.anv-l.auj .anv-a{color:var(--accent2)}
 .en-row{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-s);padding:12px 14px;margin-bottom:9px}
 .en-top{display:flex;align-items:center;gap:9px}
 .en-name{font-size:16px;font-weight:700}
@@ -473,6 +494,18 @@ button:active, .seg-opt:active, .su-opt:active, .zone-opt:active,
   font-size:13.5px;color:var(--ink2);text-align:left;display:flex;align-items:center;gap:10px}
 .motif-opt.sel{border-color:var(--accent);background:var(--card2);color:var(--ink)}
 .motif-opt .mo-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--line2)}
+/* Une option qui s'explique. Le choix du type d'évaluation est passé
+   d'un segment de trois à une liste de quatre : « Dictée » ne rentrait
+   pas, et surtout ne se comprend pas sans un mot. */
+.motif-opt .mo-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+/* Sur deux lignes, align-items:center posait la pastille ENTRE le titre
+   et l'explication, où elle ne désignait plus rien. Une classe plutôt
+   que :has() : le WebView d'Android ne le garantit pas sur les versions
+   les plus anciennes que l'application accepte. */
+.motif-opt.mo-2l{align-items:flex-start}
+.motif-opt.mo-2l .mo-dot{margin-top:6px}
+.motif-opt .mo-sub{font-size:11.5px;color:var(--ink4);line-height:1.35}
+.motif-opt.sel .mo-sub{color:var(--ink3)}
 .motif-opt.fam-conj .mo-dot{background:var(--emc)}
 .motif-opt.fam-struct .mo-dot{background:var(--e-orange)}
 .motif-opt.fam-large .mo-dot{background:var(--e-vert)}
@@ -509,7 +542,21 @@ input.txt:focus,textarea.txt:focus,select.sel-input:focus{border-color:var(--acc
 /* EDT editor */
 .edt-day{margin-bottom:14px}
 .edt-day-h{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--ink2)}
-.edt-row{display:flex;align-items:center;gap:5px;margin-bottom:7px}
+/* flex-wrap : la salle passe a la ligne. A 375 px, la premiere ligne est
+   deja pleine — horaire, classe, rythme A/B, corbeille.
+
+   MESURE : « flex-basis:100% + max-width:190px » NE SUFFIT PAS. Le
+   navigateur plafonne la base a 190 px, l'element tient donc sur la
+   premiere ligne, et ce sont les trois selecteurs qui se compriment —
+   observe a 375 px, l'horaire tombait a « 08 » et la classe a « 5e ».
+
+   Il faut un SEPARATEUR : un element de hauteur nulle qui occupe toute
+   la largeur force le retour a la ligne, et la salle peut alors rester
+   etroite sur la ligne suivante. */
+.edt-row{display:flex;align-items:center;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.edt-row .edt-br{flex:0 0 100%;height:0;margin:0;padding:0}
+.edt-row input.txt.edt-salle{flex:0 1 190px;min-width:0;margin:0 0 2px 0;
+  padding:7px 10px;font-size:13px}
 .edt-row select{background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:9px 4px;color:var(--ink);font-size:13px}
 /* min-width:0 — sans lui, un <select> flex refuse de descendre sous la
    largeur de sa plus longue option et pousse le bouton de suppression
@@ -612,6 +659,11 @@ input.txt:focus,textarea.txt:focus,select.sel-input:focus{border-color:var(--acc
 .niv-picker{display:flex;gap:8px}
 .niv-dot{flex:1;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line);color:var(--ink3);font-weight:600;font-size:15px;transition:all .15s}
 .niv-dot.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+/* Depuis la 3.4.20 le niveau est calculé. Une pastille qui ne se clique
+   plus ne doit pas ressembler à un bouton : pas de curseur main, pas de
+   transition, et les non-retenues s'effacent. */
+.niv-dot.lu{display:flex;align-items:center;justify-content:center;cursor:default;transition:none;opacity:.45}
+.niv-dot.lu.sel{opacity:1}
 .pap-check{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13.5px;color:var(--ink2)}
 .pap-check input{width:18px;height:18px}
 .btn-appr{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;
@@ -989,6 +1041,21 @@ input.txt:focus,textarea.txt:focus,select.sel-input:focus{border-color:var(--acc
 /* Une évaluation diagnostique se repère dans la liste : sa moyenne est
    affichée comme les autres, mais elle ne compte pas comme les autres. */
 .ev-chip.diag{background:var(--card2);color:var(--ink3);margin-left:5px}
+/* Une dictée ne se compare pas aux notes : « 4,2 » à côté de « 13,5 »
+   sans pastille pour les séparer se lit comme un effondrement. */
+.ev-chip.dictee{background:var(--accent2);color:var(--accent-ink);margin-left:5px}
+/* La phrase qui rend la courbe de dictées lisible. Dans la même fiche,
+   une courbe qui descend veut dire un échec au-dessus et un progrès
+   ici : sans cette ligne, la seconde se lit comme la première. */
+.dic-sens{font-size:12px;color:var(--ink2);line-height:1.45;background:var(--card2);
+  border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;padding:9px 11px;margin:8px 0}
+.dic-sens b{color:var(--ink)}
+.dic-resume{display:flex;gap:8px;margin:8px 0 0}
+.dic-resume>div{flex:1;background:var(--card2);border-radius:8px;padding:9px 8px;
+  font-size:11px;color:var(--ink3);text-align:center;line-height:1.4}
+.dic-resume b{display:block;font-size:16px;color:var(--ink)}
+.dic-tend{font-size:12.5px;color:var(--ink2);margin-top:8px;line-height:1.5}
+.dic-tend b{color:var(--ink)}
 .ev-moy{flex-shrink:0;text-align:right}
 .ev-moy b{display:block;font-size:15.5px;color:var(--ink);white-space:nowrap}
 .ev-moy span{font-size:10px;color:var(--ink4);text-transform:uppercase;letter-spacing:.05em}
@@ -1065,6 +1132,8 @@ input.txt.sn-note{width:74px;flex-shrink:0;text-align:center;padding:9px 4px}
 .sn-abs.on{background:var(--e-orange);border-color:var(--e-orange);color:var(--e-orange-fg)}
 .sn-row.absent input.txt.sn-note{opacity:.3}
 .sn-sur{font-size:11px;color:var(--ink4);flex-shrink:0;width:26px}
+/* « fautes » ne tient pas dans les 26 px prévus pour « /20 ». */
+.sn-sur.sn-f{width:38px}
 /* ===== COMPETENCES (lot 2.2) ===== */
 .sn-bloc{border-bottom:1px solid var(--line)}
 .sn-bloc:last-child{border-bottom:none}
@@ -1175,8 +1244,12 @@ input.txt.cp-court{width:62px;flex-shrink:0;padding:10px 6px;font-size:13px;text
 .pp-obs-mat{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;
   border:1px solid var(--line2);color:var(--ink2);background:var(--card)}
 .pp-obs-x{color:var(--ink4);font-size:13px;padding:0 4px}
-.pp-motif-grid{display:flex;gap:8px}
-.pp-motif-opt{flex:1;padding:14px 8px;border-radius:12px;background:var(--card2);border:2px solid var(--line2);font-size:13px;font-weight:600;color:var(--ink2)}
+/* flex-wrap : sans lui la rangée devenait plus large que l'écran passé
+   six motifs, et c'est la PAGE qui défilait — pas la bande. Deux par
+   rangée : mesuré à 375 px, trois colonnes laisseraient 109 px et
+   « Travail non fait » passerait à la ligne dans son propre bouton. */
+.pp-motif-grid{display:flex;gap:8px;flex-wrap:wrap}
+.pp-motif-opt{flex:1 1 calc(50% - 4px);min-width:0;padding:14px 8px;border-radius:12px;background:var(--card2);border:2px solid var(--line2);font-size:13px;font-weight:600;color:var(--ink2)}
 .pp-motif-opt.sel{border-color:var(--mc);background:color-mix(in srgb,var(--mc) 16%,var(--card2));color:var(--ink)}
 .pp-motif-preview{margin-top:10px;padding:10px;border-radius:9px;background:var(--card2);font-size:13px;font-weight:500;color:var(--ink);text-align:center}
 .pp-switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px;color:var(--ink)}
@@ -1423,6 +1496,23 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
 .tuto-dots{display:flex;gap:7px;justify-content:center;margin-bottom:20px}
 .tuto-dot{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:all .2s}
 .tuto-dot.on{background:var(--accent);width:22px;border-radius:4px}
+/* --- Astuces contextuelles (3.4.21) ---
+   380 : au-dessus de la barre d'onglets (40), qu'une astuce doit
+   pouvoir désigner ; en dessous du tutoriel (400), de la feuille (440)
+   et du verrou (460), qu'elle ne doit jamais recouvrir. */
+.astuce-ov{position:fixed;inset:0;z-index:380;opacity:0;transition:opacity .22s}
+.astuce-ov.show{opacity:1}
+/* Le halo est une OMBRE, pas un découpage : un box-shadow de 9999 px
+   assombrit tout sauf le rectangle. Aucun canvas, aucun masque SVG, et
+   il suit le thème sombre sans une ligne de plus. */
+.astuce-trou{position:absolute;border-radius:12px;border:2px solid var(--accent);
+  box-shadow:0 0 0 9999px rgba(8,8,12,.66);pointer-events:none}
+.astuce-bulle{position:absolute;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:13px 15px;box-shadow:0 14px 38px rgba(0,0,0,.45)}
+.astuce-txt{font-size:13.5px;line-height:1.5;color:var(--ink2)}
+.astuce-txt b{color:var(--ink)}
+.astuce-pied{display:flex;justify-content:flex-end;margin-top:9px}
+.astuce-ok{font-size:12.5px;font-weight:700;color:var(--accent);padding:5px 8px;border-radius:8px}
 .tuto-nav{display:flex;gap:10px;justify-content:space-between;align-items:center}
 .tuto-nav .btn{flex:1}
 /* ===== ASSISTANT DE PREMIERE OUVERTURE (V3.1.0) ===== */
@@ -1490,7 +1580,10 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
 .privacy-note{background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:26px 22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.5)}
 .privacy-note>svg{width:44px;height:44px;stroke:var(--accent2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-bottom:12px}
 .pn-titre{font-family:var(--serif);font-size:21px;font-weight:600;color:var(--ink);margin-bottom:10px}
-.pn-txt{font-size:14px;line-height:1.55;color:var(--ink2);margin-bottom:16px}
+/* Justifié, avec césure : sur une colonne de 380 px, justifier sans
+   couper les mots creuse des rivières blanches entre eux. */
+.pn-txt{font-size:14px;line-height:1.55;color:var(--ink2);margin-bottom:16px;
+  text-align:justify;-webkit-hyphens:auto;hyphens:auto}
 .pn-txt b{color:var(--ink)}
 .pn-more{width:100%;padding:9px;border-radius:9px;background:transparent;border:1px solid var(--line2);color:var(--accent2);font-size:12.5px;font-weight:500;margin-bottom:14px}
 .pn-check{display:flex;align-items:center;gap:8px;justify-content:center;font-size:12.5px;color:var(--ink3);margin-bottom:16px;cursor:pointer}
@@ -1505,6 +1598,17 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
 .jok-emoji{width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--card2);border:1px solid var(--line2);font-size:18px}
 .jok-lbl{flex:1;min-width:0}
 .jok-short{flex:1;min-width:0;text-align:center}
+/* Classe distincte de .jok-row2, meme mise en page. La recette compte
+   les .jok-row2 pour verifier que chaque compteur porte bien sa ligne
+   « etiquette courte + positif » : reutiliser la classe aurait fait
+   passer le controle de 7 a 12 et l'aurait rendu faux sans le casser. */
+.jok-rownb{display:flex;align-items:center;gap:8px;margin-top:7px;padding-left:46px}
+/* « input.txt.jok-nb » et non « .jok-nb » seul : la regle generale
+   input.txt{width:100%} a une specificite de 0-1-1, superieure a celle
+   d'une simple classe. Mesure a l'ecran : le champ ignorait ses 62 px,
+   prenait toute la largeur et debordait du bloc. Meme piege que pour
+   .edt-salle, ou le selecteur est deja qualifie. */
+input.txt.jok-nb{width:62px;flex:0 0 62px;text-align:center;padding:9px 6px}
 </style>
 </head>
 <body data-season="printemps" data-anim="on" data-fond="anime" data-theme="clair">
@@ -1535,7 +1639,7 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
       <div class="sub" id="dashSub"></div>
     </div>
     <div class="dash-grid" id="dashGrid"></div>
-    <div class="legend"><div class="eyebrow">Marge de manœuvre restante</div><div class="legend-row" id="legendRow"></div></div>
+    <div class="legend"><div class="eyebrow">Marge de manœuvre restante · sur l'année</div><div class="legend-row" id="legendRow"></div></div>
     <div style="height:16px"></div>
   </section>
 
@@ -1563,7 +1667,7 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
     <div class="topbar"><div class="brand"><svg aria-hidden="true" focusable="false" viewBox="13.24 26.25 74.2 52.25"><path d="M44 30 C58 26 70 32 70 42 C70 50 62 54 52 53"/><path d="M52 53 C49 59 49 66 53 74"/><path d="M45 34 C33 34 22 41 16 55 C15 58 17 60 20 59 C26 50 34 47 42 48"/><path d="M82 38 L70 76"/><path d="M82 38 C87 48 86 59 76 68"/><path d="M82 38 C77 44 73 52 72 62"/><circle class="brand-eye" cx="55" cy="38" r="3"/></svg><span class="brand-name brand-lock"><span class="lb-1">Thot</span><span class="lb-2">assistant</span></span></div><div class="eyebrow">Emploi du temps & suivi</div><h1 class="h-display">Ma semaine</h1></div>
     <div class="sw-tabs">
       <button class="sw-tab active" data-sw="semaine">Semaine</button>
-      <button class="sw-tab" data-sw="ensemble">Vue d'ensemble</button>
+      <button class="sw-tab" data-sw="anniv">Anniversaires</button>
     </div>
     <!-- volet 1 : semaine -->
     <div id="semaineVolet1">
@@ -1578,11 +1682,10 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
       <div class="sw-edit"><button id="swEditBtn">Modifier l'emploi du temps</button></div>
       <button class="minuteur-btn" id="minuteurBtn">⏱️ Minuteur de séance</button>
     </div>
-    <!-- volet 2 : vue d'ensemble -->
+    <!-- volet 2 : anniversaires -->
     <div id="semaineVolet2" style="display:none">
-      <div class="en-note">Lecture seule — l'état de chaque classe, calculé en direct depuis ta progression.</div>
-      <div class="en-grid" id="enGrid"></div>
-      <div class="enw-wrap" id="enWeekWrap"><div class="enw-h">La semaine prochaine</div><div id="enWeek"></div></div>
+      <div class="en-note" id="anvNote"></div>
+      <div class="anv-wrap" id="anvListe"></div>
     </div>
     <div style="height:20px"></div>
   </section>
@@ -1852,7 +1955,12 @@ button, .su-tab, .tab, .su-classchip, .su-trichip { touch-action:manipulation; }
       <button class="set-item" id="setTuto">
         <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M7.13 8.64C7.13 4.69 10.03 2.26 12.7 2.26 15.94 2.26 18.03 4.58 18.03 7.36 18.03 11.3 12.7 11.88 12.7 15.94"/><circle cx="12.7" cy="21.9" r="0.95" fill="currentColor" stroke="none"/></svg>
         <div class="set-item-body"><div class="set-item-title">Revoir le tutoriel</div>
-        <div class="set-item-desc">Rejoue la présentation de l'application</div></div>
+        <div class="set-item-desc">Rejoue la présentation, en entier cette fois</div></div>
+      </button>
+      <button class="set-item" id="setAstuces">
+        <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+        <div class="set-item-body"><div class="set-item-title">Revoir les astuces</div>
+        <div class="set-item-desc">Les bulles qui apparaissent une fois sur chaque écran · aucune donnée touchée</div></div>
       </button>
 
       <div class="set-group-lbl">Informations légales</div>
@@ -2690,10 +2798,18 @@ const PROG = {
 };
 
 /* ---- Paliers de durée réelle (1h de cours = 55 min) ----
-   Sous 1h : 30 · 35 · 40 · 45 min. Au-dessus : 1h05 → 2h.
-   Pré-réglé sur 1h. (pas de 50 ni 55.)                       */
-const PALIERS = ["30min","35min","40min","45min","1h","1h05","1h10","1h15","1h20","1h25","1h30","1h35","1h40","2h"];
+   Sous 1h : 0 · 10 · 15 · 20 · 25 · 30 · 35 · 40 · 45 min.
+   Au-dessus : 1h05 → 2h. Pré-réglé sur 1h. (pas de 50 ni 55.)
+
+   ZÉRO EST VOLONTAIRE. faitSeq compte les séances cochées, pas les
+   heures : une coche à zéro minute remplit son créneau — la séance est
+   faite, la progression avance — sans consommer d'heure de cours. La
+   marge augmente d'autant. C'est le cas d'une séance donnée à faire à
+   la maison. Vérifié avant de l'ajouter : aucun calcul ne divise par la
+   durée ni ne suppose un minimum.                            */
+const PALIERS = ["0min","10min","15min","20min","25min","30min","35min","40min","45min","1h","1h05","1h10","1h15","1h20","1h25","1h30","1h35","1h40","2h"];
 const PALIER_MIN = {
+  "0min":0,"10min":10,"15min":15,"20min":20,"25min":25,
   "30min":30,"35min":35,"40min":40,"45min":45,
   "1h":60,"1h05":65,"1h10":70,"1h15":75,"1h20":80,"1h25":85,"1h30":90,"1h35":95,"1h40":100,"2h":120
 };
@@ -2719,6 +2835,9 @@ const MOTIFS_MOINS = { // < 1h  (plus rapide)
   large: [
     "La tâche était plus rapide que prévu",
     "Les élèves ont été très rapides",
+    /* La raison même de la demande des durées courtes : le travail est
+       fait, mais il n'a pas pris d'heure de cours. */
+    "Donné à faire à la maison",
   ],
   conjoncturel: [
     "Ils étaient dissipés et agaçants, j'ai avancé plus vite",
@@ -2875,8 +2994,8 @@ const APP_CREATED = '24 juillet 2026';
    Ne pas la reformater : le script remplace la ligne entiere.
    Entre deux compilations la valeur reste lisible, pour que
    l'application reste utilisable telle quelle dans un navigateur. */
-const APP_UPDATED = '2 septembre 2026 à 17:13'; /* BUILD_STAMP */
-const APP_VERSION = '3.4.18';
+const APP_UPDATED = '26 septembre 2026 à 23:19'; /* BUILD_STAMP */
+const APP_VERSION = '3.4.26';
 const LS_CODE = 'prog_code_v2';
 const LS_CFG  = 'prog_cfg_v2';
 const LS_LASTSAVE = 'prog_lastsave_v2';
@@ -2892,11 +3011,22 @@ function defaultState(){
   const coches={}; CLASSES.forEach(c=>coches[c.id]={});
   const eleves={}; CLASSES.forEach(c=>eleves[c.id]=[]);
   const groupes={}; CLASSES.forEach(c=>groupes[c.id]=[]);
-  const absClasse={"5e":{},"3e":{}};   // absClasse[niveau][periodeId] = [{id,motif,h,date,dateFin}]
+  const absClasse={"5e":{},"3e":{}};   // ANCIEN, par niveau — conservé, non relu (voir absCl)
   return {
     annee:ANNEE, coches,
+    /* absCl[classeId][periodeId] = [{id,motif,h,date,dateFin,auto}]
+       Les heures perdues sont propres à CHAQUE CLASSE : deux classes du
+       même niveau n'ont pas le même emploi du temps, donc ne perdent pas
+       les mêmes heures un jour de voyage. Remplace absClasse, qui rangeait
+       par niveau et faisait donc mentir la mention « cette classe ». */
+    absCl:{},
     events:[],
-    perEvents:{"5e":{},"3e":{}},
+    perEvents:{"5e":{},"3e":{}},   // ANCIEN, par niveau — conservé, non relu
+    /* perEvCl[classeId][periodeId] = [{id,label,motif,h,date,dateFin,ord,auto}]
+       Un voyage, un jour férié, une réunion coûtent des heures
+       DIFFÉRENTES à chaque classe, selon l'emploi du temps. Il n'existe
+       pas de « nombre d'heures perdues » au niveau. */
+    perEvCl:{},
     edt:{},
     classesMeta:CLASSES.map(c=>({...c})),
     progNiv:{},                        // progression par niveau (officielle ou vierge) — remplace le code en dur
@@ -3050,6 +3180,8 @@ function migrate(p){
     coches:{...d.coches,...(p.coches||{})},
     events:p.events||[],
     perEvents:{"5e":{},"3e":{},...(p.perEvents||{})},
+    perEvCl:p.perEvCl||{},
+    perEvClMigre:!!p.perEvClMigre,
     edt:p.edt||{},
     classesMeta:(p.classesMeta||d.classesMeta).map(m=>({effectif:null,pp:false,...m})),
     progNiv:p.progNiv||{},
@@ -3068,6 +3200,8 @@ function migrate(p){
     ppContrats:p.ppContrats||{},
     eleves, groupes,
     absClasse:{"5e":{},"3e":{},...(p.absClasse||{})},
+    absCl:p.absCl||{},
+    absClMigre:!!p.absClMigre,
     demo:p.demo||false,
     demoClasseCreee:p.demoClasseCreee||null,
     demoBackup:p.demoBackup||null};
@@ -3460,7 +3594,17 @@ function blankPeriodes(){ return TRIS.map(function(){ return {arret:"",conseil:"
    n'existent qu'a l'affichage.
    ============================================================ */
 function evenementsEtConseils(){
-  const out=(S.events||[]).slice();
+  /* Les entrées sans date utilisable sont ÉCARTÉES, pas propagées.
+
+     Les trois lectures de cette liste font e.dt.slice(...) ou
+     new Date(e.dt) : une entrée sans dt levait une exception au milieu
+     du forEach qui dessine les cinq jours, et Ma semaine restait
+     entièrement blanche pour une seule ligne fautive.
+
+     migrate() recopie S.events sans aucun contrôle — une sauvegarde
+     ancienne ou un fichier retouché suffit. On perd la ligne ; on ne
+     perd plus l'écran. */
+  const out=(S.events||[]).filter(e=>e && typeof e.dt==='string' && e.dt.length>=10);
   (S.classesMeta||[]).forEach(m=>{
     const per=(CFG.trimestres||{})[m.id]||[];
     per.forEach((t,i)=>{
@@ -3489,7 +3633,12 @@ function evenementsEtConseils(){
 syncTris();
 /* jokers configurables — les ids par défaut (jComp/jOubli/jTNF) restent identiques à l'existant,
    donc aucune donnée déjà enregistrée n'est perdue. suiviCols() lit CFG.jokers. */
-function suiviCols(){ return (CFG.jokers&&CFG.jokers.length?CFG.jokers:defaultCfg().jokers).map(j=>({key:j.id,label:j.label||'Compteur',short:j.short||j.label||'Compteur',motif:j.motif,emoji:j.emoji,positif:!!j.positif,seuil:(j.seuil>0?j.seuil:3)})); }
+/* « nb » : combien de jokers avant qu'un incident devienne une
+   observation. Reglable depuis la 3.4.20, un par compteur, defaut 1 —
+   le comportement d'avant. Borne a 9 : au-dela, le compteur ne compte
+   plus rien. Ne concerne pas les compteurs positifs, qui n'ont pas de
+   plafond. */
+function suiviCols(){ return (CFG.jokers&&CFG.jokers.length?CFG.jokers:defaultCfg().jokers).map(j=>({key:j.id,label:j.label||'Compteur',short:j.short||j.label||'Compteur',motif:j.motif,emoji:j.emoji,positif:!!j.positif,seuil:(j.seuil>0?j.seuil:3),nb:(j.nb>0?Math.min(9,Math.round(j.nb)):1)})); }
 /* ---- vocabulaire : chacun nomme les choses a sa facon (V3.1.0) ---- */
 function motJokers(maj){ const m=(CFG.motJokers||'').trim()||'Jokers'; return maj?m.charAt(0).toUpperCase()+m.slice(1):m.toLowerCase(); }
 function motSequence(maj){ const m=(CFG.motSequence||'').trim()||'Séquence'; return maj?m.charAt(0).toUpperCase()+m.slice(1):m.toLowerCase(); }
@@ -4163,7 +4312,7 @@ function ajouterEval(cid, o){
     date:date,
     tri:(o&&o.tri)||triDeDate(cid,date),
     coef:(o&&o.coef>0)?o.coef:1,
-    bareme:(o&&o.bareme>0)?o.bareme:20,
+    bareme:baremeSelonType((o&&o.type)||'note', o&&o.bareme),
     type:(o&&o.type)||'note',
     /* « type » dit ce que l'évaluation PORTE, « diag » dit à quoi elle
        SERT : les deux sont indépendants. Absent des données existantes,
@@ -4182,7 +4331,7 @@ function majEval(cid, evid, o){
   /* Mêmes garde-fous qu'à la création : majEval ne doit pas pouvoir
      fabriquer un objet que ajouterEval refuserait. */
   ev.coef   = (ev.coef>0)   ? ev.coef   : 1;
-  ev.bareme = (ev.bareme>0) ? ev.bareme : 20;
+  ev.bareme = baremeSelonType(ev.type, ev.bareme);
   /* Le trimestre suit la date. Sans cela, déplacer une évaluation
      d'octobre à janvier la laissait comptée dans le premier trimestre :
      les deux moyennes trimestrielles devenaient fausses en silence.
@@ -4222,6 +4371,46 @@ function setNote(cid, evid, eid, valeur){
   ev.notes[eid]=cur; save(); return true;
 }
 
+/* ------------------------------------------------------------------
+   CE QU'UNE EVALUATION EST, EN QUATRE QUESTIONS
+
+   Ces quatre fonctions remplacent le « ev.type !== 'comp' » qui trainait
+   a huit endroits en voulant dire deux choses differentes. Elles sont
+   empilees : chacune appelle la precedente. On ne peut donc pas les
+   rendre incoherentes en n'en modifiant qu'une.
+
+   Ajouter un type special plus tard : le declarer ici, et il sera
+   correctement exclu partout, sans avoir a retrouver les huit sites.
+   ------------------------------------------------------------------ */
+
+/* Plafond de saisie d'une dictee. Voir baremeSelonType(). */
+const DICTEE_PLAFOND = 99;
+
+/* Le mot 'dictee' n'est ecrit qu'ici. */
+function evEstDictee(ev){ return !!ev && ev.type==='dictee'; }
+
+/* Y a-t-il un chiffre a saisir par eleve ? Une evaluation par
+   competences seules n'en a pas ; une dictee en a un. */
+function evPorteUnNombre(ev){ return !!ev && ev.type!=='comp'; }
+
+/* Ce chiffre est-il une NOTE, sur un bareme, ramenable sur 20 ?
+   Le nombre de fautes d'une dictee ne l'est pas : le diviser par un
+   bareme produirait un nombre qui ne veut rien dire. */
+function evPorteUneNote(ev){ return evPorteUnNombre(ev) && !evEstDictee(ev); }
+
+/* Entre-t-elle dans la moyenne ? Une diagnostique est une mesure, pas
+   un resultat ; une dictee ne se note pas. Ni l'une ni l'autre. */
+function evCompteDansMoyenne(ev){ return evPorteUneNote(ev) && !ev.diag; }
+
+/* Pour une dictee, « bareme » ne veut pas dire « sur combien » : il n'y
+   a pas de bareme. Il sert de PLAFOND a setNote, qui borne toute saisie
+   a cette valeur. 99 laisse passer la pire dictee reelle et arrete la
+   faute de frappe. Ce nombre n'est jamais montre a l'utilisateur. */
+function baremeSelonType(type, valeur){
+  if(type==='dictee') return DICTEE_PLAFOND;
+  return (valeur>0) ? valeur : 20;
+}
+
 /* Moyenne d'un eleve sur une periode, ramenee sur 20 et ponderee par les
    coefficients. Une absence est IGNOREE : elle ne vaut pas zero.
    Sans aucune note, on retombe sur la moyenne saisie a la main -- celle
@@ -4229,9 +4418,7 @@ function setNote(cid, evid, eid, valeur){
 function moyenneEleve(cid, eid, tri){
   let somme=0, poids=0;
   evalsDe(cid,tri).forEach(ev=>{
-    /* Une évaluation diagnostique est une MESURE, pas un résultat :
-       elle se dessine mais n'entre dans aucune moyenne. */
-    if(ev.type==='comp' || ev.diag) return;
+    if(!evCompteDansMoyenne(ev)) return;
     const n=noteDe(ev,eid);
     if(n.abs || n.n===null || n.n===undefined) return;
     const sur20 = (n.n / (ev.bareme||20)) * 20;
@@ -4256,6 +4443,10 @@ function moyenneEleve(cid, eid, tri){
 /* Moyenne de la classe sur UNE evaluation, ramenee sur 20. Comme
    partout ailleurs, une absence sort du calcul au lieu de valoir zero. */
 function moyenneEval(cid, ev){
+  /* Une dictee n'a pas de note sur 20 : la ramener sur 20 produirait un
+     chiffre qui ressemble a une note. On rend null, et l'affichage
+     passe par moyenneEvalBrute -- « 4,2 fautes », l'unite reelle. */
+  if(evEstDictee(ev)) return null;
   let s=0, n=0;
   (elevesDe(cid)||[]).forEach(e=>{
     const x=noteDe(ev,e.id);
@@ -4288,11 +4479,12 @@ function saisiesEval(cid, ev){
    rien du tout. Sans cette distinction, un bandeau afficherait un
    chiffre juste sous une etiquette fausse -- c'est arrive. */
 function couvertureMoyennes(cid, tri){
-  /* Le diagnostique est écarté ici aussi : sans cela, un élève n'ayant
-     qu'un diagnostique aurait été compté « d'après ses notes » alors
-     que sa moyenne vaut null — un chiffre juste sous une étiquette
-     fausse, ce que cette fonction existe précisément pour éviter. */
-  const evs=evalsDe(cid,tri).filter(ev=>ev.type!=='comp' && !ev.diag);
+  /* Même règle que la moyenne, forcément : sans cela, un élève n'ayant
+     qu'un diagnostique — ou que des dictées — aurait été compté
+     « d'après ses notes » alors que sa moyenne vaut null. Un chiffre
+     juste sous une étiquette fausse, ce que cette fonction existe
+     précisément pour éviter. */
+  const evs=evalsDe(cid,tri).filter(evCompteDansMoyenne);
   let notes=0, saisies=0, rien=0;
   (elevesDe(cid)||[]).forEach(e=>{
     const aNote = evs.some(ev=>{
@@ -4311,7 +4503,7 @@ function couvertureMoyennes(cid, tri){
 function moyenneEleveDepuisEvals(cid, eid, tri){
   let somme=0, poids=0;
   evalsDe(cid,tri).forEach(ev=>{
-    if(ev.type==='comp' || ev.diag) return;
+    if(!evCompteDansMoyenne(ev)) return;
     const n=noteDe(ev,eid);
     if(n.abs || n.n===null || n.n===undefined) return;
     somme += (n.n/(ev.bareme||20))*20*(ev.coef||1);
@@ -4319,6 +4511,66 @@ function moyenneEleveDepuisEvals(cid, eid, tri){
   });
   return poids>0 ? Math.round((somme/poids)*100)/100 : null;
 }
+/* ------------------------------------------------------------------
+   LE NIVEAU 1..5 DANS LA MATIERE — calculé, plus saisi
+
+   Il ne sert qu'au composeur de groupes, et n'est jamais montré à un
+   élève. Jusqu'à la 3.4.20 il se posait à la main sur la fiche ; il se
+   déduit désormais du travail réellement rendu.
+   ------------------------------------------------------------------ */
+
+/* Les seuils, sur 20. Rassemblés ici pour qu'on puisse les déplacer
+   d'un seul endroit : 10 est la moyenne, 16 le « très bien » — les
+   deux repères qu'un professeur français lit sans traduire. */
+function niveauDepuisVingt(m){
+  if(!(m>=0)) return null;
+  if(m<8)  return 1;
+  if(m<10) return 2;
+  if(m<13) return 3;
+  if(m<16) return 4;
+  return 5;
+}
+
+/* Renvoie {niveau, source} — la source sert à l'expliquer à l'écran.
+   Sans elle, l'utilisateur verrait un chiffre tomber du ciel. */
+function niveauEleveDetail(cid, eid){
+  /* 1) Les notes de l'ANNÉE, diagnostiques comprises. L'année et non le
+     trimestre : un niveau qui change de valeur le jour où l'on bascule
+     de trimestre ferait bouger tous les groupes sans raison. */
+  let s=0, p=0, nEv=0;
+  evalsDe(cid).forEach(ev=>{
+    if(!evPorteUneNote(ev)) return;
+    const n=noteDe(ev,eid);
+    if(n.abs || n.n===null || n.n===undefined) return;
+    s += (n.n/(ev.bareme||20))*20*(ev.coef||1);
+    p += (ev.coef||1);
+    nEv++;
+  });
+  if(p>0) return {niveau:niveauDepuisVingt(s/p), source:'notes', nb:nEv,
+                  moyenne:Math.round((s/p)*10)/10};
+
+  /* 2) À défaut, les compétences. On ne mélange PAS les deux échelles :
+     pondérer des indices 1..4 contre des notes sur 20 demanderait un
+     poids que personne ne peut justifier. */
+  let cs=0, cn=0;
+  evalsDe(cid).forEach(ev=>{
+    const cps=(noteDe(ev,eid).comps)||{};
+    Object.keys(cps).forEach(k=>{ const v=cps[k]; if(v>=1&&v<=4){ cs+=v; cn++; } });
+  });
+  if(cn>0) return {niveau:niveauDepuisVingt(((cs/cn)-1)/3*20), source:'comps', nb:cn};
+
+  /* 3) À défaut, ce qui avait été posé à la main avant la 3.4.20. On ne
+     jette pas le travail déjà fait : la valeur reste enregistrée et sert
+     de repli jusqu'à la première évaluation, qui la remplacera. */
+  const e=(elevesDe(cid)||[]).find(x=>x.id===eid);
+  if(e && e.niveau>=1 && e.niveau<=5) return {niveau:e.niveau, source:'main'};
+
+  /* 4) Rien. Un « ? » honnête plutôt qu'un 3 inventé, qui fausserait les
+     groupes sans que personne ne s'en aperçoive. */
+  return {niveau:null, source:'rien'};
+}
+function niveauEleve(cid, eid){ return niveauEleveDetail(cid,eid).niveau; }
+
 function moyenneClasse(cid, tri){
   const v=(elevesDe(cid)||[]).map(e=>moyenneEleve(cid,e.id,tri)).filter(x=>x!==null);
   if(!v.length) return null;
@@ -4630,10 +4882,16 @@ function minToLabel(min){const f=Object.entries(PALIER_MIN).find(([k,v])=>v===mi
 /* somme heures dédiées d'un niveau */
 /* heures de l'année déjà consommées hors séances : sorties, jours
    fériés, absences structurelles. Elles font partie de l'année. */
-function margeConsommee(n){
+/* Une seule entrée : la CLASSE. Ses deux composantes — événements de
+   période et absences structurelles — lui sont propres depuis les
+   3.4.23 et 3.4.25. Le paramètre « niveau » ne servait plus à rien ; le
+   garder aurait entretenu l'idée que les événements sont communs au
+   niveau, ce qui vient précisément de coûter un bug. */
+function margeConsommee(classeId){
+  if(!classeId) return 0;
   let t=0;
   ['p1','p2','p3','p4','p5'].forEach(function(pid){
-    t += (eventsHeures(n,pid)||0) + (absStructHeures(n,pid)||0);
+    t += (eventsHeures(classeId,pid)||0) + (absStructHeures(classeId,pid)||0);
   });
   return Math.round(t*2)/2;
 }
@@ -4681,14 +4939,130 @@ function debordSeances(classeId,niveau,periodeId){
   });
   return deltaMin/60;
 }
-function eventsPeriode(niveau,periodeId){
-  return (S.perEvents[niveau]||{})[periodeId]||[];
+/* Recopie les événements rangés par NIVEAU vers chaque CLASSE de ce
+   niveau. Même raisonnement, même neutralité et même marqueur que
+   migrerAbsencesParClasse : toutes les classes d'un niveau voyaient
+   déjà ces heures ; après recopie chacune a les siennes, pour le même
+   total. Sans marqueur, chaque ouverture les redoublerait. */
+function migrerEvenementsParClasse(){
+  if(S.perEvClMigre) return 0;
+  S.perEvCl = S.perEvCl || {};
+  let n=0;
+  (S.classesMeta||[]).forEach(c=>{
+    const parNiveau=(S.perEvents||{})[c.niveau];
+    if(!parNiveau) return;
+    Object.keys(parNiveau).forEach(pid=>{
+      const l=parNiveau[pid]; if(!Array.isArray(l) || !l.length) return;
+      S.perEvCl[c.id]=S.perEvCl[c.id]||{};
+      S.perEvCl[c.id][pid]=(S.perEvCl[c.id][pid]||[]).concat(l.map(e=>({...e})));
+      n+=l.length;
+    });
+  });
+  S.perEvClMigre=true;
+  save();
+  return n;
 }
-function eventsHeures(niveau,periodeId){
-  return eventsPeriode(niveau,periodeId).reduce((x,e)=>x+(e.h||0),0);
+
+/* Prend un identifiant de CLASSE, plus un niveau. */
+function eventsPeriode(classeId,periodeId){
+  return ((S.perEvCl||{})[classeId]||{})[periodeId]||[];
 }
-function absStructHeures(niveau,periodeId){
-  return ((S.absClasse[niveau]||{})[periodeId]||[]).reduce((x,a)=>x+(a.h||0),0);
+/* classeId, comme eventsPeriode qu'elle appelle. Elle s'appelait
+   « niveau » et recevait effectivement un niveau : S.perEvCl['3e']
+   n'existe pas, la liste revenait vide, et TOUT evenement de periode
+   comptait pour zero. Un renommage arrete a mi-chemin. */
+function eventsHeures(classeId,periodeId){
+  return eventsPeriode(classeId,periodeId).reduce((x,e)=>x+(e.h||0),0);
+}
+/* Recopie les absences rangées par NIVEAU vers chaque CLASSE de ce
+   niveau. Neutre par construction : aujourd'hui toutes les classes d'un
+   niveau voient déjà ces heures ; après recopie chacune a les siennes,
+   pour le même total. Aucun chiffre ne bouge à l'écran.
+
+   Le marqueur est indispensable : sans lui, chaque ouverture de
+   l'application redoublerait les heures perdues. */
+function migrerAbsencesParClasse(){
+  if(S.absClMigre) return 0;
+  S.absCl = S.absCl || {};
+  let n=0;
+  (S.classesMeta||[]).forEach(c=>{
+    const parNiveau=(S.absClasse||{})[c.niveau];
+    if(!parNiveau) return;
+    Object.keys(parNiveau).forEach(pid=>{
+      const l=parNiveau[pid]; if(!Array.isArray(l) || !l.length) return;
+      S.absCl[c.id]=S.absCl[c.id]||{};
+      S.absCl[c.id][pid]=(S.absCl[c.id][pid]||[]).concat(l.map(a=>({...a})));
+      n+=l.length;
+    });
+  });
+  S.absClMigre=true;
+  /* S.absClasse reste en place, intacte et non relue — comme e.moyenne
+     après le passage des moyennes par trimestre. On ne supprime pas une
+     donnée dont on vient de se détacher. */
+  save();
+  return n;
+}
+
+/* Heures perdues d'UNE CLASSE sur une période. Prend un identifiant de
+   CLASSE, plus un niveau : deux classes du même niveau n'ont pas le même
+   emploi du temps et ne perdent donc pas les mêmes heures. */
+/* ------------------------------------------------------------------
+   HEURES DE COURS D'UNE CLASSE ENTRE DEUX DATES
+
+   Lues dans l'emploi du temps. Renvoie {h, jours:[{iso,n}], refus} —
+   « refus » dit pourquoi on n'a pas calculé, plutôt que de rendre zéro
+   et de laisser croire à un résultat.
+
+   Un créneau vaut UNE HEURE : c'est la convention de toute
+   l'application (55 min = 1 h de cours, comme le volume hebdomadaire).
+   ------------------------------------------------------------------ */
+function heuresEdtEntre(classeId, iso1, iso2){
+  const vide={h:0, jours:[], refus:null};
+  if(!classeId || !iso1) return {...vide, refus:'dates'};
+  const d1=new Date(iso1+'T12:00');
+  const d2=new Date((iso2||iso1)+'T12:00');
+  if(isNaN(d1.getTime()) || isNaN(d2.getTime())) return {...vide, refus:'dates'};
+  if(d2<d1) return {...vide, refus:'ordre'};
+  /* Au-delà de cent vingt jours c'est une faute de frappe, pas un
+     voyage. Sans ce garde-fou, une date mal saisie retirerait cinquante
+     heures à la marge sans que rien ne clignote. */
+  if((d2-d1)/864e5 > 120) return {...vide, refus:'trop-long'};
+  const aucunEdt=!Object.keys(S.edt||{}).some(k=>(S.edt[k]||[]).length);
+  if(aucunEdt) return {...vide, refus:'pas-d-edt'};
+
+  const vac=vacancesZone();
+  const jours=[];
+  let h=0;
+  const d=new Date(d1);
+  while(d<=d2){
+    const jsem=d.getDay();                       /* 0 dimanche, 6 samedi */
+    if(jsem>=1 && jsem<=5){
+      const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      const ferie=!!ferieDe(iso);
+      const enVac=vac.some(v=>v.debut && v.fin && iso>=v.debut && iso<=v.fin);
+      if(!ferie && !enVac){
+        const ab=semaineAB(lundiDe(new Date(iso+'T12:00')));
+        let n=0;
+        (S.edt[String(jsem)]||[]).forEach(s=>{
+          if(!s || s.classeId!==classeId) return;
+          if(s.isVieDeClasse) return;            /* n'avance aucune séquence */
+          if(slotLibre(s)) return;               /* atelier, permanence */
+          if(s.sem && s.sem!=='tt' && s.sem!==ab) return;   /* l'autre semaine */
+          n++;
+        });
+        if(n){ jours.push({iso,n}); h+=n; }
+      }
+    }
+    d.setDate(d.getDate()+1);
+  }
+  return {h, jours, refus:null};
+}
+
+function absStructHeures(classeId,periodeId){
+  return (((S.absCl||{})[classeId]||{})[periodeId]||[]).reduce((x,a)=>x+(a.h||0),0);
+}
+function absListe(classeId,periodeId){
+  return ((S.absCl||{})[classeId]||{})[periodeId]||[];
 }
 /* état de marge par période pour UNE classe (le débordement dépend de la classe) */
 function margeState(classeId,niveau){
@@ -4696,8 +5070,8 @@ function margeState(classeId,niveau){
   for(const p of P.periodes){
     const base=p.marge;
     const debord=debordSeances(classeId,niveau,p.id);   // heures mordues (>0) ou rendues (<0)
-    const evt=eventsHeures(niveau,p.id);                 // heures planifiées consommées
-    const abs=absStructHeures(niveau,p.id);              // absences structurelles (stage/voyage/temps fort)
+    const evt=eventsHeures(classeId,p.id);               // heures planifiées consommées, de CETTE classe
+    const abs=absStructHeures(classeId,p.id);            // absences structurelles de CETTE classe
     const dispo=base+report;
     const conso=Math.max(0,debord)+evt+abs - Math.max(0,-debord); // rendu (débord négatif) recrédite
     const reste=dispo-conso;
@@ -4760,11 +5134,25 @@ function margeAnnuelle(classeId,niveau){
   const pc=periodeCourante(classeId,niveau);
   return ms[pc.id]? ms[pc.id].reste : 0;
 }
+/* La pastille du tableau de bord : marge de l'ANNÉE ENTIÈRE.
+   À ne pas confondre avec le bouton de chaque période, qui montre la
+   marge de cette période-là. Les deux peuvent diverger sans que ni
+   l'un ni l'autre soit faux : on peut brûler 1h30 en période 1 et
+   rester à l'équilibre sur l'année en la reprenant plus tard.
+
+   Math.round est parti. Il ramenait −0,3 h à 0, donc un déficit réel
+   de vingt minutes s'affichait « à jour » : le mot voulait dire « entre
+   moins trente et plus trente minutes », ce que personne ne pouvait
+   deviner. Le seuil est désormais LA MINUTE — 0,017 h, juste de quoi
+   absorber les poussières de calcul en virgule flottante.
+
+   Et fmtH plutôt qu'un entier : une marge d'un quart d'heure existe,
+   elle n'a pas à être arrondie à rien. */
+const MARGE_EPSILON = 1/60;
 function statutMarge(classeId,niveau){
   const reste=margeAnnuelle(classeId,niveau);
-  const r=Math.round(reste);
-  if(r>0)  return {txt:`−${r} h`, bg:'#2e7d46', fg:'#ffffff', label:'avance', reste};
-  if(r<0)  return {txt:`+${-r} h`, bg:'#c0392b', fg:'#ffffff', label:'retard', reste};
+  if(reste >  MARGE_EPSILON) return {txt:`−${fmtH(reste)}`,  bg:'#2e7d46', fg:'#ffffff', label:'avance', reste};
+  if(reste < -MARGE_EPSILON) return {txt:`+${fmtH(-reste)}`, bg:'#c0392b', fg:'#ffffff', label:'retard', reste};
   return {txt:'à jour', bg:'var(--card2)', fg:'var(--ink2)', label:'à jour', reste};
 }
 function discColor(d){return {HIST:'var(--hist)',GEO:'var(--geo)',EMC:'var(--emc)',ORG:'var(--org)'}[d];}
@@ -5051,6 +5439,29 @@ let histEcrans=[];
    « jour » y remet « set », et le retour suivant y retourne. On oscille
    entre deux écrans sans jamais rejoindre le tableau de bord. */
 let retourEnCours=false;
+/* Ramène la carte d'une classe au milieu de l'écran du tableau de bord.
+
+   NOMMÉE, et non enfermée dans le gestionnaire du bouton « Toutes les
+   classes » : la recette doit pouvoir l'appeler sans passer par un clic
+   suivi d'une attente. lot2() est synchrone — tout() fait .concat(lot2())
+   — et une promesse y casserait l'agrégation entière.
+
+   Le déplacement est calculé puis appliqué plutôt que confié à
+   scrollIntoView : on sait exactement où l'on va, sans dépendre de la
+   façon dont le navigateur interprète 'center' ni de l'animation de
+   bascule d'écran. Sans défilement animé : l'écran vient de changer,
+   glisser par-dessus donnerait l'impression qu'il tremble. */
+function ramenerClasseEnVue(cid){
+  if(!cid) return false;
+  const c=document.querySelector('#dashGrid [data-cid="'+cid+'"]');
+  if(!c) return false;
+  const r=c.getBoundingClientRect();
+  /* Pas encore de hauteur : on ne défile pas, plutôt que n'importe où. */
+  if(r.height<4) return false;
+  const y=r.top + window.scrollY - (window.innerHeight/2) + (r.height/2);
+  window.scrollTo(0, Math.max(0, Math.round(y)));
+  return true;
+}
 function go(scr){
   $$('.screen').forEach(s=>s.classList.toggle('active',s.dataset.scr===scr));
   $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===scr));
@@ -5089,8 +5500,18 @@ function bindTabs(){
     if(tab==='dash'){renderDash();go('dash');}
     else if(tab==='semaine'){renderSemaine();go('semaine');}
     else if(tab==='suivi'){
-      // code redemandé à chaque entrée, SAUF si déjà déverrouillé il y a moins de 3 min
-      const RE_LOCK_MS=3*60*1000;
+      /* Code redemandé à chaque entrée, SAUF si le Suivi a déjà été
+         déverrouillé il y a moins de trente minutes.
+
+         C'était trois minutes — Hugo croyait cinq, et le trouvait déjà
+         pesant. Trente, c'est la durée d'une demi-heure de cours : au
+         delà, le téléphone a changé de contexte et le verrou reprend
+         son sens, qui est de protéger d'un regard posé sur un appareil
+         laissé sur le bureau.
+
+         suiviUnlockedAt est une variable de session : fermer
+         l'application redemande le code, quoi qu'il arrive. */
+      const RE_LOCK_MS=30*60*1000;
       const enter=()=>{ renderSuivi(); go('suivi'); showPrivacyNote(); };
       if(suiviUnlockedAt && (Date.now()-suiviUnlockedAt)<RE_LOCK_MS){
         enter();
@@ -5109,6 +5530,8 @@ function bindTabs(){
    DASHBOARD (Progression) — ordre des classes FIGÉ
    ============================================================ */
 function renderDash(){
+  astuceBientot('a-prog','#dashGrid > *',
+    "Touche une classe pour ouvrir sa progression, et <b>coche les séances faites</b>. La pastille dit aussitôt si tu es en avance ou en retard.");
   const grid=$('#dashGrid'); grid.innerHTML='';
   // ORDRE FIGÉ : on suit S.classesMeta tel quel (5eA,5eB,3eA…3eD)
   const cards=S.classesMeta.map(c=>({m:c,e:ecartClasse(c.id)}));
@@ -5118,15 +5541,23 @@ function renderDash(){
   // Point 2 : mantra + signature (fixe)
   const mantraTxt=(CFG.mantra||'').trim();
   sub.innerHTML=`<span class="mantra-l">${mantraTxt?escHtml(mantraTxt).replace(/\n/g,'<br>'):"Faire de son mieux, c'est déjà bien assez,<br>Le faire en souriant, c'est le rendre parfait."}</span>`;
-  // l'info de suivi passe en sous-titre discret (eyebrow)
+  /* Le sous-titre ne porte plus que l'année.
+
+     Il annonçait « N classes à surveiller », ou « toutes tes classes
+     sont à jour ». Les deux partent, pas seulement celle qui alarme :
+     n'en garder qu'une aurait fait alterner deux textes d'un jour à
+     l'autre selon l'avance des classes, et un en-tête qui bouge tout
+     seul attire l'œil sur ce qu'on venait de déclarer sans intérêt.
+
+     L'information n'est pas perdue : la pastille d'avance de chaque
+     classe est juste dessous, sur sa propre carte, où elle désigne la
+     classe concernée au lieu d'en compter un nombre. */
   const eb=$('#dashEyebrow');
-  if(ratioAnnee()===0) eb.textContent="Année 2026-2027";
-  else if(enRetard===0) eb.textContent="Année 2026-2027 · toutes tes classes sont à jour";
-  else eb.textContent="Année 2026-2027 · "+enRetard+(enRetard>1?" classes à surveiller":" classe à surveiller");
+  eb.textContent="Année 2026-2027";
 
   cards.forEach(({m,e})=>{
     const bk=bucket(e), niveau=m.niveau;
-    const dedie=totalAnnee(niveau), fait=totalFait(m.id)+margeConsommee(niveau);
+    const dedie=totalAnnee(niveau), fait=totalFait(m.id)+margeConsommee(m.id);
     /* pas de volume connu = pas de pourcentage : sans cette garde, 0/0
        s'affichait "NaN%" a l'utilisateur */
     const pct=dedie>0?Math.min(100,Math.round(fait/dedie*100)):0;
@@ -5147,6 +5578,10 @@ function renderDash(){
       <div class="ccard-seq">${ec?`${discDot}${ec.seq.nom} · <b>${faitSeq(m.id,ec.seq.id,ec.seq.idxDebut,ec.seq.nbSeances)}/${ec.seq.h}h</b>`:(vide?'Progression à définir':'Année terminée 🎉')}</div>
       <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${bk.bg}"></div></div>
       <div class="ccard-foot"><span>Année : ${fait}/${dedie} h</span><span>${dedie>0?pct+'%':'—'}</span></div>`;
+    /* L'identifiant sur la carte : c'est par lui qu'on la retrouve au
+       retour, plutôt que par une position en pixels qui serait fausse
+       dès qu'une carte change de hauteur. */
+    card.dataset.cid=m.id;
     card.addEventListener('click',()=>openClass(m.id));
     grid.appendChild(card);
   });
@@ -5526,6 +5961,12 @@ function openSeanceRename(classeId,niveau,s,i){
 }
 
 function openClass(id){
+  /* Classe disparue — import d'une sauvegarde, réinitialisation,
+     changement de jeu de classes : currentClass peut désigner un
+     identifiant qui n'existe plus. La ligne suivante lisait alors
+     .niveau sur undefined et gelait l'application. On sort, l'écran
+     précédent reste affiché. */
+  if(!classMeta(id)) return;
   currentClass=id;
   const m=classMeta(id), niveau=m.niveau, P=progFor(niveau);
   const e=ecartClasse(id), bk=bucket(e);
@@ -5534,7 +5975,7 @@ function openClass(id){
   const cc=$('#classCC'); const tri=triCourant(id); cc.innerHTML=tri||''; cc.style.display=tri?'block':'none';
   const pas=$('#classPastille'); const sp=statutMarge(id,niveau); pas.textContent=sp.txt; pas.style.background=sp.bg; pas.style.color=sp.fg;
   const dedie=totalAnnee(niveau);
-  const fait=totalFait(id)+margeConsommee(niveau);
+  const fait=totalFait(id)+margeConsommee(id);
   const pct=Math.min(100,Math.round(fait/Math.max(1,dedie)*100));
   $('#classAnnualTxt').innerHTML=`<b>${fait}</b> / ${dedie} h — ${pct}%`;
   const ab=$('#classAnnualBar'); ab.style.width=pct+'%'; ab.style.background=bk.bg;
@@ -5548,7 +5989,11 @@ function openClass(id){
     const ms=mst[p.id];
     let margeCls='',margeTxt='';
     if(ms.report>0 && Math.abs(ms.reste-ms.dispo)<0.01){margeCls='report';margeTxt=`marge ${fmtH(p.marge)} + ${fmtH(ms.report)}`;}
-    else{margeTxt=`marge : ${fmtH(Math.max(0,ms.reste))}`;if(ms.reste<=1)margeCls='low';if(ms.reste<0){margeCls='neg';margeTxt=`marge dépassée (${fmtH(ms.reste)})`;}}
+    /* « de la période » : le même mot « marge » des deux côtés faisait
+       lire la marge de cette période comme celle de l'année, affichée
+       sur la carte du tableau de bord. Ce sont deux mesures
+       différentes, toutes deux justes. */
+    else{margeTxt=`marge de la période : ${fmtH(Math.max(0,ms.reste))}`;if(ms.reste<=1)margeCls='low';if(ms.reste<0){margeCls='neg';margeTxt=`période dépassée (${fmtH(ms.reste)})`;}}
     per.innerHTML=`<div class="period-head">
       <span class="eyebrow">${periodeLabelZone(p.id)||p.label}</span>
       <button class="period-marge ${margeCls}" data-marge="${p.id}">${margeTxt}</button>
@@ -5618,7 +6063,7 @@ function openClass(id){
 
     // événements de période (voyage, sortie…) + bouton d'ajout
     const evbox=el('div','perev-box');
-    const evs=[...eventsPeriode(niveau,p.id)].sort((a,b)=>(a.ord??0)-(b.ord??0));
+    const evs=[...eventsPeriode(id,p.id)].sort((a,b)=>(a.ord??0)-(b.ord??0));
     evs.forEach((evt,idx)=>{
       const row=el('div','perev');
       row.dataset.evid=evt.id;
@@ -5629,19 +6074,19 @@ function openClass(id){
         <span class="perev-h">−${fmtH(evt.h)}</span>
         <button class="perev-up" ${idx===0?'disabled':''}>▲</button>
         <button class="perev-del"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`;
-      $('.perev-up',row).addEventListener('click',()=>moveEventUp(niveau,p.id,evt.id));
-      $('.perev-del',row).addEventListener('click',()=>{delEvent(niveau,p.id,evt.id);});
-      enableDragReorder(row,evbox,niveau,p.id);
+      $('.perev-up',row).addEventListener('click',()=>moveEventUp(id,p.id,evt.id));
+      $('.perev-del',row).addEventListener('click',()=>{delEvent(id,p.id,evt.id);});
+      enableDragReorder(row,evbox,id,p.id);
       evbox.appendChild(row);
     });
     const addBtn=el('button','perev-add','+ Ajouter un événement (voyage, sortie…)');
-    addBtn.addEventListener('click',()=>openPerEvent(niveau,p));
+    addBtn.addEventListener('click',()=>openPerEvent(niveau,p,id));
     evbox.appendChild(addBtn);
     per.appendChild(evbox);
 
     // absences de classe sur la période (stage/voyage/temps fort) — structurel
     const absBox=el('div','absc-box');
-    const absList=((S.absClasse[niveau]||{})[p.id]||[]);
+    const absList=absListe(id,p.id);
     absList.forEach(a=>{
       const r=el('div','absc-row');
       const rng=a.dateFin&&a.dateFin!==a.date?fmtDate(a.date)+' → '+fmtDate(a.dateFin):fmtDate(a.date);
@@ -5651,12 +6096,12 @@ function openClass(id){
         <span class="absc-h">−${fmtH(a.h)}</span>
         <button class="perev-del" data-abs="${a.id}"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`;
       $('[data-abs]',r).addEventListener('click',()=>{
-        S.absClasse[niveau][p.id]=absList.filter(x=>x.id!==a.id);save();openClass(currentClass);toast('Absence retirée');
+        S.absCl[id][p.id]=absList.filter(x=>x.id!==a.id);save();openClass(currentClass);toast('Absence retirée');
       });
       absBox.appendChild(r);
     });
     const absAdd=el('button','absc-add','+ Absence de classe (stage, voyage, temps fort…)');
-    absAdd.addEventListener('click',()=>openAbsence(niveau,p));
+    absAdd.addEventListener('click',()=>openAbsence(niveau,p,id));
     absBox.appendChild(absAdd);
     per.appendChild(absBox);
 
@@ -5784,12 +6229,13 @@ function openEditSeance(classeId,seq,idx){
 /* ============================================================
    ÉVÉNEMENTS DE PÉRIODE (voyage, sortie…) — consomment la marge
    ============================================================ */
-function openPerEvent(niveau,periode){
+function openPerEvent(niveau,periode,classeId){
   let selH=1,selMotif=MOTIFS_EVENEMENT[0],selLabel='',selDate=todayISO(),selDateFin=todayISO();
+  let autoCalc=false;
   const sheet=$('#sheet');
   sheet.innerHTML=`
     <div class="sheet-grip"></div>
-    <h3>Ajouter un événement</h3>
+    <h3>Ajouter un événement${(()=>{const m=classMeta(classeId||currentClass); return m?' — '+escHtml(m.nom):'';})()}</h3>
     <div class="sheet-sub">${periode.label} — ces heures sont retirées de la marge de la période.</div>
     <div class="field-lbl">Type</div>
     <select class="sel-input txt" id="peMotif">${MOTIFS_EVENEMENT.map(m=>`<option>${m}</option>`).join('')}</select>
@@ -5801,8 +6247,10 @@ function openPerEvent(niveau,periode){
       <div><div class="field-lbl" style="margin-top:0">Au</div>
         <input type="date" class="txt" id="peDateFin" value="${selDateFin}"></div>
     </div>
-    <div class="field-lbl">Heures prises (au total)</div>
-    <select class="sel-input txt" id="peH">${[0.5,1,1.5,2,2.5,3,3.5,4,5,6,7,8].map(h=>`<option value="${h}">${fmtH(h)}</option>`).join('')}</select>
+    <div class="field-lbl">Heures prises sur cette classe</div>
+    <label class="pap-check"><input type="checkbox" id="peAuto"> <span>Calculer d'après mon emploi du temps</span></label>
+    <div class="field-hint" id="peAutoInfo"></div>
+    <select class="sel-input txt" id="peH">${[0,0.5,1,1.5,2,2.5,3,3.5,4,5,6,7,8].map(h=>`<option value="${h}">${fmtH(h)}</option>`).join('')}</select>
     <div class="sheet-btns">
       <button class="btn btn-ghost" id="peCancel">Annuler</button>
       <button class="btn btn-primary" id="peOk">Ajouter</button>
@@ -5815,26 +6263,76 @@ function openPerEvent(niveau,periode){
     // pré-remplir / recaler la date de fin si elle précède le début
     if(!selDateFin||selDateFin<selDate){selDateFin=selDate;$('#peDateFin',sheet).value=selDate;}});
   $('#peDateFin',sheet).addEventListener('change',e=>selDateFin=e.target.value);
+
+  /* Le calcul automatique, identique à celui des absences. Il PROPOSE :
+     décocher rend la main, car un cours peut avoir été déplacé,
+     remplacé, ou maintenu malgré la sortie. */
+  const majAutoEvt=()=>{
+    const info=$('#peAutoInfo',sheet), sel=$('#peH',sheet);
+    if(!autoCalc){ info.textContent=''; sel.disabled=false; return; }
+    const cid=classeId||currentClass;
+    const r=heuresEdtEntre(cid, selDate, selDateFin);
+    sel.disabled=true;
+    if(r.refus){
+      const m={
+        'dates':'Renseigne d\'abord les dates.',
+        'ordre':'La date de fin est avant la date de début.',
+        'trop-long':'Plus de quatre mois : vérifie les dates.',
+        'pas-d-edt':'Ton emploi du temps est vide — Réglages → Mon emploi du temps.'
+      }[r.refus]||'Calcul impossible.';
+      info.innerHTML='⚠ '+m;
+      sel.disabled=false; autoCalc=false;
+      const c=$('#peAuto',sheet); if(c) c.checked=false;
+      return;
+    }
+    selH=r.h;
+    if(!Array.prototype.some.call(sel.options,o=>parseFloat(o.value)===r.h)){
+      const o=document.createElement('option');
+      o.value=String(r.h); o.textContent=fmtH(r.h);
+      sel.appendChild(o);
+    }
+    sel.value=String(r.h);
+    if(r.h===0){
+      info.innerHTML='<b>Aucune heure perdue</b> : tu n\'as pas cours avec cette classe sur cette période.';
+      return;
+    }
+    const jj=r.jours.map(x=>{
+      const d=new Date(x.iso+'T12:00');
+      return JOURS[d.getDay()-1].toLowerCase()+' '+d.getDate()+(x.n>1?' ('+x.n+' h)':'');
+    });
+    const detail = jj.length<=4 ? jj.join(', ') : (jj.length+' jours de cours');
+    info.innerHTML='<b>'+fmtH(r.h)+'</b> — '+detail+'. Décoche pour corriger à la main.';
+  };
+  { const c=$('#peAuto',sheet);
+    if(c) c.addEventListener('change',()=>{ autoCalc=c.checked; majAutoEvt(); }); }
+  /* Les dates changent, le calcul suit. */
+  $('#peDate',sheet).addEventListener('change',majAutoEvt);
+  $('#peDateFin',sheet).addEventListener('change',majAutoEvt);
+
   $('#peCancel',sheet).addEventListener('click',closeSheet);
   $('#peOk',sheet).addEventListener('click',()=>{
-    if(!S.perEvents[niveau])S.perEvents[niveau]={};
-    if(!S.perEvents[niveau][periode.id])S.perEvents[niveau][periode.id]=[];
-    const list=S.perEvents[niveau][periode.id];
+    const cid=classeId||currentClass;
+    if(!cid){ toast('Aucune classe sélectionnée'); return; }
+    S.perEvCl=S.perEvCl||{};
+    if(!S.perEvCl[cid])S.perEvCl[cid]={};
+    if(!S.perEvCl[cid][periode.id])S.perEvCl[cid][periode.id]=[];
+    const list=S.perEvCl[cid][periode.id];
     const maxOrd=list.reduce((x,e)=>Math.max(x,e.ord??0),0);
     if(selDateFin<selDate)selDateFin=selDate;
-    list.push({id:'pe'+Date.now(),label:selLabel.trim(),motif:selMotif,h:selH,date:selDate,dateFin:selDateFin,ord:maxOrd+1});
+    list.push({id:'pe'+Date.now(),label:selLabel.trim(),motif:selMotif,h:selH,date:selDate,dateFin:selDateFin,ord:maxOrd+1,auto:!!autoCalc});
     save();closeSheet();openClass(currentClass);toast('Événement ajouté · −'+fmtH(selH));
   });
   showSheet();
 }
 /* Absence de classe sur une période (point 15) — 3 motifs, taguée structurel */
 const MOTIFS_ABSENCE=["Stage","Voyage scolaire","Temps fort"];
-function openAbsence(niveau,periode){
+function openAbsence(niveau,periode,classeId){
   let selMotif=MOTIFS_ABSENCE[0],selH=2,selDate=todayISO(),selDateFin=todayISO();
+  let autoCalc=false;
   const sheet=$('#sheet');
   sheet.innerHTML=`
     <div class="sheet-grip"></div>
-    <h3>Absence de classe</h3>
+    <h3>Absence de classe${(()=>{const m=classMeta(classeId||currentClass); return m?' — '+escHtml(m.nom):'';})()}</h3>
     <div class="sheet-sub">${periode.label} — ces heures sont décomptées de la marge, mais marquées « structurel · indépendant de ma volonté » (distinct d'un retard pédagogique).</div>
     <div class="field-lbl">Motif</div>
     <div class="seg" id="abMotif">
@@ -5845,7 +6343,9 @@ function openAbsence(niveau,periode){
       <div><div class="field-lbl" style="margin-top:0">Au</div><input type="date" class="txt" id="abDateFin" value="${selDateFin}"></div>
     </div>
     <div class="field-lbl">Heures de cours perdues (cette classe)</div>
-    <select class="sel-input txt" id="abH">${[1,1.5,2,2.5,3,4,5,6,7,8,10,12].map(h=>`<option value="${h}">${fmtH(h)}</option>`).join('')}</select>
+    <label class="pap-check"><input type="checkbox" id="abAuto"> <span>Calculer d'après mon emploi du temps</span></label>
+    <div class="field-hint" id="abAutoInfo"></div>
+    <select class="sel-input txt" id="abH">${[0,0.5,1,1.5,2,2.5,3,4,5,6,7,8,10,12].map(h=>`<option value="${h}">${fmtH(h)}</option>`).join('')}</select>
     <div class="sheet-btns">
       <button class="btn btn-ghost" id="abCancel">Annuler</button>
       <button class="btn btn-primary" id="abOk">Ajouter</button>
@@ -5855,30 +6355,94 @@ function openAbsence(niveau,periode){
   $('#abDate',sheet).addEventListener('change',e=>{selDate=e.target.value;if(!selDateFin||selDateFin<selDate){selDateFin=selDate;$('#abDateFin',sheet).value=selDate;}});
   $('#abDateFin',sheet).addEventListener('change',e=>selDateFin=e.target.value);
   $('#abH',sheet).addEventListener('change',e=>selH=parseFloat(e.target.value));
+
+  /* Le calcul automatique. Il PROPOSE : décocher rend la main, car un
+     cours peut avoir été déplacé, remplacé, ou maintenu malgré la
+     sortie. L'application ne sait pas ça, Hugo si. */
+  const majAuto=()=>{
+    const info=$('#abAutoInfo',sheet), sel=$('#abH',sheet);
+    if(!autoCalc){
+      info.textContent='';
+      sel.disabled=false;
+      return;
+    }
+    const cid=classeId||currentClass;
+    const r=heuresEdtEntre(cid, selDate, selDateFin);
+    sel.disabled=true;
+    if(r.refus){
+      /* On dit POURQUOI on ne calcule pas, au lieu de rendre zéro et de
+         laisser croire à un résultat. */
+      const m={
+        'dates':'Renseigne d\'abord les dates.',
+        'ordre':'La date de fin est avant la date de début.',
+        'trop-long':'Plus de quatre mois : vérifie les dates.',
+        'pas-d-edt':'Ton emploi du temps est vide — Réglages → Mon emploi du temps.'
+      }[r.refus]||'Calcul impossible.';
+      info.innerHTML='⚠ '+m;
+      sel.disabled=false; autoCalc=false;
+      const c=$('#abAuto',sheet); if(c) c.checked=false;
+      return;
+    }
+    selH=r.h;
+    /* Le champ ne propose pas toutes les valeurs possibles : s'il n'a
+       pas la bonne, on l'ajoute plutôt que de retomber en silence sur
+       une autre. */
+    if(!Array.prototype.some.call(sel.options,o=>parseFloat(o.value)===r.h)){
+      const o=document.createElement('option');
+      o.value=String(r.h); o.textContent=fmtH(r.h);
+      sel.appendChild(o);
+    }
+    sel.value=String(r.h);
+    if(r.h===0){
+      /* Le cœur de la demande : les 3e A ne perdent rien ce jour-là.
+         C'est un résultat, pas un échec. */
+      info.innerHTML='<b>Aucune heure perdue</b> : tu n\'as pas cours avec cette classe sur cette période.';
+      return;
+    }
+    const jj=r.jours.map(x=>{
+      const d=new Date(x.iso+'T12:00');
+      return JOURS[d.getDay()-1].toLowerCase()+' '+d.getDate()+(x.n>1?' ('+x.n+' h)':'');
+    });
+    /* Au-delà de quatre jours la liste devient illisible : on compte. */
+    const detail = jj.length<=4 ? jj.join(', ') : (jj.length+' jours de cours');
+    info.innerHTML='<b>'+fmtH(r.h)+'</b> — '+detail+'. Décoche pour corriger à la main.';
+  };
+  { const c=$('#abAuto',sheet);
+    if(c) c.addEventListener('change',()=>{ autoCalc=c.checked; majAuto(); }); }
+  /* Les dates changent, le calcul suit : sans cela on garderait le
+     résultat d'une plage qu'on vient de remplacer. */
+  $('#abDate',sheet).addEventListener('change',majAuto);
+  $('#abDateFin',sheet).addEventListener('change',majAuto);
   $('#abCancel',sheet).addEventListener('click',closeSheet);
   $('#abOk',sheet).addEventListener('click',()=>{
-    if(!S.absClasse[niveau])S.absClasse[niveau]={};
-    if(!S.absClasse[niveau][periode.id])S.absClasse[niveau][periode.id]=[];
+    const cid=classeId||currentClass;
+    if(!cid){ toast('Aucune classe sélectionnée'); return; }
+    S.absCl=S.absCl||{};
+    if(!S.absCl[cid])S.absCl[cid]={};
+    if(!S.absCl[cid][periode.id])S.absCl[cid][periode.id]=[];
     if(selDateFin<selDate)selDateFin=selDate;
-    S.absClasse[niveau][periode.id].push({id:'ab'+Date.now(),motif:selMotif,h:selH,date:selDate,dateFin:selDateFin});
+    S.absCl[cid][periode.id].push({id:'ab'+Date.now(),motif:selMotif,h:selH,date:selDate,dateFin:selDateFin,auto:!!autoCalc});
     save();closeSheet();openClass(currentClass);toast('Absence ajoutée · −'+fmtH(selH));
   });
   showSheet();
 }
-function delEvent(niveau,periodeId,evId){
-  const list=(S.perEvents[niveau]||{})[periodeId]||[];
-  S.perEvents[niveau][periodeId]=list.filter(e=>e.id!==evId);
+/* classeId et non niveau : retirer un événement depuis la progression
+   d'une classe ne doit plus l'effacer chez ses voisines de niveau. */
+function delEvent(classeId,periodeId,evId){
+  const list=eventsPeriode(classeId,periodeId);
+  if(!S.perEvCl[classeId]) S.perEvCl[classeId]={};
+  S.perEvCl[classeId][periodeId]=list.filter(e=>e.id!==evId);
   save();openClass(currentClass);toast('Événement retiré');
 }
-function moveEventUp(niveau,periodeId,evId){
-  const list=[...((S.perEvents[niveau]||{})[periodeId]||[])].sort((a,b)=>(a.ord??0)-(b.ord??0));
+function moveEventUp(classeId,periodeId,evId){
+  const list=[...eventsPeriode(classeId,periodeId)].sort((a,b)=>(a.ord??0)-(b.ord??0));
   const i=list.findIndex(e=>e.id===evId); if(i<=0)return;
   const tmp=list[i-1].ord; list[i-1].ord=list[i].ord; list[i].ord=tmp;
   save();openClass(currentClass);
 }
 /* Vrai glisser-déposer : appui long (250ms) puis glissement libre.
    Réordonne dans la liste de la période et persiste via le champ ord. */
-function enableDragReorder(row,box,niveau,periodeId){
+function enableDragReorder(row,box,classeId,periodeId){
   const grip=$('.perev-grip',row);
   let holdTimer=null, dragging=false, startY=0, offset=0, ph=null;
   const rows=()=>[...box.querySelectorAll('.perev')];
@@ -5914,7 +6478,7 @@ function enableDragReorder(row,box,niveau,periodeId){
     row.style.cssText='';
     // recalculer ord d'après l'ordre DOM
     const order=rows().map(x=>x.dataset.evid);
-    const list=(S.perEvents[niveau]||{})[periodeId]||[];
+    const list=eventsPeriode(classeId,periodeId);
     list.forEach(e=>{const i=order.indexOf(e.id); if(i>=0)e.ord=i;});
     save();openClass(currentClass);
   };
@@ -6149,10 +6713,12 @@ function semaineAB(lundi){
   return pair ? depart : (depart==='A'?'B':'A');
 }
 function renderSemaine(){
+  astuceBientot('a-semaine','#swEditBtn',
+    "Pose ton emploi du temps une fois : tes cours, tes dates et le minuteur de séance se calent tous dessus.");
   $$('.sw-tab').forEach(t=>t.classList.toggle('active',t.dataset.sw===semaineVolet));
   $('#semaineVolet1').style.display=semaineVolet==='semaine'?'block':'none';
-  $('#semaineVolet2').style.display=semaineVolet==='ensemble'?'block':'none';
-  if(semaineVolet==='semaine')renderSemaineGrid(); else renderEnsemble();
+  $('#semaineVolet2').style.display=semaineVolet==='anniv'?'block':'none';
+  if(semaineVolet==='semaine')renderSemaineGrid(); else renderAnniversaires();
 }
 function renderSemaineGrid(){
   const base=lundiDe(new Date()); base.setDate(base.getDate()+semaineOffset*7);
@@ -6186,7 +6752,7 @@ function renderSemaineGrid(){
       });
       // créneaux de cours
       slotsAB.forEach(s=>{
-        const heure=`<span class="sw-slot-time">${fmtCreneau(slotCreneau(s))}${s.sem&&s.sem!=='tt'?'<span class="ab-badge '+s.sem+'">'+s.sem+'</span>':''}</span>`;
+        const heure=`<span class="sw-slot-time"><span>${fmtCreneau(slotCreneau(s))}${s.sem&&s.sem!=='tt'?'<span class="ab-badge '+s.sem+'">'+s.sem+'</span>':''}</span>${s.salle?'<span class="sw-slot-salle">'+escHtml(s.salle)+'</span>':''}</span>`;
         /* Un intitulé libre n'a ni classe, ni séquence, ni avance à
            rattraper : il occupe l'heure, c'est tout. */
         if(slotLibre(s)){
@@ -6221,41 +6787,81 @@ function renderSemaineGrid(){
   $('#swEditHint').style.display=hasEdt?'none':'block';
 }
 
-function renderEnsemble(){
-  const wrap=$('#enGrid'); wrap.innerHTML='';
-  S.classesMeta.forEach(m=>{
-    const e=ecartClasse(m.id),bk=bucket(e);
-    const dedie=totalAnnee(m.niveau),fait=totalFait(m.id)+margeConsommee(m.niveau),pct=Math.min(100,Math.round(fait/Math.max(1,dedie)*100));
-    const ec=seqEnCours(m.id,m.niveau);
-    const row=el('div','en-row');
-    const sp=statutMarge(m.id,m.niveau);
-    row.innerHTML=`
-      <div class="en-top"><span class="en-name">${m.nom}</span>
-        <span class="pastille" style="background:${sp.bg};color:${sp.fg}">${sp.txt}</span></div>
-      <div class="en-seq">${ec?`${ec.seq.nom} · ${faitSeq(m.id,ec.seq.id,ec.seq.idxDebut,ec.seq.nbSeances)}/${ec.seq.h}h`:(progVide(m.niveau)?'Progression à définir':'Année terminée 🎉')}</div>
-      <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${bk.bg}"></div></div>`;
-    wrap.appendChild(row);
+/* ------------------------------------------------------------------
+   ANNIVERSAIRES — tous les élèves, de septembre à août
+
+   Rangés dans l'ordre de l'ANNÉE SCOLAIRE et non du calendrier : un
+   anniversaire de septembre arrive en tête, un de juin à la fin. C'est
+   l'ordre dans lequel on les vit.
+
+   Rien n'est enregistré ici : tout se recalcule à l'ouverture, comme
+   partout ailleurs dans l'application.
+   ------------------------------------------------------------------ */
+function renderAnniversaires(){
+  const liste=$('#anvListe'), note=$('#anvNote');
+  if(!liste) return;
+
+  /* Les deux années civiles que couvre l'année scolaire. ANNEE vaut
+     « 2026-2027 » ; à défaut on la déduit de la date du jour, la
+     bascule se faisant au 1er septembre. */
+  let y1, y2;
+  { const m=/^(\d{4})-(\d{4})$/.exec(String(typeof ANNEE!=='undefined'?ANNEE:''));
+    if(m){ y1=+m[1]; y2=+m[2]; }
+    else { const d=new Date(); y1=(d.getMonth()>=8)?d.getFullYear():d.getFullYear()-1; y2=y1+1; } }
+
+  /* Septembre en premier : (mois - 9 + 12) % 12 met 9 sur 0 et 8 sur 11. */
+  const rangMois=(mo)=>(mo-9+12)%12;
+
+  const avec=[], sansDate=[];
+  (S.classesMeta||[]).forEach(m=>{
+    (S.eleves[m.id]||[]).forEach(e=>{
+      const p=String(e.naissance||'').split('-');
+      if(p.length!==3 || !+p[1] || !+p[2]){ sansDate.push(e); return; }
+      const mo=+p[1], jo=+p[2];
+      /* L'âge ATTEINT pendant cette année scolaire : un anniversaire de
+         septembre à décembre tombe dans la première année civile, de
+         janvier à août dans la seconde. Sans cette distinction, la
+         moitié de la liste serait vieillie ou rajeunie d'un an. */
+      const anCivil=(mo>=9)?y1:y2;
+      const age=(+p[0]>1900)? (anCivil-(+p[0])) : null;
+      avec.push({e, classe:m.nom, mo, jo, age});
+    });
   });
-  // semaine à venir
-  const box=$('#enWeek'); box.innerHTML='';
-  const base=lundiDe(new Date()); base.setDate(base.getDate()+7);
-  let any=false;
-  JOURS.forEach((jour,ji)=>{
-    const slots=(S.edt[String(JOURS_ISO[ji])]||[]).slice().sort((a,b)=>hhmmToH(slotCreneau(a).deb)-hhmmToH(slotCreneau(b).deb));
-    if(!slots.length)return; any=true;
-    let line=`<div class="enw-day"><span class="enw-jour">${jour}</span><span class="enw-list">`;
-    line+=slots.map(s=>{
-      if(slotLibre(s)) return `<b>${escHtml(slotLabel(s))}</b>`;
-      const m=classMeta(s.classeId); if(!m) return '';
-      if(s.isVieDeClasse) return `<b>${escHtml(m.nom)}</b> vie de classe`;
-      const ps=prochaineSeance(s.classeId,m.niveau);
-      return `<b>${escHtml(m.nom)}</b> ${ps?ps.court:''}`;
-    }).filter(Boolean).join(' · ');
-    line+='</span></div>';
-    box.insertAdjacentHTML('beforeend',line);
+  avec.sort((a,b)=> (rangMois(a.mo)-rangMois(b.mo)) || (a.jo-b.jo)
+                 || String(a.e.nom||'').localeCompare(String(b.e.nom||''),'fr'));
+
+  const total=avec.length+sansDate.length;
+  if(!total){
+    note.textContent='';
+    liste.innerHTML=`<div class="gr-vide">Aucun élève enregistré. Les dates de naissance arrivent avec l'import de tes listes de classes, ou se saisissent sur la fiche de l'élève.</div>`;
+    return;
+  }
+
+  const auj=new Date();
+  const aujMo=auj.getMonth()+1, aujJo=auj.getDate();
+
+  let h='', moisCourant=-1;
+  avec.forEach(x=>{
+    if(x.mo!==moisCourant){
+      moisCourant=x.mo;
+      h+=`<div class="anv-mois">${MOIS_LONG[x.mo-1]}</div>`;
+    }
+    const estAuj=(x.mo===aujMo && x.jo===aujJo);
+    h+=`<div class="anv-l${estAuj?' auj':''}">
+      <span class="anv-j">${x.jo}</span>
+      <span class="anv-n"><b>${escHtml(x.e.prenom||'')}</b> ${escHtml(String(x.e.nom||'').toUpperCase())} <span class="anv-c">(${escHtml(x.classe)})</span></span>
+      <span class="anv-a">${estAuj?'aujourd\'hui · ':''}${x.age?x.age+' ans':''}</span>
+    </div>`;
   });
-  $('#enWeekWrap').style.display=any?'block':'none';
+  liste.innerHTML=h||`<div class="gr-vide">Aucune date de naissance enregistrée.</div>`;
+
+  /* Les élèves sans date sont COMPTÉS, pas cachés : une liste qui a
+     l'air complète sans l'être laisserait croire que tout est saisi. */
+  note.innerHTML = sansDate.length
+    ? `${avec.length} date${avec.length>1?'s':''} sur ${total} élèves — <b>${sansDate.length}</b> sans date de naissance, à compléter sur leur fiche ou à réimporter.`
+    : `${total} élève${total>1?'s':''}, toutes les dates sont connues.`;
 }
+
 
 /* édition EDT */
 function openEdtEditor(){
@@ -6267,7 +6873,7 @@ function openEdtEditor(){
      d'où que viennent les données. */
   if(trierToutEdt()) save();
   let html=`<div class="sheet-grip"></div><h3>Mon emploi du temps</h3>
-    <div class="sheet-sub">Pose tes créneaux de cours. « Toutes / A / B » dit si le cours a lieu chaque semaine ou une semaine sur deux. Pour une classe dont tu es professeur principal, tu peux poser son <b>heure de vie de classe</b> ; « Intitulé libre » sert aux ateliers, permanences et devoirs faits, sans créer de classe.</div>
+    <div class="sheet-sub">Pose tes créneaux de cours. « Toutes / A / B » dit si le cours a lieu chaque semaine ou une semaine sur deux. Pour une classe dont tu es professeur principal, tu peux poser son <b>heure de vie de classe</b> ; « Intitulé libre » sert aux ateliers, permanences et devoirs faits, sans créer de classe. La <b>salle</b> est facultative : renseignée, elle s'affiche sous l'horaire dans Ma semaine.</div>
     <div class="field-lbl" style="margin-top:0">L'année commence en</div>
     <div class="seg mini" id="edtDepart">
       <div class="seg-opt${CFG.semaineDepart==='B'?'':' sel'}" data-dep="A">Semaine A</div>
@@ -6348,7 +6954,9 @@ function edtRowHtml(day,i,s){
     <select class="edt-cren">${copts}</select>
     ${col2}
     <select class="edt-sem" title="Ce créneau a-t-il lieu toutes les semaines, ou seulement en semaine A ou B ?">${sopts}</select>
-    <button class="edt-del">✕</button></div>`;
+    <button class="edt-del">✕</button>
+    <span class="edt-br"></span>
+    <input type="text" class="txt edt-salle" value="${escAttr(s.salle||'')}" placeholder="Salle — ex. B12" aria-label="Salle du cours" autocomplete="off"></div>`;
 }
 function applyCreneau(s,cid){
   const c=creneauById(cid)||creneaux()[0];
@@ -6358,7 +6966,18 @@ function bindEdtRows(sheet){
   $$('.edt-row',sheet).forEach(row=>{
     const day=row.dataset.day,i=+row.dataset.i;
     const cren=$('.edt-cren',row), cls=$('.edt-class',row),
-          libre=$('.edt-libre',row), semSel=$('.edt-sem',row);
+          libre=$('.edt-libre',row), semSel=$('.edt-sem',row),
+          salle=$('.edt-salle',row);
+
+    /* « input » et non « change » : changer l'horaire redessine toute la
+       feuille. Attendre la perte de focus perdrait une salle tapée juste
+       avant de toucher au sélecteur d'à côté. */
+    if(salle) salle.addEventListener('input',()=>{
+      const s=S.edt[day][i]; if(!s) return;
+      const v=salle.value.trim();
+      if(v) s.salle=v; else delete s.salle;
+      save();
+    });
 
     cren.addEventListener('change',()=>{
       const s=S.edt[day][i]; if(!s) return;
@@ -6466,6 +7085,8 @@ function renderBandeau(){
 }
 let jourOffset=0, jourMode='jour', moisCursor=null, dtVue='mesdates';
 function renderDatesTab(){
+  astuceBientot('a-dates','#evtAddBtn',
+    "Conseils de classe, réunions, sorties : ce que tu poses ici <b>remonte dans Ma semaine</b>, au bon jour.");
   syncDtVue();
   renderJourTab();
   renderDates();
@@ -6808,6 +7429,13 @@ function toast(msg,dur){const t=$('#toast');t.textContent=msg;t.classList.add('s
    RÉGLAGES / CONFIGURATION
    ============================================================ */
 function renderSettings(){
+  /* « Importer une liste d'élèves » et non « Revoir le tutoriel » :
+     mesuré, ce dernier est à 2281 px du haut sur un écran de 812 — il
+     n'est jamais visible à l'arrivée, et la bulle ne sortait donc
+     jamais. Faire défiler la page sous les doigts de quelqu'un qui
+     vient d'arriver aurait été pire que de se taire. */
+  astuceBientot('a-reglages','#setImportListe',
+    "Tes listes de classe s'importent ici, plutôt que de se taper. Plus bas : <b>Mes mots</b> pour renommer le vocabulaire, et le tutoriel complet.");
   // saison
   $$('.seg-opt[data-season]').forEach(o=>o.classList.toggle('sel',o.dataset.season===CFG.saison));
   $$('.seg-opt[data-fond]').forEach(o=>o.classList.toggle('sel',o.dataset.fond===(CFG.fond||'anime')));
@@ -6917,7 +7545,7 @@ function showLock(mode,opts){
   backPush('lock');
 }
 let suiviUnlocked=false;   // (reste verrouillé : redemandé à chaque entrée dans le Suivi)
-let suiviUnlockedAt=0;     // horodatage du dernier déverrouillage réussi (grâce à 3 min → pas de redemande)
+let suiviUnlockedAt=0;     // horodatage du dernier déverrouillage réussi (moins de 30 min → pas de redemande)
 
 /* ============================================================
    EXPORT / IMPORT / RESET
@@ -6992,15 +7620,42 @@ function listerSauvegardes(){
         return String(b.name).localeCompare(String(a.name));
       });
   };
-  return FS.readdir({path:'', directory:'DOCUMENTS'})
+  return FS.readdir({path:'', directory:DOSSIER_FICHIERS})
     .then(trier)
-    .catch(()=>FS.readdir({path:'.', directory:'DOCUMENTS'}).then(trier).catch(()=>[]));
+    .catch(()=>FS.readdir({path:'.', directory:DOSSIER_FICHIERS}).then(trier).catch(()=>[]));
 }
+/* ------------------------------------------------------------------
+   OU L'APPLICATION ECRIT SES FICHIERS, SUR ANDROID
+
+   C'était 'DOCUMENTS' — le dossier PUBLIC du téléphone. Depuis
+   Android 11 une application n'y a plus accès sans la permission
+   MANAGE_EXTERNAL_STORAGE, que Thot ne demande pas et que Google
+   n'accorderait pas. Avec targetSdkVersion 36, aucune échappatoire.
+   Mesuré sur l'appareil d'Hugo :
+
+       /storage/emulated/0/Documents/sauvegarde.json
+       open failed: EACCES (Permission denied)
+
+   L'export était donc cassé pour TOUS les testeurs, pas pour lui seul.
+
+   'EXTERNAL' est le dossier propre à l'application dans le stockage
+   externe — /Android/data/com.thot.assistant/files. Toujours
+   accessible en écriture, sans aucune permission, et visible depuis un
+   ordinateur branché en USB.
+
+   CE QU'IL FAUT SAVOIR : Android SUPPRIME ce dossier à la
+   désinstallation. Une sauvegarde qui n'existerait que là ne
+   survivrait pas à un changement de téléphone — le cas même où l'on en
+   a besoin. C'est le PARTAGE qui suit l'écriture qui la met à l'abri,
+   et le message de réussite doit le dire.
+   ------------------------------------------------------------------ */
+const DOSSIER_FICHIERS = 'EXTERNAL';
+
 function lireSauvegarde(nom){
   const P=(window.Capacitor&&Capacitor.Plugins)||{};
   const FS=P.Filesystem;
   if(!FS) return Promise.reject(new Error('module de fichiers indisponible'));
-  return FS.readFile({path:nom, directory:'DOCUMENTS', encoding:'utf8'})
+  return FS.readFile({path:nom, directory:DOSSIER_FICHIERS, encoding:'utf8'})
     .then(res=>res&&res.data);
 }
 /* Applique le contenu d'une sauvegarde. Partage par les deux chemins
@@ -7027,17 +7682,45 @@ function enregistrerFichier(nom, contenu, mime, apres){
     return;
   }
   const P=(window.Capacitor&&Capacitor.Plugins)||{};
-  const FS=P.Filesystem, Partage=P.Share;
+  const FS=P.Filesystem, Partage=P.Share, DL=P.Telechargements;
+
+  /* 1. TÉLÉCHARGEMENTS, par le greffon natif. Le dossier que
+     l'utilisateur attend, qu'il retrouve depuis n'importe quel
+     gestionnaire de fichiers, et que la désinstallation ne touche pas.
+     Aucun partage ne s'ouvre : le fichier est rangé, pas envoyé — c'est
+     tout l'objet de la demande. */
+  if(DL && DL.enregistrer){
+    DL.enregistrer({nom:nom, contenu:contenu, mime:mime||'application/json'})
+      .then(res=>fini({ok:true, ou:'Téléchargements', nom:nom, uri:res&&res.uri}))
+      .catch(()=>ecrireEtPartager());   /* 2. à défaut, l'ancien chemin */
+    return;
+  }
+  ecrireEtPartager();
+
+  /* 2. Le repli : le dossier propre à l'application, puis le partage.
+     C'est le comportement de la 3.4.24 sans ce correctif — donc le pire
+     cas possible est ce qui marchait déjà. */
+  function ecrireEtPartager(){
   if(!FS){ fini({ok:false, erreur:"module de fichiers indisponible"}); return; }
-  FS.writeFile({ path:nom, data:contenu, directory:'DOCUMENTS', encoding:'utf8', recursive:true })
+  FS.writeFile({ path:nom, data:contenu, directory:DOSSIER_FICHIERS, encoding:'utf8', recursive:true })
     .then(res=>{
-      const r={ok:true, ou:'Documents', nom:nom, uri:res&&res.uri};
+      /* Plus « Documents » : rien n'y a jamais été écrit. */
+      const r={ok:true, ou:'l\'espace de Thot', nom:nom, uri:res&&res.uri};
       if(Partage&&Partage.share&&res&&res.uri){
         Partage.share({ title:nom, url:res.uri, dialogTitle:'Enregistrer ou envoyer' })
           .then(()=>fini(r)).catch(()=>fini(r));   /* partage annulé : le fichier est écrit quand même */
       }else fini(r);
     })
-    .catch(err=>fini({ok:false, erreur:String((err&&err.message)||err)}));
+    .catch(err=>{
+      /* Le message brut d'Android — « EACCES (Permission denied) », un
+         chemin /storage/emulated/0/... — n'apprend rien à un
+         professeur. On garde la cause technique, on ajoute ce qu'il
+         peut faire. */
+      const brut=String((err&&err.message)||err);
+      fini({ok:false, erreur:brut,
+            conseil:'Si le message parle de permission, préviens-moi : c\'est un défaut de l\'application, pas un réglage de ton téléphone.'});
+    });
+  }
 }
 /* Message unique : on nomme le fichier ET son emplacement. */
 /* ============================================================
@@ -7177,8 +7860,8 @@ function bindSettings(){
       // on n'efface QUE l'avancement : les coches et ce qui a consommé la marge.
       // Tout le reste (progression, élèves, groupes, suivi PP, réglages) est conservé.
       S.coches={};
-      S.perEvents={};
-      S.absClasse={};
+      S.perEvents={}; S.perEvCl={};
+      S.absClasse={}; S.absCl={};
       (S.classesMeta||[]).forEach(c=>{ S.coches[c.id]={}; });
       save(); closeSheet(); renderDash(); go('dash'); toast('Avancement réinitialisé');
     });
@@ -7234,6 +7917,11 @@ function bindSettings(){
   });
   $('#setAideProg').addEventListener('click',openAideProgression);
   $('#setTuto').addEventListener('click',()=>openTuto(true));
+  { const b=$('#setAstuces');
+    if(b) b.addEventListener('click',()=>{
+      rejouerAstuces();
+      toast('Les astuces réapparaîtront écran par écran',3500);
+    }); }
   $('#setConfid').addEventListener('click',()=>openLegal('confid'));
   $('#setMentions').addEventListener('click',()=>openLegal('mentions'));
   $('#setCGU').addEventListener('click',()=>openLegal('cgu'));
@@ -7337,6 +8025,8 @@ let suiviClass=null, suiviVolet='fiches';
 let suiviTriManuel=false;
 
 function renderSuivi(){
+  astuceBientot('a-suivi','#suiviTabs',
+    "Quatre volets ici : les <b>fiches</b> de tes élèves, tes <b>notes</b>, tes <b>groupes</b>, et une <b>roue</b> de tirage au sort.");
   if(!S.classesMeta.length){
     const pick=$('#suiviClassPick'); if(pick)pick.innerHTML='';
     const tp=$('#suiviTriPick'); if(tp)tp.innerHTML='';
@@ -8553,13 +9243,17 @@ function openPPEleve(eid){
 function openPPAddObs(eid,back){
   const sheet=$('#sheet'); const tri=ppTri;
   const today=new Date().toISOString().slice(0,10);
-  let motifs=[], mat='';
+  /* dateObs vit ICI, avec motifs et mat, et non dans le champ HTML :
+     render() détruit le HTML à chaque clic sur un motif. C'est tout le
+     défaut signalé — la date d'une observation reportée repassait à
+     aujourd'hui dès qu'on cochait un motif. */
+  let motifs=[], mat='', dateObs=today;
   const render=()=>{
     sheet.innerHTML=`<div class="sheet-grip"></div>
       <h3>Nouvelle observation</h3>
       <div class="sheet-sub">Coche un ou plusieurs motifs</div>
       <div class="field-lbl">Date</div>
-      <input type="date" class="txt" id="ppObsDate" value="${today}">
+      <input type="date" class="txt" id="ppObsDate" value="${dateObs}">
       <div class="field-lbl">Matière <span class="field-hint">d'où vient l'observation</span></div>
       <select class="sel-input txt" id="ppObsMat">
         <option value="">— non précisée —</option>
@@ -8588,9 +9282,13 @@ function openPPAddObs(eid,back){
       sel.addEventListener('change',maj);
       libre.addEventListener('input',maj);
     }
+    /* À chaque frappe, pas seulement à l'enregistrement : entre les
+       deux il peut y avoir dix redessins. */
+    { const d=$('#ppObsDate',sheet);
+      if(d) d.addEventListener('input',()=>{ if(d.value) dateObs=d.value; }); }
     $('#ppObsCancel',sheet).addEventListener('click',()=>back&&back());
     $('#ppObsSave',sheet).addEventListener('click',()=>{
-      const date=$('#ppObsDate',sheet).value||today;
+      const date=($('#ppObsDate',sheet)||{}).value||dateObs||today;
       ppObs(tri,eid).push({date,motifs:motifs.slice(),mat:mat||''});
       save(); ppTouche(eid); toast('Observation ajoutée'); back&&back();
     });
@@ -8622,6 +9320,11 @@ function openPPNote(eid,nid,back){
         <button class="btn btn-primary" id="ppnSave">Enregistrer</button>
       </div>`;
     $$('.pp-type-opt',sheet).forEach(b=>b.addEventListener('click',()=>{ note.type=b.dataset.t; render(); }));
+    /* Même défaut que l'observation : cliquer un type appelle render(),
+       qui réécrit le champ avec note.date — inchangé depuis l'ouverture.
+       On écrit dans le modèle à chaque frappe. */
+    { const d=$('#ppnDate',sheet);
+      if(d) d.addEventListener('input',()=>{ if(d.value) note.date=d.value; }); }
     $('#ppnCancel',sheet).addEventListener('click',()=>back&&back());
     if(!isNew)$('#ppnDel',sheet).addEventListener('click',()=>{
       const k=arr.findIndex(x=>x.id===note.id); if(k>=0)arr.splice(k,1); save(); ppTouche(eid); toast('Note supprimée'); back&&back();
@@ -8659,6 +9362,12 @@ function openPPContrat(eid,cid,back){
         ${!isNew?'<button class="btn-uncheck" id="ppcDel">🗑 Supprimer</button>':''}
         <button class="btn btn-primary" id="ppcSave">Enregistrer</button>
       </div>`;
+    /* Cette feuille ne se redessine pas encore ; on la met malgré tout
+       au même régime. Un futur bouton qui appellerait render() ferait
+       réapparaître le défaut ailleurs, sans lien visible avec ici. */
+    { const a=$('#ppcDebut',sheet), b=$('#ppcFin',sheet);
+      if(a) a.addEventListener('input',()=>{ c.debut=a.value; });
+      if(b) b.addEventListener('input',()=>{ c.fin=b.value; }); }
     $('#ppcCancel',sheet).addEventListener('click',()=>back&&back());
     if(!isNew)$('#ppcDel',sheet).addEventListener('click',()=>{
       const k=arr.findIndex(x=>x.id===c.id); if(k>=0)arr.splice(k,1); save(); ppTouche(eid); toast('Fiche supprimée'); back&&back();
@@ -8939,7 +9648,7 @@ function openJokersManager(){
   const render=()=>{
     let h=`<div class="sheet-grip"></div>
       <h3>${motJokers(true)} de suivi</h3>
-      <div class="sheet-sub">Un joker est un « droit à l'oubli » que l'élève peut utiliser une fois par trimestre (ex. un oubli de matériel toléré). Personnalise-les selon ta pratique.</div>
+      <div class="sheet-sub">Un joker est un « droit à l'oubli » (ex. un oubli de matériel toléré). Tu choisis <b>combien</b> chaque élève en a par ${periodeMot()} avant qu'un incident devienne une observation — un si tu es strict, trois ou quatre si tu l'es moins.</div>
       <div class="cls-list">`;
     CFG.jokers.forEach((j,i)=>{
       /* Deux lignes : sur 375 px, l'emoji, le nom, l'etiquette courte
@@ -8956,6 +9665,10 @@ function openJokersManager(){
           <input class="txt jok-short" data-jshort="${i}" value="${escHtml(j.short||'')}" placeholder="ex. Oubli">
           <label class="jok-pos"><input type="checkbox" data-jpos="${i}" ${j.positif?'checked':''}> positif</label>
         </div>
+        ${j.positif?'':`<div class="jok-rownb">
+          <span class="jok-l2" style="flex:1">Jokers avant observation</span>
+          <input class="txt jok-nb" type="number" inputmode="numeric" min="1" max="9" step="1" data-jnb="${i}" value="${j.nb>0?Math.min(9,Math.round(j.nb)):1}" aria-label="Nombre de jokers avant observation">
+        </div>`}
       </div>`;
     });
     h+=`</div>
@@ -8981,6 +9694,16 @@ function openJokersManager(){
       saveCfg(); render();
     }));
     $$('[data-jshort]',sheet).forEach(inp=>inp.addEventListener('change',()=>{ const j=CFG.jokers[+inp.dataset.jshort]; if(j){ j.short=inp.value.trim()||(String(j.label||'').trim().split(/\s+/)[0]||'Compteur'); saveCfg(); }}));
+    /* Borné à 1..9 ici ET dans suiviCols : un champ nombre accepte tout
+       ce qu'on y colle, min et max ne sont qu'une indication du
+       navigateur. Zéro joker aurait fait écrire une observation au
+       premier bavardage sans qu'on l'ait choisi. */
+    $$('[data-jnb]',sheet).forEach(inp=>inp.addEventListener('change',()=>{
+      const j=CFG.jokers[+inp.dataset.jnb]; if(!j) return;
+      const v=Math.round(parseFloat(inp.value));
+      j.nb = (v>=1) ? Math.min(9,v) : 1;
+      inp.value=j.nb; saveCfg();
+    }));
     $$('[data-jpos]',sheet).forEach(c=>c.addEventListener('change',()=>{
       const j=CFG.jokers[+c.dataset.jpos]; if(j){ j.positif=!!c.checked; saveCfg(); }
     }));
@@ -10200,6 +10923,8 @@ function openSeqEditor(niveau,periodeId,sid,back){
   render();
 }
 function renderFiches(){
+  astuceBientot('a-fiches','#fichesAdd',
+    "Trente-deux noms à taper ? Non : <b>Réglages → Importer une liste d'élèves</b> lit ton tableur, sur ton appareil.");
   if(!suiviClass || !classMeta(suiviClass))return;
   const frL=$('#fichesResetLbl'); if(frL)frL.textContent=motJokers(true);
   const cid=suiviClass, list=sortEleves(elevesDe(cid).slice());
@@ -10352,9 +11077,16 @@ function openSuiviRapide(cid,eid){
       const n=st[c.key]||0;
       const used=n>=1;
       const obsN=nbObsMotif(t,c.motif);
+      /* La tuile est petite : le texte reste court. Avec un seul joker
+         on garde les mots d'avant ; au-delà, une fraction se lit d'un
+         coup d'œil et dit exactement ce qu'il reste. */
+      const nbJok=c.nb||1;
+      const etatJok = (n===0)
+        ? (nbJok===1 ? 'joker dispo' : `${nbJok} jokers`)
+        : `${n}/${nbJok} utilisé${n>1?'s':''}`;
       const etat = c.positif
         ? (n? `${n} fois ce ${periodeMot()}` : 'pas encore')
-        : `${used?'joker utilisé':'joker dispo'}${obsN?` · ${obsN} obs`:''}`;
+        : `${etatJok}${obsN?` · ${obsN} obs`:''}`;
       return `<button class="su-tile ${c.positif?(used?'bonus':''):(used?'used':'')}" data-col="${c.key}" data-motif="${c.motif}">
         <span class="su-tile-ico">${c.emoji}</span>
         <span class="su-tile-lbl">${escHtml(c.label)}${c.positif?` (${n})`:''}</span>
@@ -10366,7 +11098,7 @@ function openSuiviRapide(cid,eid){
     sheet.innerHTML=`
       <div class="sheet-grip"></div>
       <h3>Suivi — ${e.prenom}</h3>
-      <div class="sheet-sub">${classMeta(cid).nom} · <b>${triLbl}</b> — un tap = un incident. Le joker saute, puis c'est une observation.</div>
+      <div class="sheet-sub">${classMeta(cid).nom} · <b>${triLbl}</b> — un tap = un incident. Les jokers sautent d'abord, puis c'est une observation.</div>
       <div class="su-grid3">${jokTiles}</div>
       <div class="su-grid2">
         <button class="su-tile act obs" id="tObs"><span class="su-tile-ico">📝</span><span class="su-tile-lbl">Observation directe</span><span class="su-tile-state">${st.obs.length} ce trimestre</span></button>
@@ -10403,8 +11135,19 @@ function openSuiviRapide(cid,eid){
           toast(colDef.label+' · '+st[col]+(st[col]>1?' fois':' fois')+' ce '+periodeMot(),3000);
           render(); return;
         }
-        if(st[col]<1){ st[col]=1; persist(); navigator.vibrate&&navigator.vibrate(12);
-          toast('Joker '+colLabel+' utilisé',4000);
+        /* Le nombre de jokers est réglable depuis la 3.4.20. st[col]
+           n'est plus un drapeau 0/1 mais un compteur 0..N — les valeurs
+           déjà enregistrées restent valides dans la nouvelle échelle,
+           donc rien à migrer.
+
+           Baisser le réglage en cours d'année laisse un élève au-dessus
+           du plafond : son prochain incident déclenche l'observation,
+           ce qui est bien ce que « à partir de maintenant » veut dire. */
+        const nbJok=colDef.nb||1;
+        if(st[col]<nbJok){ st[col]=(st[col]||0)+1; persist(); navigator.vibrate&&navigator.vibrate(12);
+          toast(nbJok===1
+            ? 'Joker '+colLabel+' utilisé'
+            : 'Joker '+colLabel+' · '+st[col]+' sur '+nbJok+' utilisé'+(st[col]>1?'s':''),4000);
         } else {
           // joker déjà utilisé → observation datée, PUIS le joker se recharge automatiquement
           const dejaN=nbObsMotif(t,motif);
@@ -10513,6 +11256,22 @@ function openEleveSheet(cid, eid){
   const e = isNew? ensureSuivi({id:'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
       nom:'',prenom:'',genre:'F',niveau:3,moyenne:'',pap:false,papDetail:'',naissance:''})
     : ensureSuivi({...elevesDe(cid).find(x=>x.id===eid)});
+  /* Le niveau ne se saisit plus : il se calcule. On dit d'où il vient,
+     sinon l'utilisateur voit un chiffre tomber du ciel — et cherche le
+     bouton qui n'existe plus. */
+  const nivDet = isNew ? {niveau:null, source:'rien'} : niveauEleveDetail(cid, eid);
+  const nivPhrase = (()=>{
+    if(nivDet.source==='notes')
+      return 'Calculé d\'après ses '+nivDet.nb+' évaluation'+(nivDet.nb>1?'s':'')
+           + ' notée'+(nivDet.nb>1?'s':'')+' de l\'année, diagnostiques comprises — moyenne '
+           + fmtNb(nivDet.moyenne)+'/20. Il se met à jour tout seul.';
+    if(nivDet.source==='comps')
+      return 'Calculé d\'après les compétences relevées : aucune note pour l\'instant. '
+           + 'La première note prendra le relais.';
+    if(nivDet.source==='main')
+      return 'Posé à la main avant la mise à jour. Il sera recalculé dès la première évaluation.';
+    return 'Aucune évaluation pour l\'instant : le niveau apparaîtra dès la première note.';
+  })();
   const sheet=$('#sheet');
   sheet.innerHTML=`
     <div class="sheet-grip"></div>
@@ -10535,8 +11294,9 @@ function openEleveSheet(cid, eid){
     <div class="field-hint" id="eMoyInfo"></div>
     <div class="field-lbl">Niveau${enMatiere()} <span class="field-hint">(sert aux groupes · jamais affiché aux élèves)</span></div>
     <div class="niv-picker" id="eNiv">
-      ${[1,2,3,4,5].map(n=>`<button class="niv-dot${e.niveau===n?' sel':''}" data-n="${n}">${n}</button>`).join('')}
+      ${[1,2,3,4,5].map(n=>`<span class="niv-dot lu${nivDet.niveau===n?' sel':''}">${n}</span>`).join('')}
     </div>
+    <div class="field-hint">${nivPhrase}</div>
     <div class="field-lbl">Options <span class="field-hint">séparées par des virgules</span></div>
     <input type="text" class="txt" id="eOpt" value="${escAttr(e.options||'')}" placeholder="Latin, grec, chorale…" autocomplete="off">
     <div class="field-lbl">Section <span class="field-hint">euro, bilangue, sportive…</span></div>
@@ -10577,8 +11337,10 @@ function openEleveSheet(cid, eid){
     if(dg) dg.textContent='Délégué'+(fem?'e':'');
     if(sp) sp.textContent='Suppléant'+(fem?'e':'');
   }));
-  // niveau
-  $$('#eNiv .niv-dot',sheet).forEach(o=>o.addEventListener('click',()=>{e.niveau=+o.dataset.n;$$('#eNiv .niv-dot',sheet).forEach(x=>x.classList.toggle('sel',x===o));}));
+  /* Plus d'écouteur sur le niveau : il est calculé. La valeur
+     éventuellement posée à la main avant la 3.4.20 reste dans e.niveau
+     et n'est pas effacée — niveauEleveDetail s'en sert tant qu'aucune
+     évaluation n'existe. */
   // pap toggle
   $('#ePap',sheet).addEventListener('change',ev=>{$('#ePapD',sheet).style.display=ev.target.checked?'block':'none';});
   /* Moyenne : automatique ou saisie a la main. En automatique le champ
@@ -10741,6 +11503,8 @@ function legendeComp(){
 function fmtNb(v){ const n=Math.round((+v||0)*100)/100; return String(n).replace('.',','); }
 
 function renderNotes(){
+  astuceBientot('a-notes','#evAdd',
+    "Chaque évaluation saisie ici <b>calcule la moyenne</b> de tes élèves et nourrit leur fiche — et le brouillon de leur appréciation.");
   if(!suiviClass || !classMeta(suiviClass)) return;
   const cid=suiviClass, tri=suiviTri;
   const evs=evalsDe(cid,tri), els=elevesDe(cid);
@@ -10792,9 +11556,9 @@ function renderNotes(){
     card.innerHTML=`
       <div class="ev-main">
         <div class="ev-nom">${escHtml(ev.nom)}</div>
-        <div class="ev-meta">${jourMois(ev.date)}${ev.type==='comp'?'':' · coef '+fmtNb(ev.coef)+' · sur '+fmtNb(ev.bareme)}${nbComps?' · '+nbComps+' compétence'+(nbComps>1?'s':''):''}<span class="ev-chip${complet?' plein':''}">${n}/${els.length}</span>${ev.diag?'<span class="ev-chip diag">diagnostique</span>':''}</div>
+        <div class="ev-meta">${jourMois(ev.date)}${(ev.type==='comp'||evEstDictee(ev))?'':' · coef '+fmtNb(ev.coef)+' · sur '+fmtNb(ev.bareme)}${nbComps?' · '+nbComps+' compétence'+(nbComps>1?'s':''):''}<span class="ev-chip${complet?' plein':''}">${n}/${els.length}</span>${ev.diag?'<span class="ev-chip diag">diagnostique</span>':''}${evEstDictee(ev)?'<span class="ev-chip dictee">dictée</span>':''}</div>
       </div>
-      <div class="ev-moy"><b>${moy===null?'—':(fmtNb(moy)+'<span style="color:var(--ink4);font-weight:400">/'+fmtNb(ev.bareme)+'</span>')}</b><span>${ev.type==='comp'?'compétences':'moyenne'}</span></div>`;
+      <div class="ev-moy"><b>${moy===null?'—':(evEstDictee(ev)?fmtNb(moy):(fmtNb(moy)+'<span style="color:var(--ink4);font-weight:400">/'+fmtNb(ev.bareme)+'</span>'))}</b><span>${ev.type==='comp'?'compétences':(evEstDictee(ev)?'fautes en moyenne':'moyenne')}</span></div>`;
     card.addEventListener('click',()=>openSaisieNotes(cid,ev.id));
     wrap.appendChild(card);
   });
@@ -10831,15 +11595,23 @@ function openEvalSheet(cid, evid){
       ${TRIS.map(t=>`<div class="seg-opt${triForce===t?' sel':''}" data-t="${t}">${escHtml(triLabel(t))}</div>`).join('')}
     </div>
     <div class="field-lbl">Cette évaluation porte</div>
-    <div class="seg mini" id="evType">
-      <div class="seg-opt${ev.type==='note'?' sel':''}" data-ty="note">Une note</div>
-      <div class="seg-opt${ev.type==='comp'?' sel':''}" data-ty="comp">Des compétences</div>
-      <div class="seg-opt${ev.type==='mixte'?' sel':''}" data-ty="mixte">Les deux</div>
+    <div class="motif-list" id="evType">
+      <button class="motif-opt${ev.type==='note'?' sel':''}" data-ty="note">
+        <span class="mo-dot"></span><span class="mo-txt"><span>Une note</span></span></button>
+      <button class="motif-opt${ev.type==='comp'?' sel':''}" data-ty="comp">
+        <span class="mo-dot"></span><span class="mo-txt"><span>Des compétences</span></span></button>
+      <button class="motif-opt${ev.type==='mixte'?' sel':''}" data-ty="mixte">
+        <span class="mo-dot"></span><span class="mo-txt"><span>Les deux</span></span></button>
+      <button class="motif-opt mo-2l${ev.type==='dictee'?' sel':''}" data-ty="dictee">
+        <span class="mo-dot"></span><span class="mo-txt"><span>Une dictée</span>
+          <span class="mo-sub">On compte les fautes, rien d'autre. Pas de note, pas de coefficient, hors moyenne — et sa propre courbe.</span></span></button>
     </div>
-    <div class="field-lbl">À quoi elle sert</div>
-    <button class="motif-opt${ev.diag?' sel':''}" id="evDiag">
-      <span class="mo-dot"></span><span>Évaluation diagnostique</span></button>
-    <div class="field-hint">Elle apparaît dans les graphiques et dans le niveau de compétence, mais n'entre ni dans la moyenne ni dans l'appréciation de bulletin.</div>
+    <div id="evDiagBloc">
+      <div class="field-lbl">À quoi elle sert</div>
+      <button class="motif-opt${ev.diag?' sel':''}" id="evDiag">
+        <span class="mo-dot"></span><span class="mo-txt"><span>Évaluation diagnostique</span></span></button>
+      <div class="field-hint">Elle apparaît dans les graphiques et dans le niveau de compétence, mais n'entre ni dans la moyenne ni dans l'appréciation de bulletin.</div>
+    </div>
     <div id="evNoteBloc">
       <div class="row2">
         <div><div class="field-lbl">Coefficient</div>
@@ -10875,8 +11647,14 @@ function openEvalSheet(cid, evid){
   const autresComps=(ev.comps||[]).filter(id=>connuesEv.indexOf(id)<0);
   let choisies=(ev.comps||[]).filter(id=>connuesEv.indexOf(id)>=0);
   function majType(){
-    $('#evNoteBloc',sheet).style.display = (typ==='comp') ? 'none' : 'block';
-    $('#evCompBloc',sheet).style.display = (typ==='note') ? 'none' : 'block';
+    /* Une dictée ne montre ni l'un ni l'autre : elle n'a ni barème, ni
+       coefficient, ni compétences. Et la case « diagnostique » n'aurait
+       sur elle aucun effet — une dictée est déjà hors moyenne — donc
+       elle disparaît plutôt que de mentir sur ce qu'elle fait. */
+    const estDictee = (typ==='dictee');
+    $('#evNoteBloc',sheet).style.display = (typ==='comp'||estDictee) ? 'none' : 'block';
+    $('#evCompBloc',sheet).style.display = (typ==='note'||estDictee) ? 'none' : 'block';
+    { const bdb=$('#evDiagBloc',sheet); if(bdb) bdb.style.display = estDictee ? 'none' : 'block'; }
     const box=$('#evCompListe',sheet); if(!box) return;
     box.innerHTML='';
     const dispo=competencesDispo();
@@ -10895,9 +11673,33 @@ function openEvalSheet(cid, evid){
       box.appendChild(b);
     });
   }
-  $$('#evType .seg-opt',sheet).forEach(o=>o.addEventListener('click',()=>{
-    typ=o.dataset.ty;
-    $$('#evType .seg-opt',sheet).forEach(x=>x.classList.toggle('sel',x===o));
+  /* Rien n'est encore saisi : le choix du type reste libre, se tromper
+     de bouton doit rester rattrapable. Dès qu'une valeur existe, passer
+     de « note » à « dictée » ou l'inverse est refusé — voir plus bas. */
+  const dejaSaisi = !isNew && saisiesEval(cid, src)>0;
+  $$('#evType .motif-opt',sheet).forEach(o=>o.addEventListener('click',()=>{
+    const vise=o.dataset.ty;
+    /* Le franchissement de la frontière « dictée » ne toucherait à aucun
+       chiffre et changerait le sens de tous : un « 12 » cesserait d'être
+       douze sur vingt pour devenir douze fautes, et la moyenne de
+       l'élève bougerait sans qu'une seule note ait été modifiée.
+       Les autres changements de type restent permis : ils n'altèrent
+       pas ce que les nombres déjà entrés veulent dire. */
+    if(dejaSaisi && (vise==='dictee') !== (typ==='dictee')){
+      toast('Des valeurs sont déjà saisies : ce changement leur donnerait un autre sens.');
+      return;
+    }
+    /* On quitte la dictée. Le champ barème est masqué, pas retiré, et il
+       porte encore le plafond de saisie — 99, qui n'est pas un barème.
+       Le laisser fabriquerait un contrôle « sur 99 » que personne n'a
+       demandé. On ne remet 20 que si la valeur est bien ce plafond : un
+       barème saisi à la main n'est jamais écrasé. */
+    if(typ==='dictee' && vise!=='dictee'){
+      const cb=$('#evBareme',sheet);
+      if(cb && +cb.value===DICTEE_PLAFOND) cb.value=20;
+    }
+    typ=vise;
+    $$('#evType .motif-opt',sheet).forEach(x=>x.classList.toggle('sel',x===o));
     majType();
   }));
   majType();
@@ -10929,12 +11731,23 @@ function openEvalSheet(cid, evid){
     const date=$('#evDate',sheet).value || todayISO();
     const coef=parseFloat($('#evCoef',sheet).value);
     const bareme=parseFloat($('#evBareme',sheet).value);
+    const estDictee=(typ==='dictee');
     if(!nom){ toast('Donne un nom à l\'évaluation'); return; }
-    if(!(bareme>0)){ toast('Le barème doit être supérieur à zéro'); return; }
+    /* Le champ barème est masqué pour une dictée : le lire donnerait NaN
+       et le contrôle refuserait une saisie parfaitement valide. */
+    if(!estDictee && !(bareme>0)){ toast('Le barème doit être supérieur à zéro'); return; }
     if(!triForce){ toast('Choisis le trimestre de cette évaluation'); return; }
-    if(typ!=='note' && !choisies.length){ toast('Choisis au moins une compétence'); return; }
-    const o={nom, date, coef:(coef>0?coef:1), bareme, tri:triForce,
-             type:typ, diag:diag, comps:choisies.concat(autresComps)};
+    if((typ==='comp'||typ==='mixte') && !choisies.length){ toast('Choisis au moins une compétence'); return; }
+    /* Une dictée garde « autresComps » — les compétences d'une AUTRE
+       matière, invisibles ici et conservées exprès. Les jeter parce que
+       l'utilisateur passe en dictée les perdrait pour de bon, alors
+       qu'elles ne s'affichent nulle part sur une dictée : compsEvalDispo
+       filtre sur la matière courante et n'en renverra aucune. */
+    const o=estDictee
+      ? {nom, date, coef:1, bareme:DICTEE_PLAFOND, tri:triForce,
+         type:'dictee', diag:false, comps:autresComps}
+      : {nom, date, coef:(coef>0?coef:1), bareme, tri:triForce,
+         type:typ, diag:diag, comps:choisies.concat(autresComps)};
     if(isNew){
       const nouveau=ajouterEval(cid,o);
       if(triForce) majEval(cid,nouveau.id,{tri:triForce});
@@ -10990,7 +11803,7 @@ function openSaisieNotes(cid, evid){
   sheet.innerHTML=`
     <div class="sheet-grip"></div>
     <h3>${escHtml(ev.nom)}</h3>
-    <div class="sheet-sub">${jourMois(ev.date)} · coef ${fmtNb(ev.coef)} · sur ${fmtNb(ev.bareme)} · ${triLabel(ev.tri)}<br>Tout s'enregistre au fur et à mesure.</div>
+    <div class="sheet-sub">${jourMois(ev.date)} · ${evEstDictee(ev)?'dictée, on compte les fautes':'coef '+fmtNb(ev.coef)+' · sur '+fmtNb(ev.bareme)} · ${triLabel(ev.tri)}<br>Tout s'enregistre au fur et à mesure.</div>
     <div class="sn-head">
       <span class="sn-moy" id="snMoy"></span>
       <button class="sn-edit" id="snEdit">⚙ Modifier</button>
@@ -11003,17 +11816,21 @@ function openSaisieNotes(cid, evid){
   if(!list.length){
     box.innerHTML=`<div class="pp-empty">Aucun élève dans cette classe.</div>`;
   }
-  const avecNote = ev.type!=='comp';
-  const compsEval = compsEvalDispo(ev);
+  const avecNote = evPorteUnNombre(ev);
+  const dictee   = evEstDictee(ev);
+  /* Une dictée ne porte pas de compétences. compsEvalDispo filtrerait
+     déjà sur la matière courante, mais le dire ici rend l'intention
+     lisible plutôt que dépendante d'un effet de bord. */
+  const compsEval = dictee ? [] : compsEvalDispo(ev);
   list.forEach(e=>{
     const n=noteDe(ev,e.id);
     const bloc=el('div','sn-bloc');
     const row=el('div','sn-row'+(n.abs?' absent':''));
     row.innerHTML=`
       <span class="sn-nom"><b>${escHtml(e.nom.toUpperCase())}</b> ${escHtml(e.prenom)}</span>
-      ${avecNote?`<input type="number" class="txt sn-note" inputmode="decimal" step="0.25" min="0" max="${ev.bareme}"
-             value="${n.n===null||n.n===undefined?'':n.n}" placeholder="—" aria-label="Note de ${escAttr(e.prenom)}">
-      <span class="sn-sur">/${fmtNb(ev.bareme)}</span>`:''}
+      ${avecNote?`<input type="number" class="txt sn-note" inputmode="decimal" step="${dictee?'0.5':'0.25'}" min="0" max="${ev.bareme}"
+             value="${n.n===null||n.n===undefined?'':n.n}" placeholder="—" aria-label="${dictee?'Nombre de fautes de ':'Note de '}${escAttr(e.prenom)}">
+      <span class="sn-sur${dictee?' sn-f':''}">${dictee?'fautes':'/'+fmtNb(ev.bareme)}</span>`:''}
       <button class="sn-abs${n.abs?' on':''}" aria-label="Absent">abs</button>`;
     const bAbs=$('.sn-abs',row);
     if(avecNote){
@@ -11080,7 +11897,12 @@ function openSaisieNotes(cid, evid){
     const evNow=evalTrouve(cid,evid); if(!evNow) return;
     const m=moyenneEvalBrute(cid,evNow), n=saisiesEval(cid,evNow);
     const t=$('#snMoy',sheet);
-    if(t) t.innerHTML = `Moyenne <b>${m===null?'—':(fmtNb(m)+'/'+fmtNb(evNow.bareme))}</b> · ${n}/${list.length} renseigné${n>1?'s':''}`;
+    /* Pour une dictée, le plafond de saisie n'est pas un barème :
+       afficher « 4,2/99 » n'aurait aucun sens. C'est une moyenne de
+       fautes, et elle se lit en fautes. */
+    const chiffre = (m===null) ? '—'
+      : (evEstDictee(evNow) ? fmtNb(m)+' faute'+(m>=2?'s':'') : fmtNb(m)+'/'+fmtNb(evNow.bareme));
+    if(t) t.innerHTML = `Moyenne <b>${chiffre}</b> · ${n}/${list.length} renseigné${n>1?'s':''}`;
     /* Le nom reste sous les yeux : en descendant trente-deux eleves, on
        ne savait plus ce qu'on corrigeait. */
     const ti=$('#snTitre',sheet);
@@ -11186,6 +12008,15 @@ function exporterStatsClasse(cid, tri){
   const evs=evalsDe(cid,tri);
   if(!evs.length) L.push('  aucune');
   evs.forEach(ev=>{
+    /* moyenneEval rend null sur une dictée — elle ramène sur 20, ce qui
+       n'a pas de sens pour un nombre de fautes. C'est moyenneEvalBrute
+       qui donne le chiffre juste, dans son unité d'origine. */
+    if(evEstDictee(ev)){
+      const mf=moyenneEvalBrute(cid,ev);
+      L.push('  · '+ev.nom+' — '+jourMois(ev.date)+' — dictée, hors moyenne'
+        +(mf===null?'':' — '+fmtNb(mf)+' faute'+(mf>=2?'s':'')+' en moyenne'));
+      return;
+    }
     const me=moyenneEval(cid,ev);
     L.push('  · '+ev.nom+' — '+jourMois(ev.date)
       +(ev.type==='comp'?' — compétences':' — coef '+fmtNb(ev.coef)+', sur '+fmtNb(ev.bareme))
@@ -11245,7 +12076,12 @@ function openBilanEleve(cid, eid){
   const evolution=(precedent&&moy!==null)? Math.round((moy-precedent.v)*10)/10 : null;
 
   const evs=evalsDe(cid,tri);
-  const notees=evs.filter(x=>x.type!=='comp');
+  /* evPorteUneNote et non « type!=='comp' » : une dictée porte un
+     chiffre sans être une note. Sans ce filtre elle se serait affichée
+     « coef 1 · 12/99 » dans la liste des évaluations, et son nombre de
+     fautes aurait été tracé sur l'axe des notes sur 20. */
+  const notees=evs.filter(evPorteUneNote);
+  const dictees=evs.filter(evEstDictee);
   const compsVues=[];
   /* Filtre sur le referentiel courant : c'est ici que des competences
      d'EPS apparaissaient dans un bilan d'histoire-geographie. */
@@ -11285,52 +12121,47 @@ function openBilanEleve(cid, eid){
         <span><i style="background:var(--line2)"></i>la classe</span></div>`;
   }
 
-  /* --- courbe d'evolution, evaluation par evaluation ---
-     Les barres ci-dessus comparent des PERIODES ; celle-ci suit le
-     detail a l'interieur de la periode, ce que la moyenne masque. La
-     moyenne de la classe passe en filigrane sur la MEME evaluation :
-     comparer un eleve a la moyenne annuelle de la classe n'aurait
-     aucun sens un jour de controle difficile. */
+  /* --- courbes d'evolution : ce trimestre, ou l'annee ---
+     Les barres ci-dessus comparent des PERIODES ; celles-ci suivent le
+     detail a l'interieur, ce que la moyenne masque.
+
+     evalsDe(cid) sans trimestre renvoie l'annee entiere deja triee par
+     date : l'annuel ne coute que de l'appeler. Les deux courbes sont
+     construites d'avance et on montre l'une ou l'autre -- rien a
+     recalculer au clic, et le meme selecteur commande les notes et les
+     dictees : un seul geste, un seul modele mental. */
   {
-    const pts=[], ptsCl=[], leg=[];
-    notees.forEach(ev=>{
-      const nd=noteDe(ev,eid);
-      const bar=ev.bareme||20;
-      const v=(nd.abs||nd.n===null||nd.n===undefined)? null : (nd.n/bar)*20;
-      pts.push(v);
-      /* moyenne de la classe SUR CETTE evaluation */
-      let s=0,k=0;
-      (elevesDe(cid)||[]).forEach(x=>{
-        const q=noteDe(ev,x.id);
-        if(q.abs||q.n===null||q.n===undefined) return;
-        s+=(q.n/bar)*20; k++;
-      });
-      ptsCl.push(k? s/k : null);
-      /* La note TELLE QU'ELLE A ÉTÉ SAISIE, sur son propre barème.
+    const evsAn    = evalsDe(cid);
+    const noteesAn = evsAn.filter(evPorteUneNote);
+    const dicteesAn= evsAn.filter(evEstDictee);
 
-         La légende affichait jusqu'ici la note ramenée sur 20, celle qui
-         sert à tracer la courbe : un 8/10 s'y lisait « 16 », un nombre
-         que le professeur n'a jamais écrit. Écrire « 16/20 » l'aurait
-         rendu faux deux fois plutôt qu'une.
+    const cTri = blocCourbeNotes(cid, eid, notees,   e.prenom);
+    const cAn  = blocCourbeNotes(cid, eid, noteesAn, e.prenom);
+    const dTri = blocCourbeDictees(cid, eid, dictees,   e.prenom);
+    const dAn  = blocCourbeDictees(cid, eid, dicteesAn, e.prenom);
 
-         La courbe, elle, reste ramenée sur 20 — on ne trace pas sur le
-         même axe des notes sur 10 et sur 20, et l'axe porte sa
-         graduation à gauche. Le dessin compare, la légende constate. */
-      /* La mention sous la courbe évite qu'un point bas de départ se
-         lise comme un échec : un diagnostique se passe AVANT
-         l'apprentissage, c'est même sa raison d'être. */
-      leg.push({nom:(ev.nom||'Évaluation')+(ev.date?' · '+fmtDate(ev.date):'')+(ev.diag?' · diagnostique':''),
-                val:(v===null?'abs.':(fmtNb(nd.n)+'/'+fmtNb(bar)))});
-    });
-    if(pts.filter(v=>v!==null).length>=1){
-      h+=`<div class="stat-h">Évolution sur le ${periodeMot()}</div>
-        <div class="gr-box">${svgCourbe([
-            {points:ptsCl, couleur:'var(--line2)', filigrane:true},
-            {points:pts,   couleur:'var(--accent)'}
-          ],20,120)}</div>
-        <div class="gr-cles"><span><i style="background:var(--accent)"></i>${escHtml(e.prenom)}</span>
-          <span><i style="background:var(--line2)"></i>la classe, sur la même évaluation</span></div>
-        ${grLegende(leg)}`;
+    /* Le selecteur n'apparait que s'il change quelque chose. Au premier
+       trimestre l'annee EST le trimestre : proposer un choix sans effet
+       fait douter de tout le reste de l'ecran. */
+    const utile = (noteesAn.length>notees.length) || (dicteesAn.length>dictees.length);
+
+    if(cTri || dTri || cAn || dAn){
+      h+=`<div class="stat-h">Évolution</div>`;
+      if(utile){
+        h+=`<div class="seg mini" id="bilPeriode">
+          <div class="seg-opt sel" data-p="tri">Ce ${periodeMot()}</div>
+          <div class="seg-opt" data-p="an">L'année</div>
+        </div>`;
+      }
+      if(cTri||cAn){
+        h+=`<div id="bilCourbeTri">${cTri||'<div class="gr-vide">Aucune note sur ce '+periodeMot()+'.</div>'}</div>
+            <div id="bilCourbeAn" style="display:none">${cAn}</div>`;
+      }
+      if(dTri||dAn){
+        h+=`<div class="stat-h">Ses dictées</div>
+            <div id="bilDicteeTri">${dTri||'<div class="gr-vide">Aucune dictée sur ce '+periodeMot()+'.</div>'}</div>
+            <div id="bilDicteeAn" style="display:none">${dAn}</div>`;
+      }
     }
   }
 
@@ -11394,6 +12225,21 @@ function openBilanEleve(cid, eid){
   h+=`<div class="sheet-btns"><button class="btn btn-primary" id="bilClose">Fermer</button></div>`;
   sheet.innerHTML=h;
   $('#bilClose',sheet).addEventListener('click',closeSheet);
+
+  /* Un seul selecteur pour les deux courbes. Les quatre blocs existent
+     deja dans la page : basculer n'est qu'un display, jamais un
+     recalcul -- et les blocs absents sont simplement ignores. */
+  { const seg=$('#bilPeriode',sheet);
+    if(seg) $$('.seg-opt',seg).forEach(o=>o.addEventListener('click',()=>{
+      $$('.seg-opt',seg).forEach(x=>x.classList.toggle('sel',x===o));
+      const an=(o.dataset.p==='an');
+      [['#bilCourbeTri','#bilCourbeAn'],['#bilDicteeTri','#bilDicteeAn']].forEach(paire=>{
+        const a=$(paire[0],sheet), b=$(paire[1],sheet);
+        if(a) a.style.display = an?'none':'block';
+        if(b) b.style.display = an?'block':'none';
+      });
+    }));
+  }
   showSheet();
 }
 
@@ -11616,7 +12462,7 @@ function trajectoireDansPeriode(cid, eid, tri){
        On lit par noteDe(), comme partout ailleurs, et une absence est
        ignorée — elle ne vaut pas zéro. Une évaluation diagnostique est
        écartée : cette fonction ne sert qu'à l'appréciation. */
-    if(ev.type==='comp' || ev.diag) return;
+    if(!evCompteDansMoyenne(ev)) return;
     const nd=noteDe(ev,eid);
     if(nd.abs || nd.n===null || nd.n===undefined) return;
     const bareme=(ev.bareme>0?ev.bareme:20);
@@ -12258,6 +13104,10 @@ function renderGroupes(){
 function openGroupEditor(cid, gid){
   const isNew=!gid;
   const roster=sortEleves(elevesDe(cid).slice());
+  /* Le niveau est calculé depuis la 3.4.20. Le relire à chaque
+     comparaison de tri ferait parcourir toutes les évaluations O(n log n)
+     fois : on le calcule une fois par élève, ici. */
+  const nivDe={}; roster.forEach(x=>{ nivDe[x.id]=niveauEleve(cid,x.id); });
   if(!roster.length){toast("Ajoute d'abord des élèves à cette classe");return;}
   let model = isNew
     ? {id:'g'+Date.now().toString(36),titre:'',date:todayISO(),mode:'alea',sets:[[],[]]}
@@ -12318,7 +13168,7 @@ function openGroupEditor(cid, gid){
         /* Le niveau, dans l'EDITEUR seulement : composer un groupe
            equilibre a la main sans le voir relevait de la memoire. Il
            n'apparait ni dans la vue partagee ni dans la roue. */
-        const chip=el('span','grp-chip'+(dup[id]?' dup':''), `${e.prenom} ${e.nom[0]}. <span class="grp-chip-niv">(niv. ${e.niveau||'?'})</span><button class="grp-chip-x">✕</button>`);
+        const chip=el('span','grp-chip'+(dup[id]?' dup':''), `${e.prenom} ${e.nom[0]}. <span class="grp-chip-niv">(niv. ${nivDe[id]||'?'})</span><button class="grp-chip-x">✕</button>`);
         $('.grp-chip-x',chip).addEventListener('click',()=>{model.sets[gi]=model.sets[gi].filter(x=>x!==id);render();});
         chips.appendChild(chip);
       });
@@ -12359,7 +13209,11 @@ function openGroupEditor(cid, gid){
     // tri selon le mode
     if(mode==='alea'){ pool.sort(()=>Math.random()-0.5); }
     else { // hetero/homo : on s'appuie sur le niveau (coulisse) puis G/F
-      pool.sort((a,b)=> (b.niveau-a.niveau) || (a.genre<b.genre?-1:1) );
+      /* « ||0 » et non le champ brut : un élève sans évaluation avait un
+         niveau undefined, la soustraction donnait NaN, et le tri devenait
+         imprévisible — les groupes changeaient d'une génération à l'autre
+         sans qu'on y touche. Faute de mesure, il passe en dernier. */
+      pool.sort((a,b)=> ((nivDe[b.id]||0)-(nivDe[a.id]||0)) || (a.genre<b.genre?-1:1) );
     }
     const groups=Array.from({length:nbGroupes},()=>[]);
     if(mode==='homo'){
@@ -12907,7 +13761,7 @@ function openSetup(rejeu){
     // 2 bis) remise a zero : on vide APRES la reconstruction des classes,
     // pour que chaque classe retrouve des structures propres
     if(razDemande){
-      S.progNiv={}; S.perEvents={}; S.absClasse={};
+      S.progNiv={}; S.perEvents={}; S.perEvCl={}; S.absClasse={}; S.absCl={};
       S.pp={t1:{},t2:{},t3:{}}; S.ppNotes={}; S.ppContrats={}; S.ppMaj={};
       S.seqOverrides={}; S.seanceOverrides={}; S.customSeq={}; S.seqHidden={};
       (S.classesMeta||[]).forEach(c=>{ S.eleves[c.id]=[]; S.groupes[c.id]=[]; S.coches[c.id]={}; });
@@ -12977,9 +13831,22 @@ const TUTO_STEPS=[
      lit les avertissements ; la première étape du tutoriel est le seul
      endroit par où tout le monde passe. */
   {emoji:'👋', titre:'Bienvenue dans Thot Assistant',
+   /* « court » : ce qui s'affiche au PREMIER LANCEMENT. La version
+      longue ci-dessous reste, et sert quand on rejoue le tutoriel
+      depuis les Réglages. Deux longueurs, un seul texte source. */
+   court:()=> surAppareil()
+     ? "Ta progression, tes classes et ton suivi d'élèves dans une seule application, qui fonctionne sans connexion.<br><br>Rien ne quitte ton téléphone : <b>aucun compte, aucun serveur, aucun envoi</b>."
+     : "Ta progression, tes classes et ton suivi d'élèves dans une seule page.<br><br>Rien ne part sur Internet : tes données vivent <b>dans ce navigateur, sur cette machine</b>. Sur un autre ordinateur, tu repartirais d'un carnet vierge.",
    txt:()=> surAppareil()
      ? "Ta progression, tes classes et ton suivi d'élèves dans une seule application, qui fonctionne sans connexion. Rien ne quitte ton téléphone : aucun compte, aucun serveur, aucun envoi. Cinq onglets en bas de l'écran ; on les passe en revue en une minute."
      : "Ta progression, tes classes et ton suivi d'élèves dans une seule page. Aucun compte, aucun serveur, aucun envoi : rien de ce que tu saisis ne part sur Internet. Tes données vivent <b>dans ce navigateur, sur cette machine</b> — sur un autre ordinateur, tu repartirais d'un carnet vierge. Cinq onglets en bas de l'écran ; on les passe en revue en une minute."},
+
+  /* La carte des lieux. Nouvelle en 3.4.21 : le tutoriel disait ce que
+     l'application fait sans dire où. Nommer les cinq onglets coûte
+     trente mots et remplace quatre étapes de description. */
+  {emoji:'🧭', titre:'Cinq onglets, c\'est tout',
+   court:"<b>Progression</b> — ce que tu as fait, ce qu\'il reste.<br><b>Ma semaine</b> — tes cours, créneau par créneau.<br><b>Suivi</b> — tes élèves, derrière un code.<br><b>Dates</b> — conseils, réunions, rendez-vous.<br><b>Réglages</b> — tout le reste.<br><br>Le détail vient au fur et à mesure, là où il sert.",
+   txt:"<b>Progression</b> — ce que tu as fait, ce qu\'il reste.<br><b>Ma semaine</b> — tes cours, créneau par créneau.<br><b>Suivi</b> — tes élèves, derrière un code.<br><b>Dates</b> — conseils, réunions, rendez-vous.<br><b>Réglages</b> — tout le reste.<br><br>Les étapes qui suivent les reprennent une par une."},
 
   {emoji:'📚', titre:'Ta progression',
    txt:"Une progression par classe, découpée en <b>séquences</b> puis en <b>séances</b>. Tu coches ce qui est fait : la pastille dit si tu es en avance ou en retard, et la <b>marge</b> montre les heures qui te restent pour les imprévus. Tout se règle dans Réglages → Ma progression — et si ces mots ne sont pas les tiens, dans Réglages → Mes mots."},
@@ -12995,6 +13862,9 @@ const TUTO_STEPS=[
      retaper. Les deux chemins sont donnés en toutes lettres — une étape
      qui dit « c'est possible » sans dire « c'est ici » ne sert à rien. */
   {emoji:'📄', titre:'Ne retape rien : importe',
+   /* Gardée au premier lancement : c'est la seule chose qui ne se
+      devine pas en explorant, et l'ignorer coûte une heure de saisie. */
+   court:"Tes <b>listes de classe</b> et ta <b>programmation annuelle</b> se remplissent depuis un fichier — un tableur, un document Word.<br><br>C\'est dans <b>Réglages</b>, et le fichier est lu sur ton appareil : il ne part nulle part.",
    txt:"Deux choses se remplissent depuis un fichier.<br><br><b>Tes listes de classe</b> — Réglages → <b>Importer une liste d'élèves</b>. Un tableur Excel, LibreOffice ou CSV : classe, nom, prénom, genre, date de naissance. Un modèle est fourni.<br><br><b>Ta programmation annuelle</b> — Réglages → Ma progression → <b>Importer ma programmation</b>. Un document Word ou LibreOffice contenant ton tableau habituel : périodes, séquences, séances, marge de manœuvre. Un exemple du format attendu s'affiche avant que tu choisisses le fichier.<br><br>Dans les deux cas, un écran te montre ce que Thot a compris <b>avant</b> d'écrire quoi que ce soit. Et le fichier est lu sur ton appareil : il ne part nulle part."},
 
   {emoji:'📝', titre:'Le carnet de notes',
@@ -13012,21 +13882,28 @@ const TUTO_STEPS=[
 let tutoIdx=0;
 function openTuto(fromReglages){
   tutoIdx=0;
+  /* PREMIER LANCEMENT : seules les étapes qui portent un texte « court »,
+     et c'est ce texte-là qu'elles montrent. Trois écrans, ~110 mots.
+     DEPUIS LES RÉGLAGES : les neuf, en version longue. Rien n'a été
+     supprimé — le contenu est passé d'imposé à disponible. */
+  const complet = !!fromReglages;
+  const etapes = complet ? TUTO_STEPS : TUTO_STEPS.filter(s=>s.court);
   const existing=$('#tutoOv'); if(existing)existing.remove();
   const ov=document.createElement('div'); ov.className='tuto-ov'; ov.id='tutoOv';
   document.body.appendChild(ov);
   const render=()=>{
-    const s=TUTO_STEPS[tutoIdx]; const last=tutoIdx===TUTO_STEPS.length-1;
+    const s=etapes[tutoIdx]; const last=tutoIdx===etapes.length-1;
+    const brut = complet ? s.txt : (s.court || s.txt);
     ov.innerHTML=`
       <div class="tuto-card">
         <button class="tuto-skip" id="tutoSkip">${fromReglages?'Fermer':'Passer'}</button>
         <div class="tuto-emoji">${s.emoji}</div>
         <div class="tuto-titre">${s.titre}</div>
-        <div class="tuto-txt">${typeof s.txt==='function' ? s.txt() : s.txt}</div>
-        <div class="tuto-dots">${TUTO_STEPS.map((_,i)=>`<span class="tuto-dot${i===tutoIdx?' on':''}"></span>`).join('')}</div>
+        <div class="tuto-txt">${typeof brut==='function' ? brut() : brut}</div>
+        <div class="tuto-dots">${etapes.map((_,i)=>`<span class="tuto-dot${i===tutoIdx?' on':''}"></span>`).join('')}</div>
         <div class="tuto-nav">
           ${tutoIdx>0?'<button class="btn btn-ghost" id="tutoPrev">Précédent</button>':'<span></span>'}
-          <button class="btn btn-primary" id="tutoNext">${last?'C\'est parti !':'Suivant'}</button>
+          <button class="btn btn-primary" id="tutoNext">${last?(complet?'Fermer':'C\'est parti !'):'Suivant'}</button>
         </div>
       </div>`;
     $('#tutoSkip',ov).addEventListener('click',finish);
@@ -13038,6 +13915,142 @@ function openTuto(fromReglages){
   requestAnimationFrame(()=>ov.classList.add('show'));
 }
 function maybeRunTuto(){ if(!CFG.tutoVu){ setTimeout(()=>openTuto(false),300); } }
+
+/* ============================================================
+   ASTUCES CONTEXTUELLES (3.4.21)
+
+   Une bulle courte, ancrée sur un VRAI élément, montrée UNE fois, la
+   première fois que l'utilisateur arrive là où elle sert.
+
+   Elle remplace la moitié du tutoriel : on ne décrit plus un bouton,
+   on le désigne, au moment où il sert.
+   ============================================================ */
+
+let astuceEnCours=null;
+
+/* CFG et non S : une astuce vue est un réglage d'interface, pas une
+   donnée d'élève. La clé absente — cas de toutes les installations
+   existantes — veut dire « aucune vue », le bon défaut. */
+function astucesVues(){
+  if(!CFG.astucesVues || typeof CFG.astucesVues!=='object') CFG.astucesVues={};
+  return CFG.astucesVues;
+}
+
+/* Une astuce ne s'invite jamais par-dessus quelque chose d'ouvert.
+
+   PAS DE LISTE DE CALQUES. La première version en connaissait trois ;
+   l'application en compte sept, dont deux passent SOUS les astuces —
+   le minuteur de séance et la note de confidentialité. Une bulle
+   s'est posée pendant l'assistant de configuration : invisible sous
+   lui, et consommée pour toujours.
+
+   Une liste aurait été fausse au prochain calque ajouté, et personne
+   n'aurait pensé à la mettre à jour. On pose donc une RÈGLE : est
+   « occupé » tout ce qui est posé en `fixed`, aussi large et haut que
+   l'écran, visible, et au-dessus de la barre d'onglets. On ne demande
+   plus lequel c'est ; on regarde ce qui est là. */
+function ecranOccupe(){
+  const ov=$('#overlay');     if(ov && ov.classList.contains('show')) return true;
+  const lk=$('#lockScreen');  if(lk && !lk.classList.contains('hidden')) return true;
+  const enfants=document.body.children;
+  for(let i=0;i<enfants.length;i++){
+    const el=enfants[i];
+    if(el.id==='astuceOv') continue;              /* pas soi-même */
+    let st; try{ st=getComputedStyle(el); }catch(e){ continue; }
+    if(st.position!=='fixed') continue;
+    if(st.display==='none' || st.visibility==='hidden') continue;
+    if(parseFloat(st.opacity)===0) continue;
+    /* 100 laisse dehors la barre d'onglets (40) et les en-têtes
+       collants (20) : ce ne sont pas des calques. */
+    if((parseInt(st.zIndex,10)||0) < 100) continue;
+    const r=el.getBoundingClientRect();
+    /* 90 % de l'écran laisse dehors les bandeaux et les toasts. */
+    if(r.width >= window.innerWidth*0.9 && r.height >= window.innerHeight*0.9) return true;
+  }
+  return false;
+}
+
+function fermerAstuce(){
+  if(!astuceEnCours) return;
+  const ov=astuceEnCours.ov, id=astuceEnCours.id;
+  astuceEnCours=null;
+  astucesVues()[id]=true; saveCfg();
+  ov.classList.remove('show');
+  setTimeout(()=>{ if(ov.parentNode) ov.parentNode.removeChild(ov); },240);
+}
+
+/* Renvoie true si la bulle a été posée. false veut dire « pas
+   maintenant » — jamais une erreur : l'appelant réessaiera au prochain
+   passage sur l'écran. */
+function astuce(id, cible, texte){
+  if(!id || astucesVues()[id] || astuceEnCours || ecranOccupe()) return false;
+  let el=null;
+  try{ el = (typeof cible==='string') ? document.querySelector(cible) : cible; }catch(e){ return false; }
+  if(!el) return false;
+  const r=el.getBoundingClientRect();
+  /* Pas là, replié, ou hors de l'écran : ON SE TAIT. Une bulle qui
+     pointe vers rien fait chercher un bouton qui n'existe pas. */
+  if(r.width<4 || r.height<4) return false;
+  if(r.bottom<8 || r.top>window.innerHeight-8) return false;
+
+  const M=8, L=12;                       // marge autour de la cible, marge d'écran
+  const ov=document.createElement('div');
+  ov.className='astuce-ov'; ov.id='astuceOv';
+  ov.innerHTML='<div class="astuce-trou"></div>'
+    + '<div class="astuce-bulle"><div class="astuce-txt">'+texte+'</div>'
+    + '<div class="astuce-pied"><button class="astuce-ok">Compris</button></div></div>';
+  document.body.appendChild(ov);
+
+  const trou=$('.astuce-trou',ov), bulle=$('.astuce-bulle',ov);
+  /* Borné à l'écran. Mesuré : le halo des quatre volets du Suivi
+     faisait 391 px de large pour un écran de 375 — ses bords étaient
+     dessinés hors champ et le cadre paraissait ouvert. */
+  const x1=Math.max(2, r.left-M), y1=Math.max(2, r.top-M);
+  const x2=Math.min(window.innerWidth-2,  r.right+M);
+  const y2=Math.min(window.innerHeight-2, r.bottom+M);
+  trou.style.left=x1+'px';        trou.style.top=y1+'px';
+  trou.style.width=(x2-x1)+'px';  trou.style.height=(y2-y1)+'px';
+
+  /* La bulle passe DESSOUS s'il y a la place, DESSUS sinon, et reste
+     dans l'écran dans les deux cas. On mesure sa hauteur après avoir
+     fixé sa largeur : l'inverse donnerait la hauteur d'un texte sur une
+     largeur qu'il n'aura pas. */
+  const bw=Math.min(300, window.innerWidth-2*L);
+  bulle.style.width=bw+'px';
+  const bh=bulle.getBoundingClientRect().height;
+  let top=r.bottom+M+8;
+  if(top+bh > window.innerHeight-L) top=r.top-M-8-bh;
+  top=Math.max(L, Math.min(top, window.innerHeight-L-bh));
+  let left=r.left + r.width/2 - bw/2;
+  left=Math.max(L, Math.min(left, window.innerWidth-L-bw));
+  bulle.style.top=top+'px'; bulle.style.left=left+'px';
+
+  astuceEnCours={ov:ov, id:id};
+  ov.addEventListener('click',fermerAstuce);
+  /* Le halo est collé à des coordonnées d'écran : dès que ça bouge, il
+     désigne autre chose. On ferme plutôt que de suivre. */
+  window.addEventListener('scroll',fermerAstuce,{once:true,passive:true});
+  window.addEventListener('resize',fermerAstuce,{once:true});
+  requestAnimationFrame(()=>ov.classList.add('show'));
+  return true;
+}
+
+/* Appelée depuis un rendu d'écran : le délai laisse la mise en page se
+   poser et la transition d'onglet se terminer. Sans lui, on mesurerait
+   la position d'un élément encore en train d'arriver. */
+function astuceBientot(id, cible, texte, delai){
+  setTimeout(function(){ try{ astuce(id,cible,texte); }catch(e){} }, delai||500);
+}
+
+/* Réglages → tout revoir. On efface la mémoire des astuces, pas les
+   données : aucun élève, aucune note, aucune progression n'est touché. */
+function rejouerAstuces(){
+  /* Fermer AVANT d'effacer : fermerAstuce marque l'astuce en cours
+     comme vue, et le faire après remettrait aussitôt une entrée dans
+     la mémoire qu'on vient de vider. */
+  fermerAstuce();
+  CFG.astucesVues={}; saveCfg();
+}
 
 /* ============================================================
    IMPORT D'UNE LISTE D'ÉLÈVES — LE MOTEUR (v3.4.0)
@@ -13520,16 +14533,29 @@ function enregistrerFichierBinaire(nom, octets, mime, apres){
   const P=(window.Capacitor&&Capacitor.Plugins)||{};
   const FS=P.Filesystem, Partage=P.Share;
   if(!FS){ fini({ok:false, erreur:"module de fichiers indisponible"}); return; }
+  /* Téléchargements d'abord, comme pour les sauvegardes. base64:true —
+     un tableur ne passe pas par une chaîne de caractères. */
+  { const DL=(window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Telechargements);
+    if(DL && DL.enregistrer){
+      DL.enregistrer({nom:nom, contenu:u8Base64(octets), mime:mime||'application/octet-stream', base64:true})
+        .then(res=>fini({ok:true, ou:'Téléchargements', nom:nom, uri:res&&res.uri}))
+        .catch(()=>ecrireBinEtPartager());
+      return;
+    } }
+  ecrireBinEtPartager();
+
+  function ecrireBinEtPartager(){
   /* Pas d'option encoding : le greffon comprend alors du base64. */
-  FS.writeFile({ path:nom, data:u8Base64(octets), directory:'DOCUMENTS', recursive:true })
+  FS.writeFile({ path:nom, data:u8Base64(octets), directory:DOSSIER_FICHIERS, recursive:true })
     .then(res=>{
-      const r={ok:true, ou:'Documents', nom:nom, uri:res&&res.uri};
+      const r={ok:true, ou:'l\'espace de Thot', nom:nom, uri:res&&res.uri};
       if(Partage&&Partage.share&&res&&res.uri){
         Partage.share({ title:nom, url:res.uri, dialogTitle:'Enregistrer ou envoyer' })
           .then(()=>fini(r)).catch(()=>fini(r));
       }else fini(r);
     })
     .catch(err=>fini({ok:false, erreur:String((err&&err.message)||err)}));
+  }
 }
 
 /* ---- Écrire une archive ZIP ---------------------------------------
@@ -13793,7 +14819,13 @@ function svgCourbe(series, max, hauteur){
     if(d) g+='<path d="'+d.trim()+'" fill="none" stroke="'+col+'" stroke-width="'+(s.filigrane?1.5:2.2)+'"'
       + (s.filigrane?' stroke-dasharray="4 3" opacity=".65"':'')
       + ' stroke-linecap="round" stroke-linejoin="round"/>';
-    if(!s.filigrane) s.points.forEach((v,i)=>{
+    /* Les marqueurs disparaissent quand ils sont trop nombreux : sur
+       300 px de large, cent disques de 3 px de rayon se recouvrent et
+       noient la ligne qu'ils sont censes ponctuer. Une dictee trois fois
+       par semaine depasse la centaine de points dans l'annee. Le seuil
+       est ici et non chez l'appelant -- un appelant qui doit y penser
+       est un appelant qui oubliera. */
+    if(!s.filigrane && n<=40) s.points.forEach((v,i)=>{
       if(v===null||v===undefined||isNaN(v)) return;
       g+='<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="3" fill="'+col+'"/>';
     });
@@ -13858,6 +14890,133 @@ function grLegende(items){
     + '</div>').join('')+'</div>';
 }
 
+/* ------------------------------------------------------------------
+   COURBE DE NOTES D'UN ÉLÈVE
+
+   Extraite de la fiche élève, où elle était écrite en ligne et ne
+   savait tracer qu'une période. En faire une fonction permet de
+   l'appeler deux fois — sur le trimestre, sur l'année — sans écrire le
+   tracé deux fois, donc sans risquer de le corriger une fois sur deux.
+
+   La moyenne de la classe passe en filigrane sur LA MÊME évaluation :
+   comparer un élève à la moyenne annuelle de la classe n'aurait aucun
+   sens un jour de contrôle difficile.
+
+   Renvoie '' quand il n'y a rien à tracer — un cadre vide se lit comme
+   une panne.
+   ------------------------------------------------------------------ */
+function blocCourbeNotes(cid, eid, evs, prenom){
+  const pts=[], ptsCl=[], leg=[];
+  (evs||[]).forEach(ev=>{
+    const nd=noteDe(ev,eid);
+    const bar=ev.bareme||20;
+    const v=(nd.abs||nd.n===null||nd.n===undefined)? null : (nd.n/bar)*20;
+    pts.push(v);
+    /* moyenne de la classe SUR CETTE evaluation */
+    let s=0,k=0;
+    (elevesDe(cid)||[]).forEach(x=>{
+      const q=noteDe(ev,x.id);
+      if(q.abs||q.n===null||q.n===undefined) return;
+      s+=(q.n/bar)*20; k++;
+    });
+    ptsCl.push(k? s/k : null);
+    /* La note TELLE QU'ELLE A ÉTÉ SAISIE, sur son propre barème.
+
+       La légende affichait jusqu'ici la note ramenée sur 20, celle qui
+       sert à tracer la courbe : un 8/10 s'y lisait « 16 », un nombre
+       que le professeur n'a jamais écrit. Écrire « 16/20 » l'aurait
+       rendu faux deux fois plutôt qu'une.
+
+       La courbe, elle, reste ramenée sur 20 — on ne trace pas sur le
+       même axe des notes sur 10 et sur 20, et l'axe porte sa
+       graduation à gauche. Le dessin compare, la légende constate. */
+    /* La mention sous la courbe évite qu'un point bas de départ se
+       lise comme un échec : un diagnostique se passe AVANT
+       l'apprentissage, c'est même sa raison d'être. */
+    leg.push({nom:(ev.nom||'Évaluation')+(ev.date?' · '+fmtDate(ev.date):'')+(ev.diag?' · diagnostique':''),
+              val:(v===null?'abs.':(fmtNb(nd.n)+'/'+fmtNb(bar)))});
+  });
+  if(pts.filter(v=>v!==null).length<1) return '';
+  return `<div class="gr-box">${svgCourbe([
+      {points:ptsCl, couleur:'var(--line2)', filigrane:true},
+      {points:pts,   couleur:'var(--accent)'}
+    ],20,120)}</div>
+    <div class="gr-cles"><span><i style="background:var(--accent)"></i>${escHtml(prenom)}</span>
+      <span><i style="background:var(--line2)"></i>la classe, sur la même évaluation</span></div>
+    ${grLegende(leg)}`;
+}
+
+/* ------------------------------------------------------------------
+   COURBE DE DICTÉES
+
+   Elle ressemble à la précédente et n'a rien à voir avec elle.
+
+   L'axe compte des FAUTES. Il n'y a pas de barème, donc pas de maximum
+   donné : il vient des données. Et surtout LE BAS EST LE BON CÔTÉ —
+   l'inverse de toutes les autres courbes de l'application.
+
+   Ce dernier point est un piège de lecture, pas un détail de dessin :
+   dans la même fiche, deux courbes qui descendent voudront dire l'une
+   un échec, l'autre un progrès. La phrase sous le dessin n'est donc pas
+   décorative, c'est elle qui rend la courbe lisible.
+
+   Pas de légende ligne à ligne : trois dictées par semaine font plus de
+   cent lignes dans l'année, que personne ne lira. Un résumé de trois
+   chiffres dit ce qu'on venait chercher.
+   ------------------------------------------------------------------ */
+function blocCourbeDictees(cid, eid, evs, prenom){
+  const pts=[], ptsCl=[];
+  (evs||[]).forEach(ev=>{
+    const nd=noteDe(ev,eid);
+    pts.push((nd.abs||nd.n===null||nd.n===undefined)? null : nd.n);
+    ptsCl.push(moyenneEvalBrute(cid,ev));
+  });
+  const faites=pts.filter(v=>v!==null);
+  if(!faites.length) return '';
+
+  /* Le maximum vient des données — il n'y a pas de barème. Plancher à
+     4 : sans lui, un élève qui oscille entre 0 et 1 faute verrait sa
+     courbe occuper toute la hauteur, et une faute d'écart paraîtrait un
+     gouffre. Arrondi au multiple de 4 supérieur pour que les cinq
+     graduations de svgCourbe tombent sur des entiers. */
+  const hauts=faites.concat(ptsCl.filter(v=>v!==null));
+  const max=Math.max(4, Math.ceil(Math.max.apply(null,hauts)/4)*4);
+
+  /* Le résumé remplace la légende. Deux moitiés comparées, comme la
+     trajectoire du bulletin : au-dessous de quatre dictées la
+     comparaison ne veut rien dire et on se tait. */
+  let resume='';
+  if(faites.length>=4){
+    const m=Math.floor(faites.length/2);
+    const moy=(a)=>a.reduce((x,y)=>x+y,0)/a.length;
+    const d=Math.round((moy(faites.slice(0,m))-moy(faites.slice(faites.length-m)))*10)/10;
+    resume = (d>=0.5)  ? `<b>${fmtNb(d)} faute${d>=2?'s':''} de moins</b> en moyenne sur la seconde moitié.`
+           : (d<=-0.5) ? `<b>${fmtNb(-d)} faute${-d>=2?'s':''} de plus</b> en moyenne sur la seconde moitié.`
+           : `Autant de fautes au début qu'à la fin.`;
+  }
+  const mini=Math.min.apply(null,faites), maxi=Math.max.apply(null,faites);
+  const moyE=Math.round((faites.reduce((a,b)=>a+b,0)/faites.length)*10)/10;
+
+  /* --accent et non --accent2 : mesuré sur carte blanche, le second
+     tombe à 2,15:1 quand le premier tient 2,73:1. Ni l'un ni l'autre
+     n'atteint les 3:1 exigés d'un objet graphique — défaut antérieur,
+     qui touche déjà la courbe de notes — mais on n'ajoute pas une
+     courbe MOINS lisible que celle qui existe. */
+  return `<div class="gr-box">${svgCourbe([
+      {points:ptsCl, couleur:'var(--line2)', filigrane:true},
+      {points:pts,   couleur:'var(--accent)'}
+    ],max,120)}</div>
+    <div class="gr-cles"><span><i style="background:var(--accent)"></i>${escHtml(prenom)}</span>
+      <span><i style="background:var(--line2)"></i>la classe, sur la même dictée</span></div>
+    <div class="dic-sens">Moins il y a de fautes, mieux c'est : ici, <b>une courbe qui descend est une progression</b>.</div>
+    <div class="dic-resume">
+      <div><b>${faites.length}</b> dictée${faites.length>1?'s':''} faite${faites.length>1?'s':''}</div>
+      <div><b>${fmtNb(moyE)}</b> faute${moyE>=2?'s':''} en moyenne</div>
+      <div><b>${fmtNb(mini)} – ${fmtNb(maxi)}</b>de la meilleure à la pire</div>
+    </div>
+    ${resume?`<div class="dic-tend">${resume}</div>`:''}`;
+}
+
 /* ============================================================
    DIAGNOSTIC AUTOMATIQUE D'UN ÉLÈVE
 
@@ -13874,7 +15033,12 @@ function diagnosticEleve(cid, eid, tri){
   /* --- tendance : première moitié contre seconde moitié --- */
   const notes=[];
   evalsDe(cid,tri).forEach(ev=>{
-    if(ev.type==='comp') return;
+    /* evPorteUneNote et non evCompteDansMoyenne : la diagnostique reste
+       dans la tendance -- partir d'une mesure d'entree et progresser,
+       c'est precisement ce que cette tendance doit voir. La dictee, en
+       revanche, sort : un nombre de fautes divise par un bareme ne veut
+       rien dire. */
+    if(!evPorteUneNote(ev)) return;
     const nd=noteDe(ev,eid);
     if(nd.abs || nd.n===null || nd.n===undefined) return;
     notes.push((nd.n/(ev.bareme||20))*20);
@@ -14206,6 +15370,11 @@ function brancherRetourMateriel(){
 
 function init(){
   assurerProgressions();   // repare les classes creees sans progression
+  /* APRÈS assurerProgressions : la recopie parcourt S.classesMeta, qui
+     doit être en état. Le marqueur interne fait que ceci ne coûte rien
+     à partir de la deuxième ouverture. */
+  migrerAbsencesParClasse();
+  migrerEvenementsParClasse();
   applyTheme();
   backPrime(); backPush('buffer');   // amorce le tampon retour (reste dans l'appli)
   brancherRetourMateriel();
@@ -14238,7 +15407,16 @@ init();
 
 </script>
 <script>
-  document.getElementById('classBack').addEventListener('click',()=>{renderDash();go('dash');});
+  document.getElementById('classBack').addEventListener('click',()=>{
+    /* currentClass est déjà posé par openClass : on retient la classe
+       AVANT de redessiner, car renderDash peut la remettre à null. */
+    const quittee=currentClass;
+    renderDash(); go('dash');
+    /* setTimeout et NON requestAnimationFrame : rAF ne se déclenche pas
+       tant que la fenêtre n'est pas peinte — onglet en arrière-plan,
+       écran éteint. Le défilement s'évaporait alors en silence. */
+    setTimeout(()=>ramenerClasseEnVue(quittee),0);
+  });
 </script>
 </body>
 </html>
