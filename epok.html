@@ -9701,6 +9701,7 @@ function rendre(){
 function aller(onglet, haut){
   ONGLET = onglet;
   rendre();
+  inscrireNav();
   if(haut !== false) window.scrollTo(0,0);
 }
 
@@ -9708,6 +9709,53 @@ function aller(onglet, haut){
 function ouvrirSeance(coursId, numero){
   ECRAN = { nom:"lecture", coursId, seance:Number(numero) };
   aller("cours");
+}
+
+/* ---------- Bouton Retour du telephone ----------
+   Epok tient dans une seule page : sans rien faire, le bouton Retour
+   quitterait l'application d'un coup, depuis n'importe quel ecran. On
+   inscrit donc chaque navigation dans l'historique du navigateur.
+   Retour ramene alors a l'ecran precedent, et seulement depuis
+   l'accueil -- la premiere entree -- il sort de l'application.
+   Un quiz en cours n'est jamais inscrit : il ne peut pas etre
+   reconstitue depuis l'historique, et revenir en arriere pendant un
+   quiz, c'est le quitter. */
+
+let enRetour = false;          /* vrai pendant le traitement d'un retour */
+
+function etatNav(){
+  return { epok:1, onglet:ONGLET, nom:ECRAN.nom,
+           coursId:ECRAN.coursId || null, seance:ECRAN.seance || null };
+}
+
+function memeEcran(a, b){
+  return !!a && a.epok === 1 && a.onglet === b.onglet && a.nom === b.nom
+         && a.coursId === b.coursId && a.seance === b.seance;
+}
+
+/* Inscrit l'ecran courant, sauf s'il est deja la derniere entree : sans
+   ce garde-fou, revenir deux fois au meme ecran empilerait des doublons,
+   et il faudrait autant d'appuis sur Retour pour les defaire. */
+function inscrireNav(){
+  if(enRetour) return;
+  try{
+    const e = etatNav();
+    if(memeEcran(history.state, e)) return;
+    history.pushState(e, "");
+  }catch(err){ /* historique indisponible : la navigation marche quand meme */ }
+}
+
+if(typeof window !== "undefined" && window.addEventListener){
+  window.addEventListener("popstate", function(ev){
+    if(!ev.state || ev.state.epok !== 1) return;   /* entree etrangere */
+    enRetour = true;
+    QUIZ = null;
+    ONGLET = ev.state.onglet;
+    ECRAN = { nom:ev.state.nom, coursId:ev.state.coursId, seance:ev.state.seance };
+    rendre();
+    window.scrollTo(0,0);
+    enRetour = false;
+  });
 }
 
 document.addEventListener("click", function(ev){
@@ -9911,6 +9959,8 @@ function avisAccueil(texte, ok){
 
 /* ---------- Demarrage ---------- */
 rendre();
+/* L'accueil est la premiere entree : c'est de la que Retour sort. */
+try{ history.replaceState(etatNav(), ""); }catch(e){}
 
 /* L'ecran d'ouverture a fini son fondu : on le retire du DOM plutot que
    de le laisser, invisible, par-dessus la page. */
