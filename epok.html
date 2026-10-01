@@ -8940,7 +8940,7 @@ const CLE_ANCIENNE = "clio.progression.v1";
 function etatVierge(){
   return {
     v: 1,
-    reglages: { uneSeanceParJour: UNE_SEANCE_PAR_JOUR, classement: "theme" },
+    reglages: { uneSeanceParJour: UNE_SEANCE_PAR_JOUR, classement: "theme", hasardNeuf: true },
     cours: {},          // { idCours: { seances:{ "1":{...} }, termine:"AAAA-MM-JJ"|null } }
     historique: [],     // [{ d, type, coursId, seance, justes, total }]
     questions: {},      // { "idCours#seance#index": { r:ratees, j:reussies } }
@@ -8981,6 +8981,7 @@ function fusionnerEtat(base, lu){
   if(lu.reglages && typeof lu.reglages === "object"){
     e.reglages.uneSeanceParJour = lu.reglages.uneSeanceParJour !== false;
     e.reglages.classement = lu.reglages.classement === "periode" ? "periode" : "theme";
+    e.reglages.hasardNeuf = lu.reglages.hasardNeuf !== false;
   }
   if(lu.cours && typeof lu.cours === "object") e.cours = lu.cours;
   if(Array.isArray(lu.historique)) e.historique = lu.historique;
@@ -9284,6 +9285,26 @@ let ECRAN = { nom:"catalogue", coursId:null, seance:null };
 let FILTRE = "Toutes";
 /* Entree de lecture du catalogue : "theme" ou "periode". */
 let CLASSEMENT = ETAT.reglages.classement === "periode" ? "periode" : "theme";
+/* Le tirage au hasard se limite-t-il aux cours jamais commences ? */
+let HASARD_NEUF = ETAT.reglages.hasardNeuf !== false;
+
+/* Les cours actuellement affiches, selon l'entree de classement et le
+   filtre. Le tirage au hasard s'appuie sur cette meme definition : ce
+   qui sort est toujours pris parmi ce que l'on a sous les yeux. */
+function coursAffiches(){
+  if(FILTRE === "Toutes") return COURS.slice();
+  const champ = CLASSEMENT === "theme" ? "theme" : "periode";
+  return COURS.filter(c => c[champ] === FILTRE);
+}
+
+/* Tire un cours parmi ceux affiches, eventuellement restreint a ceux
+   qu'on n'a jamais ouverts. Renvoie null s'il n'y a aucun candidat. */
+function tirerCours(){
+  let candidats = coursAffiches();
+  if(HASARD_NEUF) candidats = candidats.filter(c => nbFaites(c.id) === 0);
+  if(!candidats.length) return null;
+  return candidats[Math.floor(Math.random() * candidats.length)];
+}
 
 function rendreCours(){
   const vue = document.getElementById("vue-cours");
@@ -9318,6 +9339,19 @@ function rendreCatalogue(vue){
     `<button class="pastille" data-action="filtre" data-periode="${esc(g.nom)}"
       aria-pressed="${FILTRE === g.nom ? "true" : "false"}">${esc(g.court)}</button>`
   ).join("") + `</div>`);
+
+  /* Pour les jours sans : un cours tire parmi ceux affiches. L'option
+     ecarte ceux deja commences, afin d'en decouvrir un vraiment neuf. */
+  const neufs = coursAffiches().filter(c => nbFaites(c.id) === 0).length;
+  parts.push(`<div class="rang-boutons" style="margin:0 0 4px">
+    <button class="bouton petit" data-action="hasard">Au hasard</button>
+    <button class="pastille" data-action="hasard-neuf"
+      aria-pressed="${HASARD_NEUF ? "true" : "false"}">jamais commencé</button>
+  </div>`);
+  parts.push(`<p class="minuscule" style="margin:0 0 6px">${
+    HASARD_NEUF ? "tirage parmi les " + neufs + " cours jamais commencés" : "tirage parmi tous les cours affichés"
+  }</p>`);
+  parts.push(`<div id="avis-hasard"></div>`);
 
   const affiches = FILTRE === "Toutes" ? groupes : groupes.filter(g => g.nom === FILTRE);
   affiches.forEach(g => {
@@ -9831,6 +9865,25 @@ document.addEventListener("click", function(ev){
   /* -- Navigation dans les cours -- */
   if(a === "catalogue"){ ECRAN = {nom:"catalogue"}; aller("cours"); }
   else if(a === "filtre"){ FILTRE = el.dataset.periode; rendreCours(); }
+  else if(a === "hasard"){
+    const tire = tirerCours();
+    if(!tire){
+      const z = document.getElementById("avis-hasard");
+      if(z) z.innerHTML = `<div class="avis" style="margin:0 0 14px">` + (HASARD_NEUF
+        ? `Tous les cours affichés sont déjà commencés. Décochez « jamais commencé »,
+           ou élargissez le filtre.`
+        : `Aucun cours à tirer ici. Élargissez le filtre.`) + `</div>`;
+      return;
+    }
+    ECRAN = { nom:"fiche", coursId:tire.id };
+    aller("cours");
+  }
+  else if(a === "hasard-neuf"){
+    HASARD_NEUF = !HASARD_NEUF;
+    ETAT.reglages.hasardNeuf = HASARD_NEUF;
+    sauverEtat();
+    rendreCours();
+  }
   else if(a === "classement"){
     CLASSEMENT = el.dataset.classement === "periode" ? "periode" : "theme";
     /* Un filtre de periode n'a aucun sens parmi les themes, et l'inverse
