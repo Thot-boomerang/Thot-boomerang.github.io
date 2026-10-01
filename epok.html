@@ -170,7 +170,9 @@ body[data-onglet="quiz"] .vignette::before{width:38px}
   padding-bottom:2px}
 .filet span{
   font-family:var(--police-titre);font-size:12.5px;letter-spacing:.24em;
-  text-transform:uppercase;color:var(--bordeaux);white-space:nowrap;font-weight:700;
+  text-transform:uppercase;color:var(--bordeaux);font-weight:700;
+  /* Un titre long doit passer a la ligne plutot que deborder du cadre. */
+  text-align:center;max-width:76%;
 }
 .losange{color:var(--or-vif);opacity:.95;font-size:14px}
 
@@ -565,6 +567,7 @@ select{width:100%}
      id: "identifiant-unique-sans-espace",
      titre: "Titre du cours",
      periode: "1914-1945",        // doit figurer dans PERIODES ci-dessous
+     theme: "Guerre froide",      // doit etre le << nom >> d'un THEMES
      dates: "1919-1939",
      note: "",                    // facultatif : precision affichee en gris
      problematique: "Une phrase.",
@@ -625,10 +628,39 @@ select{width:100%}
      l'attribut SVG.
    ===================================================================== */
 
-/* Ordre d'affichage des periodes dans l'onglet Cours. Une periode sans
-   aucun cours reste visible et porte la mention << bientot >>. */
+/* Le catalogue se parcourt selon deux entrees, au choix du lecteur.
+
+   1. La chronologie : les grandes periodes scolaires. Une periode sans
+      aucun cours reste visible et porte la mention << bientot >>.
+   2. Le theme : ce qui rapproche des cours que la chronologie separe.
+      Le regime nazi, le stalinisme, le fascisme italien et le
+      franquisme tombent tous dans << 1914-1945 >>, alors que c'est leur
+      parente de nature qui interesse ; a l'inverse la Premiere Guerre
+      mondiale et la guerre froide meritent chacune leur propre entree.
+
+   Le libelle << Dictatures et regimes totalitaires >> est volontairement
+   large : l'Espagne franquiste est le plus souvent rangee parmi les
+   regimes autoritaires, non totalitaires, et le cours expose ce debat.
+   Ranger ces quatre cours ensemble n'affirme donc pas qu'ils sont de
+   meme nature : cela invite a les comparer.
+
+   Pour ajouter un theme, il suffit de l'ajouter ici et de le porter sur
+   les cours concernes : l'onglet Cours s'y adapte seul. */
 const PERIODES = ["Antiquité", "Moyen Âge", "Époque moderne", "XIXe siècle",
                   "1914-1945", "Depuis 1945"];
+
+/* Chaque theme porte deux libelles : << nom >> sert de titre de section,
+   << court >> tient sur une pastille. Sans ce libelle court, cinq themes
+   remplissaient six lignes de pastilles et repoussaient les cours hors
+   de l'ecran -- exactement le defaut que le classement devait corriger.
+   C'est << nom >> que les cours referencent dans leur champ theme. */
+const THEMES = [
+  { nom:"Première Guerre mondiale",                court:"Première Guerre" },
+  { nom:"Démocraties dans l'entre-deux-guerres",   court:"Entre-deux-guerres" },
+  { nom:"Dictatures et régimes totalitaires",      court:"Dictatures" },
+  { nom:"Seconde Guerre mondiale",                 court:"Seconde Guerre" },
+  { nom:"Guerre froide",                           court:"Guerre froide" }
+];
 
 const COURS = [
 
@@ -637,6 +669,7 @@ const COURS = [
   id: "france-1920-1930",
   titre: "La France des années 1920-1930",
   periode: "1914-1945",
+  theme: "Démocraties dans l'entre-deux-guerres",
   dates: "1919-1939",
   note: "",
   problematique: "Comment une France victorieuse en 1918, mais saignée et endettée, en vient-elle en vingt ans à douter de son régime, de sa monnaie et de sa sécurité ?",
@@ -1235,6 +1268,7 @@ const COURS = [
   id: "regime-stalinien",
   titre: "Le régime stalinien",
   periode: "1914-1945",
+  theme: "Dictatures et régimes totalitaires",
   dates: "1924-1953",
   note: "",
   problematique: "Comment un appareil de parti conquis par un homme se transforme-t-il en système de domination totale sur une société, et à quel prix humain ?",
@@ -1851,6 +1885,7 @@ const COURS = [
   id: "regime-nazi",
   titre: "Le régime nazi",
   periode: "1914-1945",
+  theme: "Dictatures et régimes totalitaires",
   dates: "1919-1945",
   note: "",
   problematique: "Comment un parti marginal parvient-il légalement au pouvoir, détruit un État de droit en quelques mois, et engage un pays entier dans une politique raciale et guerrière ?",
@@ -2492,6 +2527,7 @@ const COURS = [
   id: "italie-fasciste",
   titre: "Le régime fasciste italien",
   periode: "1914-1945",
+  theme: "Dictatures et régimes totalitaires",
   dates: "1919-1943",
   note: "",
   problematique: "Comment le premier régime fasciste d’Europe naît-il d’une crise de la démocratie libérale, et jusqu’où va réellement son emprise sur la société italienne ?",
@@ -3102,6 +3138,7 @@ const COURS = [
   id: "espagne-franquiste",
   titre: "Le régime franquiste",
   periode: "1914-1945",
+  theme: "Dictatures et régimes totalitaires",
   dates: "1931-1975",
   note: "déborde la période : régime de 1939 à 1975",
   problematique: "Comment un régime né d’une guerre civile et voisin des fascismes parvient-il à survivre à leur défaite, puis à transformer l’Espagne jusqu’à préparer, sans le vouloir, sa propre fin ?",
@@ -3704,6 +3741,7 @@ const COURS = [
   id: "pgm-1914-1915",
   titre: "1914-1915 : l'échec de la guerre courte",
   periode: "1914-1945",
+  theme: "Première Guerre mondiale",
   dates: "1914-1915",
   note: "1er volume d'une trilogie sur la Première Guerre mondiale",
   problematique: "Comment une guerre que chaque état-major pensait courte et mobile se fige-t-elle, en moins d'un an, dans un système de tranchées dont personne n'a prévu la sortie ?",
@@ -4321,6 +4359,7 @@ const COURS = [
   id: "pgm-1916-1917",
   titre: "1916-1917 : la guerre d'usure",
   periode: "1914-1945",
+  theme: "Première Guerre mondiale",
   dates: "1916-1917",
   note: "2e volume d'une trilogie sur la Première Guerre mondiale",
   problematique: "Faute de pouvoir percer, comment les états-majors en viennent-ils à faire de l'épuisement méthodique de l'adversaire une stratégie assumée, jusqu'à ce que les armées elles-mêmes refusent d'en payer le prix ?",
@@ -4951,6 +4990,7 @@ const COURS = [
   id: "pgm-1917-1918",
   titre: "1917-1918 : la sortie de la guerre",
   periode: "1914-1945",
+  theme: "Première Guerre mondiale",
   dates: "1917-1918",
   note: "3e et dernier volume d'une trilogie sur la Première Guerre mondiale",
   problematique: "Comment un conflit qui vient de perdre l'un de ses plus grands belligérants, la Russie, s'achève-t-il pourtant, en quelques mois à peine, par l'effondrement complet du camp qui semblait en tirer le plus grand avantage ?",
@@ -5619,6 +5659,7 @@ const COURS = [
   id: "sgm-1939-1942",
   titre: "1939-1942 : l'expansion de l'Axe",
   periode: "1914-1945",
+  theme: "Seconde Guerre mondiale",
   dates: "1939-1942",
   note: "1er volume d'une trilogie sur la Seconde Guerre mondiale",
   problematique: "Comment l'Axe, en trois ans à peine, étend-il sa domination sur la quasi-totalité de l'Europe et de vastes portions d'Afrique et d'Asie, avant de rencontrer, presque simultanément sur trois théâtres distincts, les premières limites de son ambition ?",
@@ -6283,6 +6324,7 @@ const COURS = [
   id: "sgm-1943-1944",
   titre: "1943-1944 : le tournant et la reconquête",
   periode: "1914-1945",
+  theme: "Seconde Guerre mondiale",
   dates: "1943-1944",
   note: "2e volume d'une trilogie sur la Seconde Guerre mondiale",
   problematique: "Comment les Alliés, désormais maîtres de l'initiative sur tous les fronts à la fois, parviennent-ils à coordonner des offensives d'une ampleur inédite sur l'Est, en Méditerranée, en France et dans le Pacifique, sans jamais laisser à l'Axe le temps de se réorganiser ?",
@@ -6909,6 +6951,7 @@ const COURS = [
   id: "sgm-france-fin-reich",
   titre: "La France occupée et la fin du Reich",
   periode: "1914-1945",
+  theme: "Seconde Guerre mondiale",
   dates: "1940-1945",
   note: "3e et dernier volume d'une trilogie sur la Seconde Guerre mondiale",
   problematique: "Comment la France se divise-t-elle entre collaboration d'État et résistance minoritaire, et comment l'Europe et l'Asie sortent-elles, en quelques mois, d'une guerre qui a fait du continent le théâtre du crime de masse le plus systématique de l'histoire ?",
@@ -7531,6 +7574,7 @@ const COURS = [
   id: "guerre-froide-1",
   titre: "La guerre froide : la formation des blocs (1945-1957)",
   periode: "Depuis 1945",
+  theme: "Guerre froide",
   dates: "1945-1957",
   note: "1er volume d'une trilogie sur la guerre froide",
   problematique: "Comment l'alliance victorieuse de 1945 se transforme-t-elle, en l'espace de quelques années à peine, en un affrontement mondial qui divise durablement l'Europe et entraîne les deux superpuissances dans une course aux armements sans précédent ?",
@@ -8204,6 +8248,7 @@ const COURS = [
   id: "guerre-froide-2",
   titre: "La guerre froide : du mur à la chute (1958-1991)",
   periode: "Depuis 1945",
+  theme: "Guerre froide",
   dates: "1958-1991",
   note: "2e et dernier volume d'une trilogie sur la guerre froide",
   problematique: "Comment un affrontement qui frôle la guerre nucléaire ouverte à Cuba se transforme-t-il, trente ans plus tard, en un effondrement rapide et largement pacifique de l'un des deux blocs, sans qu'aucun des deux camps ne l'ait véritablement anticipé ?",
@@ -8895,7 +8940,7 @@ const CLE_ANCIENNE = "clio.progression.v1";
 function etatVierge(){
   return {
     v: 1,
-    reglages: { uneSeanceParJour: UNE_SEANCE_PAR_JOUR },
+    reglages: { uneSeanceParJour: UNE_SEANCE_PAR_JOUR, classement: "theme" },
     cours: {},          // { idCours: { seances:{ "1":{...} }, termine:"AAAA-MM-JJ"|null } }
     historique: [],     // [{ d, type, coursId, seance, justes, total }]
     questions: {},      // { "idCours#seance#index": { r:ratees, j:reussies } }
@@ -8935,6 +8980,7 @@ function fusionnerEtat(base, lu){
   const e = base;
   if(lu.reglages && typeof lu.reglages === "object"){
     e.reglages.uneSeanceParJour = lu.reglages.uneSeanceParJour !== false;
+    e.reglages.classement = lu.reglages.classement === "periode" ? "periode" : "theme";
   }
   if(lu.cours && typeof lu.cours === "object") e.cours = lu.cours;
   if(Array.isArray(lu.historique)) e.historique = lu.historique;
@@ -9236,6 +9282,8 @@ function rendreAccueil(){
 /* Ecran courant de l'onglet Cours. */
 let ECRAN = { nom:"catalogue", coursId:null, seance:null };
 let FILTRE = "Toutes";
+/* Entree de lecture du catalogue : "theme" ou "periode". */
+let CLASSEMENT = ETAT.reglages.classement === "periode" ? "periode" : "theme";
 
 function rendreCours(){
   const vue = document.getElementById("vue-cours");
@@ -9248,16 +9296,33 @@ function rendreCatalogue(vue){
   const parts = [];
   parts.push(`<div class="filet"><span>Catalogue</span></div>`);
 
-  /* Pastilles de periode : toutes les periodes restent visibles. */
-  const pastilles = ["Toutes"].concat(PERIODES);
-  parts.push(`<div class="pastilles">` + pastilles.map(p =>
-    `<button class="pastille" data-action="filtre" data-periode="${esc(p)}"
-      aria-pressed="${FILTRE === p ? "true" : "false"}">${esc(p)}</button>`
+  /* Deux entrees pour le meme catalogue : la chronologie, ou le theme.
+     La chronologie range le regime nazi, le stalinisme, le fascisme et le
+     franquisme dans un seul << 1914-1945 >> ; le theme les rapproche et
+     separe au contraire les deux guerres mondiales de leurs voisines. */
+  parts.push(`<p class="minuscule" style="margin:0 0 6px">Classer par</p>`);
+  parts.push(`<div class="pastilles">` + [["theme","thème"],["periode","période"]].map(x =>
+    `<button class="pastille" data-action="classement" data-classement="${x[0]}"
+      aria-pressed="${CLASSEMENT === x[0] ? "true" : "false"}">${esc(x[1])}</button>`
   ).join("") + `</div>`);
 
-  const periodesAffichees = FILTRE === "Toutes" ? PERIODES : [FILTRE];
-  periodesAffichees.forEach(p => {
-    const liste = COURS.filter(c => c.periode === p);
+  /* Pastilles de filtrage : tous les groupes restent visibles, meme vides. */
+  const parTheme = CLASSEMENT === "theme";
+  const champ = parTheme ? "theme" : "periode";
+  /* Un groupe se decrit par son nom (titre de section) et son libelle
+     court (pastille) ; une periode se suffit de son nom. */
+  const groupes = parTheme ? THEMES.map(t => ({ nom:t.nom, court:t.court }))
+                           : PERIODES.map(p => ({ nom:p, court:p }));
+  parts.push(`<div class="pastilles">` +
+    [{ nom:"Toutes", court:"Toutes" }].concat(groupes).map(g =>
+    `<button class="pastille" data-action="filtre" data-periode="${esc(g.nom)}"
+      aria-pressed="${FILTRE === g.nom ? "true" : "false"}">${esc(g.court)}</button>`
+  ).join("") + `</div>`);
+
+  const affiches = FILTRE === "Toutes" ? groupes : groupes.filter(g => g.nom === FILTRE);
+  affiches.forEach(g => {
+    const p = g.nom;
+    const liste = COURS.filter(c => c[champ] === p);
     parts.push(filet(p));
     if(!liste.length){
       parts.push(`<div class="carte"><p class="secondaire" style="margin:0">
@@ -9766,6 +9831,15 @@ document.addEventListener("click", function(ev){
   /* -- Navigation dans les cours -- */
   if(a === "catalogue"){ ECRAN = {nom:"catalogue"}; aller("cours"); }
   else if(a === "filtre"){ FILTRE = el.dataset.periode; rendreCours(); }
+  else if(a === "classement"){
+    CLASSEMENT = el.dataset.classement === "periode" ? "periode" : "theme";
+    /* Un filtre de periode n'a aucun sens parmi les themes, et l'inverse
+       non plus : on repart de << Toutes >> en changeant d'entree. */
+    FILTRE = "Toutes";
+    ETAT.reglages.classement = CLASSEMENT;
+    sauverEtat();
+    rendreCours();
+  }
   else if(a === "fiche"){ ECRAN = {nom:"fiche", coursId:el.dataset.cours}; aller("cours"); }
   else if(a === "lire" || a === "reprendre"){ ouvrirSeance(el.dataset.cours, el.dataset.seance); }
 
