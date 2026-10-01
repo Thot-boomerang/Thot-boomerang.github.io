@@ -324,6 +324,52 @@ body[data-onglet="quiz"] .vignette::before{width:38px}
   @keyframes ouv-fondu{from{opacity:0}to{opacity:1}}
 }
 
+/* --- Tableaux -------------------------------------------------------
+   Mis en page comme un tableau imprime : filets fins, en-tete en
+   petites capitales sur fond legerement teinte, pas de quadrillage
+   complet. Sur telephone, un tableau trop large defile horizontalement
+   dans son propre cadre plutot que de pousser la page entiere. */
+.lecture .tableau{
+  overflow-x:auto;margin:22px 0;
+  -webkit-overflow-scrolling:touch;
+}
+.lecture table{
+  border-collapse:collapse;width:100%;min-width:300px;
+  font-size:15px;line-height:1.45;
+}
+/* Sur telephone, un cran de corps en moins gagne une colonne : le
+   defilement horizontal reste disponible, mais devient l'exception. */
+@media (max-width:560px){
+  .lecture table{font-size:13.5px}
+  .lecture thead th{font-size:10.5px;letter-spacing:.06em;padding:6px 7px}
+  .lecture tbody td,.lecture tbody th{padding:6px 7px}
+}
+.lecture caption{
+  caption-side:top;text-align:left;font-style:italic;
+  color:var(--texte-2);font-size:13.5px;padding:0 0 7px;
+}
+.lecture thead th{
+  font-family:var(--police-titre);font-size:11.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--bordeaux);
+  background:rgba(125,29,38,.07);
+  border-top:1.5px solid var(--bordeaux);
+  border-bottom:1px solid var(--bordeaux);
+  padding:7px 9px;text-align:left;vertical-align:bottom;
+}
+.lecture tbody td,.lecture tbody th{
+  border-bottom:1px solid rgba(179,154,94,.65);
+  padding:7px 9px;text-align:left;vertical-align:top;
+}
+.lecture tbody tr:last-child td,.lecture tbody tr:last-child th{
+  border-bottom:1.5px solid var(--bordeaux);
+}
+/* Colonne de chiffres : alignee a droite et chasse fixe, pour que les
+   ordres de grandeur se comparent d'un coup d'oeil. */
+.lecture td.n,.lecture th.n{
+  text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.lecture tbody th{font-weight:700;color:var(--texte)}
+
 /* --- Croquis : cartes et schemas (SVG inline) ------------------------
    Planche gravee contrecollee dans la page : double filet, fond de
    papier plus clair, legende en italique. Le trace est schematique
@@ -578,7 +624,9 @@ select{width:100%}
          titre: "Titre de la seance",
          problematique: "Une phrase.",
          contenu: ` ... HTML simple : h3, p, ul, strong, blockquote,
-                    et, ponctuellement, une <figure class="croquis"> ... `,
+                    un <table> quand des chiffres se comparent mieux
+                    alignes, et une <figure class="croquis"> quand un
+                    trace vaut mieux qu'une phrase ... `,
          anecdote: ` ... HTML simple, jamais evalue ... `,
          questions: [             // EXACTEMENT 5
            {
@@ -598,6 +646,16 @@ select{width:100%}
    - un paragraphe final << Fil rouge >> qui annonce la seance suivante ;
    - anecdote vraie et verifiable ; si elle releve de la legende, le dire ;
    - un point douteux se signale par un commentaire <!-- A VERIFIER -->.
+
+   Tableaux (la ou des chiffres se comparent) : un <table> ordinaire,
+   avec <thead> et <th> pour l'en-tete. Le CSS le met en page comme un
+   tableau imprime : filets fins, en-tete en petites capitales, colonnes
+   de chiffres alignees a droite si on leur donne class="n" -- reserve
+   aux nombres que l'on compare, car cette classe interdit la coupure
+   et peut faire deborder le tableau si on l'applique a des dates. Sur
+   telephone, un tableau trop large defile horizontalement plutot que
+   de deborder. Ne pas y mettre de phrases longues : un tableau sert a
+   comparer, pas a raconter.
 
    Cartes et schemas (facultatif, la ou ils eclairent vraiment le propos) :
    inseres dans contenu sous la forme
@@ -659,7 +717,10 @@ const THEMES = [
   { nom:"Démocraties dans l'entre-deux-guerres",   court:"Entre-deux-guerres" },
   { nom:"Dictatures et régimes totalitaires",      court:"Dictatures" },
   { nom:"Seconde Guerre mondiale",                 court:"Seconde Guerre" },
-  { nom:"Guerre froide",                           court:"Guerre froide" }
+  { nom:"Guerre froide",                           court:"Guerre froide" },
+  { nom:"Décolonisations et tiers-monde",          court:"Décolonisations" },
+  { nom:"Construction européenne",                 court:"Europe" },
+  { nom:"Le monde depuis 1989",                    court:"Depuis 1989" }
 ];
 
 const COURS = [
@@ -8902,6 +8963,666 @@ const COURS = [
       }
     ]
   }
+]
+},
+
+/* ====================== COURS 14 ====================== */
+{
+  id: "independances-asie",
+  titre: "Les indépendances en Asie (1945-1954)",
+  periode: "Depuis 1945",
+  theme: "Décolonisations et tiers-monde",
+  dates: "1945-1954",
+  note: "",
+  problematique: "Pourquoi, au sortir de la même guerre et face aux mêmes empires affaiblis, l'Inde accède-t-elle à l'indépendance par la négociation en deux ans, quand l'Indochine y parvient au terme de neuf ans de guerre ?",
+  sources: [
+    "Bernard Droz, Histoire de la décolonisation au XXe siècle, Seuil, 2006",
+    "Jacques Frémeaux, Les Empires coloniaux. Une histoire-monde, CNRS Éditions, 2012",
+    "Claude Markovits (dir.), Histoire de l’Inde moderne, 1480-1950, Fayard, 1994",
+    "Pierre Brocheux et Daniel Hémery, Indochine, la colonisation ambiguë (1858-1954), La Découverte, 2001",
+    "Jacques Dalloz, La Guerre d’Indochine, 1945-1954, Seuil, 1987"
+  ],
+  seances: [
+
+  {
+    numero: 1,
+    titre: "1945 : pourquoi les empires vacillent",
+    problematique: "Qu'est-ce que la Seconde Guerre mondiale a détruit dans les empires coloniaux d'Asie, qui ne se reconstruira pas ?",
+    contenu: `
+<h3>1. La guerre a brisé le prestige européen</h3>
+<p>En quelques mois, entre décembre 1941 et mai 1942, le Japon chasse les Européens d’Asie du Sud-Est. Hong Kong tombe le 25 décembre 1941, <strong>Singapour le 15 février 1942</strong> — la plus grande capitulation de l’histoire militaire britannique, avec plus de 80 000 prisonniers —, puis les Indes néerlandaises, la Birmanie, les Philippines. L’Indochine française, elle, reste sous administration de Vichy jusqu’au coup de force japonais du 9 mars 1945, qui balaie en une nuit l’appareil colonial.</p>
+<p>La portée de ces défaites est moins militaire que symbolique. Une puissance asiatique a vaincu les Européens sur leur propre terrain colonial, devant les populations qu’ils prétendaient gouverner au nom de leur supériorité. Le Japon exploite méthodiquement ce renversement : sa <strong>sphère de coprospérité de la Grande Asie orientale</strong> se présente comme une libération, il favorise des administrations locales, arme et entraîne des milices nationalistes. L’occupation japonaise est dure, parfois meurtrière, et beaucoup de nationalistes la combattent — mais elle laisse derrière elle des cadres politiques expérimentés et des hommes en armes.</p>
+<p>Quand le Japon capitule le 2 septembre 1945, les puissances coloniales ne sont pas sur place pour le remplacer. Ce vide de quelques semaines est décisif : les mouvements nationalistes proclament l’indépendance <em>avant</em> le retour des métropoles. L’Indonésie le 17 août 1945, le Viêt Nam le 2 septembre. Les Européens ne reviendront donc pas restaurer un ordre, mais le reconquérir.</p>
+
+<h3>2. Des métropoles sans moyens</h3>
+<p>Le Royaume-Uni sort vainqueur et ruiné. Sa dette extérieure a explosé, il dépend de prêts américains, et le gouvernement travailliste de <strong>Clement Attlee</strong>, élu en juillet 1945, a des priorités intérieures : logement, santé, nationalisations. L’Inde, longtemps présentée comme le joyau de l’Empire, coûte désormais plus qu’elle ne rapporte ; Londres est même débitrice de New Delhi au titre des dépenses de guerre. Tenir l’Inde contre son gré exigerait des moyens que le pays n’a plus.</p>
+<p>La France est dans une situation inverse et plus dangereuse. Humiliée en 1940, elle tire une part de sa légitimité retrouvée de son empire : c’est depuis l’Afrique que la France libre a existé. Renoncer aux colonies reviendrait à avouer que le rang n’a pas été reconquis. La <strong>conférence de Brazzaville</strong> (janvier-février 1944) annonce bien des réformes, mais son préambule écarte explicitement toute idée d’autonomie. Les Pays-Bas, occupés quatre ans, exsangues, veulent eux aussi retrouver dans les Indes orientales la richesse perdue.</p>
+
+<h3>3. Un contexte international qui a changé</h3>
+<p>La <strong>Charte de l’Atlantique</strong> (août 1941) affirme le droit des peuples à choisir leur gouvernement. Churchill précise aussitôt qu’elle ne vise pas l’Empire britannique, mais le texte circule et les nationalistes le citent. La Charte des Nations unies, en 1945, institue un régime de tutelle pour les territoires non autonomes et installe un forum où la question coloniale sera désormais posée publiquement.</p>
+<p>Les deux puissances qui dominent l’après-guerre sont anticolonialistes, pour des raisons opposées : l’URSS par doctrine, les États-Unis par tradition et par intérêt commercial. Mais à partir de 1947, la guerre froide renverse ce calcul américain. Dès lors qu’un mouvement d’indépendance est communiste, Washington préfère soutenir son allié européen. Cette bascule ne joue pas en Inde ; elle décidera du sort de l’Indochine.</p>
+
+<h3>4. Deux chemins, dès le départ</h3>
+<p>Les indépendances asiatiques suivent deux voies, et l’écart se creuse très tôt.</p>
+<div class="tableau">
+<table>
+<caption>Les principales indépendances d’Asie, 1946-1954</caption>
+<thead><tr><th>Territoire</th><th>Métropole</th><th>Indépendance</th></tr></thead>
+<tbody>
+<tr><th>Philippines</th><td>États-Unis</td><td>4 juillet 1946</td></tr>
+<tr><th>Inde et Pakistan</th><td>Royaume-Uni</td><td>15 août 1947</td></tr>
+<tr><th>Birmanie</th><td>Royaume-Uni</td><td>4 janvier 1948</td></tr>
+<tr><th>Ceylan</th><td>Royaume-Uni</td><td>4 février 1948</td></tr>
+<tr><th>Indonésie</th><td>Pays-Bas</td><td>27 décembre 1949</td></tr>
+<tr><th>Viêt Nam, Laos, Cambodge</th><td>France</td><td>21 juillet 1954</td></tr>
+</tbody>
+</table>
+</div>
+<p>Le tableau dit l’essentiel mais masque les écarts de durée et de prix : les Philippines étaient promises à l’indépendance dès 1934, l’Inde la paie d’une partition sanglante, l’Indonésie de quatre ans de guerre, l’Indochine de neuf.</p>
+<p>Trois variables expliquent l’écart. D’abord la <strong>nature du mouvement nationaliste</strong> : un parti de masse ancien et organisé, capable de négocier, n’obtient pas la même chose qu’une guérilla armée. Ensuite la <strong>disposition de la métropole</strong> : Londres cherche une sortie, Paris et La Haye veulent revenir. Enfin l’<strong>inscription dans la guerre froide</strong> : un mouvement communiste transforme une guerre coloniale en front d’un affrontement mondial, ce qui prolonge le conflit au lieu de l’abréger.</p>
+<p><strong>Fil rouge.</strong> Le cas indien éclaire la première variable : nulle part ailleurs le nationalisme n’a eu autant de temps pour se construire en parti de masse. C’est ce long travail, commencé bien avant 1945, qu’il faut suivre maintenant.</p>
+`,
+    anecdote: `
+<p>Le préambule des recommandations de la <strong>conférence de Brazzaville</strong>, en février 1944, est resté célèbre pour sa netteté : « les fins de l’œuvre de civilisation accomplie par la France dans les colonies écartent toute idée d’autonomie, toute possibilité d’évolution hors du bloc français de l’Empire ; la constitution éventuelle, même lointaine, de <em>self-governments</em> dans les colonies est à écarter ». Brazzaville est pourtant présentée, alors et depuis, comme une conférence réformatrice — et elle l’est sur le travail forcé, l’instruction, la représentation. Mais la phrase dit l’essentiel : en 1944, la France libre envisage de réformer l’Empire, pas de le quitter. Dix ans plus tard, jour pour jour ou presque, elle aura perdu l’Indochine.</p>
+`,
+    questions: [
+      {
+        enonce: "Pourquoi les défaites européennes de 1941-1942 en Asie comptent-elles davantage par leur portée symbolique que par leurs pertes militaires ?",
+        options: [
+          "Une puissance asiatique a battu les Européens devant les populations qu'ils prétendaient gouverner au nom de leur supériorité",
+          "Elles ont détruit la totalité des forces militaires européennes présentes dans le monde",
+          "Elles ont prouvé que les métropoles n'avaient plus les moyens de défendre leurs colonies lointaines",
+          "Elles ont entraîné la dissolution immédiate des administrations coloniales par les Nations unies"
+        ],
+        correctes: [0, 2],
+        explication: "Le prestige colonial reposait sur une prétendue supériorité européenne, que la victoire japonaise dément publiquement. S'y ajoute une leçon stratégique durable : les métropoles ne peuvent pas défendre simultanément leur territoire et leurs possessions. Les Nations unies n'ont joué aucun rôle en 1942, et les forces européennes n'ont pas été détruites ailleurs qu'en Asie."
+      },
+      {
+        enonce: "Quel effet a le vide de quelques semaines qui suit la capitulation japonaise de septembre 1945 ?",
+        options: [
+          "Les mouvements nationalistes proclament l'indépendance avant le retour des métropoles",
+          "Les puissances coloniales reprennent pacifiquement leurs administrations d'avant-guerre",
+          "Les Nations unies placent aussitôt ces territoires sous tutelle internationale",
+          "Le Japon conserve l'administration des territoires occupés jusqu'en 1947"
+        ],
+        correctes: [0],
+        explication: "L'Indonésie proclame son indépendance le 17 août 1945, le Viêt Nam le 2 septembre. Quand les Européens reviennent, un pouvoir se réclamant de la souveraineté nationale est déjà installé : ils ne restaurent donc plus une administration, ils la reprennent à quelqu'un. Les Nations unies n'ont joué aucun rôle, et le Japon avait capitulé."
+      },
+      {
+        enonce: "Pourquoi la position du Royaume-Uni sur l'Inde diffère-t-elle de celle de la France sur l'Indochine ?",
+        options: [
+          "Londres sort ruinée et son gouvernement travailliste a des priorités intérieures",
+          "La France tire de son empire une part de la légitimité qu'elle a perdue en 1940",
+          "L'Inde coûte désormais à Londres plus qu'elle ne lui rapporte",
+          "Le Royaume-Uni avait promis l'indépendance immédiate dès la Charte de l'Atlantique"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Trois logiques se combinent du côté britannique : des finances épuisées, un gouvernement tourné vers la reconstruction intérieure, et une Inde devenue coûteuse. Du côté français, renoncer à l'Empire reviendrait à admettre que le rang n'a pas été reconquis après 1940. Churchill avait au contraire précisé que la Charte de l'Atlantique ne visait pas l'Empire britannique."
+      },
+      {
+        enonce: "Comment la guerre froide modifie-t-elle la position américaine sur les décolonisations à partir de 1947 ?",
+        options: [
+          "Washington soutient désormais ses alliés européens lorsque le mouvement d'indépendance est communiste",
+          "Les États-Unis abandonnent toute référence au droit des peuples à disposer d'eux-mêmes",
+          "Washington cesse toute aide économique à ses alliés d'Europe occidentale",
+          "Les États-Unis imposent aux Européens un calendrier de retrait de toutes leurs colonies"
+        ],
+        correctes: [0],
+        explication: "La priorité donnée à l'endiguement l'emporte sur une tradition anticolonialiste qui était à la fois un principe et un intérêt commercial. Dès lors que l'indépendance risque de faire basculer un territoire dans le camp soviétique, l'endiguement devient prioritaire. Le discours sur le droit des peuples n'est pas abandonné, il cesse simplement de commander la décision — ce qui explique l'aide américaine à la France en Indochine."
+      },
+      {
+        enonce: "Quelles variables expliquent qu'une indépendance soit négociée ou arrachée par les armes ?",
+        options: [
+          "La nature du mouvement nationaliste : parti de masse organisé ou guérilla armée",
+          "La disposition de la métropole : chercher une sortie ou vouloir revenir",
+          "L'inscription du conflit dans la guerre froide",
+          "La distance géographique entre la colonie et la métropole"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Un parti de masse ancien dispose d'interlocuteurs et d'une représentativité reconnue, ce qui rend la négociation possible. Encore faut-il que la métropole cherche une sortie. Enfin, un mouvement communiste transforme la guerre coloniale en front de l'affrontement mondial, ce qui la prolonge. La distance ne joue pas : l'Inde est plus lointaine que l'Indochine et accède pourtant à l'indépendance par la négociation."
+      }
+    ]
+  },
+
+  {
+    numero: 2,
+    titre: "L’Inde : un nationalisme de masse face à une Ligue musulmane (1919-1946)",
+    problematique: "Comment un mouvement qui réclamait l’unité de l’Inde finit-il par accepter sa division ?",
+    contenu: `
+<h3>1. Un nationalisme ancien, devenu un parti de masse</h3>
+<p>Le <strong>Congrès national indien</strong> est fondé en 1885 ; c’est d’abord un cercle d’élites anglophones qui demande des réformes, non le départ des Britanniques. Tout change avec le retour d’Afrique du Sud, en 1915, de <strong>Mohandas Gandhi</strong>. Il transforme le Congrès en organisation de masse, implantée dans les villages, et lui donne un répertoire d’action inédit : le <em>satyagraha</em>, désobéissance civile non violente qui rend la répression coûteuse pour le colonisateur parce qu’elle la rend publique et indéfendable.</p>
+<p>Le <strong>massacre d’Amritsar</strong>, le 13 avril 1919, où la troupe ouvre le feu sur une foule enfermée dans un enclos, fait basculer une part de l’opinion indienne modérée. <!-- A VERIFIER : le bilan officiel britannique du Jallianwala Bagh, 379 morts, est tenu pour très sous-estimé ; les estimations indiennes avoisinent le millier --> Suivent la non-coopération de 1920-1922, puis la <strong>marche du sel</strong> de 1930 : Gandhi parcourt près de 400 kilomètres pour ramasser une poignée de sel et violer symboliquement le monopole d’État. L’image fait le tour du monde. Le <em>Government of India Act</em> de 1935 concède l’autonomie provinciale ; aux élections de 1937, le Congrès l’emporte largement et gouverne seul la plupart des provinces.</p>
+
+<h3>2. La Ligue musulmane et la théorie des deux nations</h3>
+<p>La <strong>Ligue musulmane</strong>, fondée en 1906, est longtemps marginale. Son président, <strong>Muhammad Ali Jinnah</strong>, avocat formé à Londres, fut même salué comme l’« ambassadeur de l’unité hindo-musulmane ». Sa rupture tient à une expérience précise : les gouvernements provinciaux du Congrès, après 1937, gouvernent sans la Ligue et paraissent confondre majorité indienne et majorité hindoue.</p>
+<p>De là naît la conviction que, dans une Inde unie et démocratique, les musulmans seraient une minorité permanente, structurellement minoritaire à chaque élection. La <strong>résolution de Lahore</strong>, le 23 mars 1940, réclame des États indépendants là où les musulmans sont majoritaires. C’est la <strong>théorie des deux nations</strong> : hindous et musulmans ne formeraient pas deux communautés d’une même nation, mais deux nations distinctes. Le mot « Pakistan » n’y figure pas encore ; l’idée, elle, est posée.</p>
+
+<h3>3. La guerre précipite tout</h3>
+<p>En septembre 1939, le vice-roi déclare l’Inde en guerre sans consulter aucun élu indien. Les ministères du Congrès démissionnent en bloc ; la Ligue, qui choisit de coopérer, occupe l’espace laissé vide et se renforce. La mission Cripps, en 1942, échoue à offrir assez. Le Congrès lance alors le mot d’ordre <strong>« Quit India »</strong> en août 1942 : la répression est immédiate, ses dirigeants sont emprisonnés jusqu’à la fin de la guerre.</p>
+<p>Deux chocs achèvent d’user l’autorité britannique. La <strong>famine du Bengale</strong> de 1943 fait des millions de morts dans une province administrée par Londres, qui maintient les exportations et tarde à secourir. <!-- A VERIFIER : les estimations du bilan de la famine du Bengale varient de 2 à 3 millions de morts selon les auteurs --> Puis, en 1945-1946, les procès des soldats de l’<strong>Armée nationale indienne</strong> de Subhas Chandra Bose, qui avaient combattu aux côtés du Japon, soulèvent une émotion considérable : des hommes jugés pour trahison apparaissent à l’opinion comme des patriotes. En février 1946, la mutinerie de la marine royale indienne révèle que Londres ne peut plus compter sans réserve sur les troupes indiennes — c’est-à-dire sur l’instrument même de sa domination.</p>
+
+<h3>4. 1946 : la négociation bute sur la partition</h3>
+<p>Les élections de 1945-1946 donnent un résultat sans ambiguïté et sans issue : le Congrès emporte l’écrasante majorité des sièges généraux, la Ligue la quasi-totalité des sièges réservés aux musulmans. Chacun peut donc se dire le seul représentant légitime — de l’Inde pour l’un, des musulmans pour l’autre.</p>
+<p>Le plan de la mission du Cabinet, en mai 1946, propose une fédération souple où des groupes de provinces conserveraient de larges pouvoirs : c’est la dernière formule qui maintiendrait l’unité. Elle échoue sur les interprétations contraires qu’en donnent les deux partis. Jinnah appelle alors au <strong>« Direct Action Day »</strong> du 16 août 1946 : Calcutta bascule en quelques jours dans des massacres intercommunautaires d’une ampleur inédite. <!-- A VERIFIER : le bilan des massacres de Calcutta d'août 1946, souvent avancé autour de 4 000 morts, varie fortement selon les sources --> La violence se propage au Bihar, puis au Pendjab.</p>
+<p>À partir de là, la partition cesse d’être une revendication pour devenir la seule solution que les deux camps acceptent — l’un par conviction, l’autre par résignation. Le 20 février 1947, Attlee annonce que le Royaume-Uni quittera l’Inde au plus tard en juin 1948.</p>
+<p><strong>Fil rouge.</strong> Reste à exécuter cette partition. C’est dans les cinq mois qui suivent, et dans la précipitation, que se joue le prix humain de l’indépendance.</p>
+`,
+    anecdote: `
+<p>En février 1946, les matelots indiens de la <em>Royal Indian Navy</em> se mutinent à Bombay, puis dans plusieurs ports : des milliers d’hommes et des dizaines de bâtiments échappent au commandement britannique pendant quelques jours. La révolte est matée, et le Congrès comme la Ligue appellent au calme — tous deux redoutent une insurrection qu’ils ne contrôleraient pas. L’épisode est pourtant décisif dans les calculs de Londres : l’Empire des Indes tenait avec des soldats et des marins indiens. Le jour où leur loyauté devient incertaine, la question n’est plus de savoir s’il faut partir, mais quand.</p>
+`,
+    questions: [
+      {
+        enonce: "En quoi le satyagraha de Gandhi rend-il la répression coûteuse pour le colonisateur ?",
+        options: [
+          "Il rend la répression publique et indéfendable aux yeux de l'opinion",
+          "Il désorganise militairement les troupes britanniques",
+          "Il s'appuie sur une campagne d'attentats contre les fonctionnaires britanniques",
+          "Il prive l'administration britannique de toute ressource fiscale"
+        ],
+        correctes: [0],
+        explication: "La non-violence ne désarme pas l'adversaire, elle le place devant un choix perdant : céder, ou frapper des gens désarmés sous le regard du monde, chaque violence officielle devenant alors un argument contre la domination. Amritsar en 1919 puis la marche du sel en 1930 fonctionnent exactement ainsi. Le mouvement n'a jamais eu de portée militaire et n'a pas asséché les finances coloniales."
+      },
+      {
+        enonce: "Qu'est-ce qui fait basculer Jinnah, longtemps partisan de l'unité, vers la théorie des deux nations ?",
+        options: [
+          "L'expérience des gouvernements provinciaux du Congrès après 1937",
+          "La crainte d'une minorité structurellement minoritaire à chaque élection",
+          "Un soutien financier massif apporté par le Royaume-Uni à la Ligue",
+          "La conviction que les musulmans forment une nation distincte, et non une communauté"
+        ],
+        correctes: [0, 1, 3],
+        explication: "Le point de bascule est politique et non religieux au départ : gouvernant seul après 1937, le Congrès paraît confondre majorité indienne et majorité hindoue. Jinnah en tire que la démocratie majoritaire condamnerait les musulmans à une minorité permanente, d'où la revendication d'États séparés à Lahore en 1940. Londres n'a pas financé la Ligue."
+      },
+      {
+        enonce: "Pourquoi la mutinerie de la marine royale indienne, en février 1946, pèse-t-elle autant dans les calculs britanniques ?",
+        options: [
+          "L'Empire des Indes reposait sur des soldats et des marins indiens",
+          "Elle montre que la loyauté de l'instrument même de la domination devient incertaine",
+          "Elle a détruit la flotte britannique en océan Indien",
+          "Elle a été soutenue ouvertement par le Congrès et par la Ligue"
+        ],
+        correctes: [0, 1],
+        explication: "Une poignée de Britanniques n'a jamais tenu l'Inde seule : la domination reposait sur des troupes recrutées sur place. Le jour où ces hommes peuvent se retourner, la question cesse d'être celle du départ pour devenir celle de sa date. Congrès et Ligue ont au contraire appelé au calme, redoutant une insurrection échappant à leur contrôle."
+      },
+      {
+        enonce: "Pourquoi les élections de 1945-1946 rendent-elles l'accord plus difficile, et non plus facile ?",
+        options: [
+          "Chaque parti peut désormais se dire le seul représentant légitime de ceux qu'il prétend incarner",
+          "Le Congrès emporte les sièges généraux, la Ligue la quasi-totalité des sièges musulmans",
+          "Aucun des deux partis n'obtient de résultat clair",
+          "Les Britanniques imposent une coalition entre les deux partis"
+        ],
+        correctes: [0, 1],
+        explication: "Un résultat flou aurait obligé à composer. Ici le verdict est net des deux côtés, et c'est précisément ce qui bloque : la Ligue détient un mandat incontestable sur l'électorat musulman, le Congrès sur le reste. Aucun des deux ne peut plus céder sans se renier devant ses électeurs."
+      },
+      {
+        enonce: "Comment la partition passe-t-elle du statut de revendication à celui de seule issue acceptée ?",
+        options: [
+          "L'échec du plan fédéral de la mission du Cabinet ferme la dernière voie unitaire",
+          "Les massacres de Calcutta d'août 1946 rendent la coexistence politiquement intenable",
+          "Elle est acceptée par conviction d'un côté, par résignation de l'autre",
+          "Elle est imposée unilatéralement par un vote des Nations unies"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Le plan de mai 1946 était la dernière formule conservant l'unité ; son échec ne laisse que la division. Les tueries de Calcutta puis leur propagation transforment ensuite un désaccord politique en affrontement communautaire, auquel la partition apparaît comme la seule réponse. Les Nations unies n'y ont pris aucune part."
+      }
+    ]
+  },
+
+  {
+    numero: 3,
+    titre: "La partition de 1947 : une indépendance dans le sang",
+    problematique: "Pourquoi la partition, décidée pour éviter la guerre civile, produit-elle l’une des plus grandes catastrophes humaines du siècle ?",
+    contenu: `
+<h3>1. Un calendrier précipité</h3>
+<p><strong>Lord Mountbatten</strong> arrive à New Delhi le 22 mars 1947 avec mandat d’organiser le retrait. En quelques semaines, il conclut que l’unité est hors d’atteinte et fait accepter le plan du 3 juin : deux dominions, l’Inde et le Pakistan, ce dernier formé de deux blocs séparés par 1 700 kilomètres de territoire indien. Surtout, il <strong>avance la date de dix mois</strong> : l’indépendance aura lieu le 15 août 1947, et non en juin 1948.</p>
+<p>Ce choix est au cœur du débat historiographique. Mountbatten le justifie par l’urgence : la violence monte, l’administration se décompose, attendre serait pire. Ses critiques lui reprochent l’inverse — avoir retiré toute possibilité de préparer les transferts de population, de sécuriser les zones mixtes et d’organiser la protection des minorités. Les deux arguments portent ; ce qui est certain, c’est que la précipitation a laissé les populations sans protection au moment précis où elles en avaient le plus besoin.</p>
+
+<h3>2. Une frontière tracée en cinq semaines</h3>
+<p>Le tracé est confié à <strong>Cyril Radcliffe</strong>, juriste britannique qui n’avait jamais mis les pieds en Inde — gage d’impartialité aux yeux de Londres, méconnaissance totale du terrain en réalité. Il dispose de cinq semaines pour partager le Pendjab et le Bengale, deux provinces où hindous, musulmans et sikhs vivent entremêlés village par village.</p>
+<div class="tableau">
+<table>
+<caption>Le partage du 15 août 1947</caption>
+<thead><tr><th>Ensemble</th><th>Composition</th><th>Province partagée</th></tr></thead>
+<tbody>
+<tr><th>Inde</th><td>majorité hindoue, forte minorité musulmane maintenue</td><td>Pendjab oriental, Bengale occidental</td></tr>
+<tr><th>Pakistan occidental</th><td>majorité musulmane</td><td>Pendjab occidental</td></tr>
+<tr><th>Pakistan oriental</th><td>majorité musulmane, bengalophone</td><td>Bengale oriental</td></tr>
+<tr><th>États princiers</th><td>plus de 550 entités, libres d’adhérer à l’un ou l’autre</td><td>Cachemire, Hyderabad, Junagadh</td></tr>
+</tbody>
+</table>
+</div>
+<p>Détail décisif : le tracé n’est rendu public que le <strong>17 août, deux jours après l’indépendance</strong>. Pendant les journées les plus dangereuses, des millions de personnes ignorent dans quel pays elles se trouvent. Les fonctionnaires, les policiers et les militaires non plus ne le savent pas, et beaucoup choisissent de partir plutôt que de protéger.</p>
+
+<h3>3. L’exode et les massacres</h3>
+<figure class="croquis">
+<svg viewBox="0 0 360 282" role="img" aria-label="Carte de la partition de l'Inde en 1947 et des flux de population">
+  <rect width="360" height="282" fill="#ece1c4"/>
+  <path d="M86,30 L150,22 L214,34 L256,62 L292,120 L286,186 L236,232 L170,250 L120,226 L92,168 L74,96 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1.2"/>
+  <path d="M86,30 L150,22 L146,70 L128,110 L96,126 L74,96 Z" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1.4"/>
+  <path d="M256,62 L292,120 L286,186 L252,180 L244,120 Z" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1.4"/>
+  <path d="M146,70 L128,110 L96,126 L74,96" fill="none" stroke="#8c2432" stroke-width="2.6" stroke-dasharray="7,4"/>
+  <path d="M256,62 L244,120 L252,180" fill="none" stroke="#8c2432" stroke-width="2.6" stroke-dasharray="7,4"/>
+  <text class="cr-pays" x="168" y="150" font-size="11">INDE</text>
+  <text class="cr-ville" x="86" y="46" font-size="8" font-weight="700" fill="#14382c">PAKISTAN</text>
+  <text class="cr-ville" x="86" y="56" font-size="8" font-weight="700" fill="#14382c">OCCIDENTAL</text>
+  <text class="cr-ville" x="252" y="100" font-size="8" font-weight="700" fill="#14382c">PAKISTAN</text>
+  <text class="cr-ville" x="252" y="110" font-size="8" font-weight="700" fill="#14382c">ORIENTAL</text>
+  <path d="M110,92 L146,102" fill="none" stroke="#6d1b26" stroke-width="3" marker-end="url(#f-a)"/>
+  <path d="M146,80 L110,70" fill="none" stroke="#1f4a3c" stroke-width="3" marker-end="url(#f-b)"/>
+  <text class="cr-ville" x="100" y="118" font-size="7.5">PENDJAB</text>
+  <path d="M248,142 L222,150" fill="none" stroke="#6d1b26" stroke-width="3" marker-end="url(#f-a)"/>
+  <path d="M224,132 L250,126" fill="none" stroke="#1f4a3c" stroke-width="3" marker-end="url(#f-b)"/>
+  <text class="cr-ville" x="222" y="168" font-size="7.5">BENGALE</text>
+  <path d="M120,18 L158,12 L176,30 L140,40 Z" fill="url(#h-or)" stroke="#a9761f" stroke-width="1.4"/>
+  <text class="cr-ville" x="178" y="22" font-size="7.5" fill="#7a5514">Cachemire</text>
+  <circle cx="162" cy="92" r="2.6" fill="#3a3020"/><text class="cr-ville" x="166" y="90" font-size="8">Delhi</text>
+  <circle cx="104" cy="78" r="2.4" fill="#3a3020"/><text class="cr-ville" x="72" y="76" font-size="8">Lahore</text>
+  <circle cx="246" cy="138" r="2.4" fill="#3a3020"/><text class="cr-ville" x="196" y="136" font-size="8">Calcutta</text>
+  <g transform="translate(6,236)">
+    <rect x="0" y="0" width="348" height="42" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <rect x="8" y="6" width="15" height="9" fill="url(#h-b)" stroke="#1f4a3c" stroke-width="1"/>
+    <text class="cr-leg" x="28" y="14">Pakistan, en deux blocs séparés par 1 700 km</text>
+    <path d="M8,26 L26,26" stroke="#8c2432" stroke-width="2.6" stroke-dasharray="5,3"/>
+    <text class="cr-leg" x="32" y="29">Ligne Radcliffe, publiée le 17 août 1947</text>
+    <path d="M8,38 L22,38" stroke="#6d1b26" stroke-width="2.6" marker-end="url(#f-a)"/>
+    <text class="cr-leg" x="30" y="41">Départs hindous et sikhs</text>
+    <path d="M196,38 L210,38" stroke="#1f4a3c" stroke-width="2.6" marker-end="url(#f-b)"/>
+    <text class="cr-leg" x="218" y="41">Départs musulmans</text>
+  </g>
+</svg>
+<figcaption><b>La partition du 15 août 1947.</b> La frontière coupe en deux les seules provinces où les communautés sont entremêlées, le Pendjab et le Bengale : ce sont elles qui concentreront l'essentiel des déplacements et des massacres.</figcaption>
+</figure>
+<p>Ce qui suit est le plus grand déplacement de population de l’histoire en si peu de temps : de l’ordre de dix à quinze millions de personnes changent de pays en quelques mois. <!-- A VERIFIER : les estimations du nombre de déplacés de 1947 varient de 10 à 18 millions selon les auteurs et selon la période retenue --> Les hindous et les sikhs quittent le Pendjab occidental, les musulmans le Pendjab oriental, et les colonnes se croisent sur les mêmes routes.</p>
+<p>Ces violences ne sont pas de simples débordements. Les travaux récents ont montré qu’elles furent largement <strong>organisées</strong> : milices communautaires constituées à l’avance, listes de maisons, attaques coordonnées contre les convois et les trains. Au Pendjab, des groupes paramilitaires issus des trois communautés opèrent avec des hommes démobilisés de l’armée des Indes, qui apportent encadrement et savoir-faire militaire. L’État colonial, qui disposait encore de troupes, a refusé de les engager massivement pour protéger les populations, estimant que ce n’était plus sa responsabilité.</p>
+<p>Les femmes furent visées de manière spécifique : enlèvements, viols et conversions forcées par dizaines de milliers, et suicides collectifs imposés ou choisis pour échapper au déshonneur. Les deux États signeront plus tard des accords de restitution des femmes enlevées, appliqués des années durant et souvent contre la volonté des intéressées, désormais installées dans une autre famille. Cette histoire-là, longtemps tue des deux côtés de la frontière, n’a été écrite qu’à partir des années 1990.</p>
+<p>Les massacres sont réciproques et systématiques : convois attaqués, villages incendiés, trains arrivant en gare remplis de cadavres. Le bilan humain reste discuté : les estimations vont de plusieurs centaines de milliers à un million de morts, certains travaux avançant davantage. <!-- A VERIFIER : le bilan humain de la partition est l'objet d'un débat historiographique ouvert, les estimations s'échelonnant de 200 000 à 2 millions de morts --> Au Bengale, le jeûne de Gandhi à Calcutta contribue à faire retomber la violence, résultat que lui-même jugeait fragile.</p>
+
+<h3>4. Un conflit né le premier jour</h3>
+<p>Les États princiers devaient choisir leur rattachement. Le <strong>Cachemire</strong> cumule les contradictions : un maharaja hindou, Hari Singh, règne sur une population majoritairement musulmane, et hésite. En octobre 1947, des combattants venus du Pakistan y pénètrent ; le maharaja demande alors le secours de l’Inde, qui l’obtient contre son rattachement. Des troupes indiennes sont aéroportées à Srinagar.</p>
+<p>La <strong>première guerre indo-pakistanaise</strong> s’achève par un cessez-le-feu le 1er janvier 1949, sur une ligne qui n’a jamais été reconnue comme frontière. Le Cachemire reste partagé, revendiqué en entier par les deux États, et nourrira trois guerres supplémentaires. Le 30 janvier 1948, Gandhi est assassiné par un nationaliste hindou qui lui reprochait sa conciliation envers les musulmans : l’homme qui avait voulu l’unité meurt de la haine née de sa rupture.</p>
+<p><strong>Fil rouge.</strong> L’Inde a payé son indépendance d’un prix humain terrible, mais en deux ans et sans guerre contre la métropole. À l’autre extrémité de l’Asie, la France a choisi de revenir les armes à la main.</p>
+`,
+    anecdote: `
+<p>Cyril Radcliffe reçut ses instructions début juillet 1947 et rendit son tracé le 12 août. Il n’avait jamais visité l’Inde, ne connaissait ni le Pendjab ni le Bengale, et travailla sur des cartes et des recensements dans une villa de New Delhi, à l’écart. Il refusa ses honoraires et, rentré à Londres, brûla ses papiers de travail. Il n’est jamais retourné en Asie du Sud. Le poète W. H. Auden lui consacra plus tard un poème, <em>Partition</em>, qui décrit un homme à qui l’on demande de séparer en quelques semaines des peuples mêlés depuis des siècles, et qui sait d’avance que le résultat sera jugé par les morts.</p>
+`,
+    questions: [
+      {
+        enonce: "Pourquoi l'avancée de dix mois de la date de l'indépendance est-elle au cœur du débat historiographique ?",
+        options: [
+          "Elle se justifie par une violence montante et une administration qui se décompose",
+          "Elle a supprimé toute possibilité de préparer les transferts et de protéger les minorités",
+          "Elle a été décidée par le Congrès contre l'avis de Mountbatten",
+          "Elle a laissé les populations sans protection au moment où elles en avaient le plus besoin"
+        ],
+        correctes: [0, 1, 3],
+        explication: "Les deux lectures sont défendables : attendre dans un pays qui bascule pouvait coûter davantage, mais partir si vite a interdit toute organisation du transfert. Ce qui est certain est le résultat : l'État qui partait n'assurait plus la sécurité, et celui qui arrivait ne la contrôlait pas encore. La décision revient à Mountbatten, non au Congrès."
+      },
+      {
+        enonce: "Quelle conséquence a le fait que la ligne Radcliffe ne soit publiée que le 17 août, deux jours après l'indépendance ?",
+        options: [
+          "Des millions de personnes ignorent dans quel pays elles se trouvent au moment le plus dangereux",
+          "Les fonctionnaires et militaires locaux ignorent eux-mêmes de quel État ils relèvent",
+          "Beaucoup choisissent de partir plutôt que d'assurer la protection des populations",
+          "Les deux dominions refusent de reconnaître le tracé"
+        ],
+        correctes: [0, 1, 2],
+        explication: "L'incertitude ne touche pas que les habitants : les agents censés maintenir l'ordre ne savent pas davantage quel État ils servent, et beaucoup abandonnent leur poste pour rejoindre leur communauté. C'est cette défaillance simultanée de l'ancien et du nouvel État qui ouvre l'espace aux massacres. Le tracé a bien été accepté par les deux dominions."
+      },
+      {
+        enonce: "Pourquoi le Pendjab et le Bengale concentrent-ils l'essentiel des violences ?",
+        options: [
+          "Ce sont les seules provinces où la frontière coupe des populations entremêlées village par village",
+          "Ce sont les provinces les plus pauvres de l'Inde britannique",
+          "Ce sont les seules provinces à majorité musulmane de l'Inde britannique",
+          "Les deux armées y livrent des batailles rangées dès août 1947"
+        ],
+        correctes: [0],
+        explication: "Ailleurs, le partage sépare des régions déjà majoritairement homogènes et provoque surtout des départs ; là, les colonnes qui fuient en sens inverse se croisent sur les mêmes routes. Le Sind et le Baloutchistan étaient aussi à majorité musulmane, sans être partagés. Au Pendjab et au Bengale, la ligne traverse un habitat mêlé : chacun devient minoritaire chez soi du jour au lendemain, et les convois qui fuient en sens inverse se rencontrent. La guerre régulière entre les deux États n'éclate qu'au Cachemire, en octobre."
+      },
+      {
+        enonce: "Qu'est-ce qui rend le cas du Cachemire explosif dès 1947 ?",
+        options: [
+          "Un maharaja hindou règne sur une population majoritairement musulmane",
+          "Le rattachement à l'Inde est obtenu en échange d'un secours militaire, après une incursion armée",
+          "Le cessez-le-feu de janvier 1949 fixe une ligne jamais reconnue comme frontière",
+          "Le Cachemire avait été attribué au Pakistan par la ligne Radcliffe"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Le principe du rattachement reposait sur le choix du prince, non sur celui des habitants : ici les deux divergent, ce qui permet aux deux États de se dire légitimes. Le rattachement arraché dans l'urgence, puis une ligne de cessez-le-feu jamais transformée en frontière, installent un litige permanent. Les États princiers échappaient au tracé Radcliffe."
+      },
+      {
+        enonce: "Que signifie l'assassinat de Gandhi, le 30 janvier 1948, dans l'histoire de la partition ?",
+        options: [
+          "Il est tué par un nationaliste hindou qui lui reprochait sa conciliation envers les musulmans",
+          "L'artisan de l'unité meurt de la haine née de la rupture qu'il n'a pu empêcher",
+          "Il est tué par un militant de la Ligue musulmane opposé à son influence",
+          "Sa mort entraîne l'annulation de la partition"
+        ],
+        correctes: [0, 1],
+        explication: "Gandhi avait jeûné à Calcutta puis à Delhi pour faire cesser les représailles et avait exigé que l'Inde verse au Pakistan la part de trésorerie qui lui revenait. C'est précisément cette conciliation qui lui est reprochée par son meurtrier, Nathuram Godse. La partition n'a jamais été remise en cause."
+      }
+    ]
+  },
+
+  {
+    numero: 4,
+    titre: "L’Indochine : de l’insurrection à la guerre (1945-1949)",
+    problematique: "Pourquoi la négociation franco-vietnamienne de 1946, qui avait abouti à un accord signé, débouche-t-elle sur neuf ans de guerre ?",
+    contenu: `
+<h3>1. Le 2 septembre 1945 à Hanoï</h3>
+<p>Le <strong>Viêt-minh</strong>, fondé en 1941, est un front national dirigé par les communistes autour de <strong>Hô Chi Minh</strong> : la formule lui permet de rassembler bien au-delà du parti. Le coup de force japonais du 9 mars 1945 détruit l’appareil colonial français ; la <strong>famine du Tonkin</strong> de 1944-1945, aggravée par les réquisitions et la désorganisation des transports, tue une part considérable de la population du delta et ruine ce qui restait de légitimité à l’administration. <!-- A VERIFIER : les estimations du bilan de la famine du Tonkin varient fortement, de quelques centaines de milliers à deux millions de morts selon les auteurs --></p>
+<p>À la capitulation japonaise, le Viêt-minh s’empare du pouvoir dans le vide : c’est la révolution d’Août. L’empereur Bao Dai abdique le 25 août. Le <strong>2 septembre 1945</strong>, Hô Chi Minh proclame à Hanoï l’indépendance de la <strong>République démocratique du Viêt Nam</strong>, en ouvrant son discours sur une citation de la Déclaration d’indépendance américaine. Des officiers américains de l’OSS assistent à la cérémonie. Le geste est calculé : il s’agit de placer la cause vietnamienne sous le patronage du droit des peuples plutôt que sous celui de Moscou.</p>
+
+<h3>2. Le retour français et l’accord manqué</h3>
+<p>La conférence de Potsdam a confié le désarmement des Japonais aux Chinois nationalistes au nord du 16e parallèle, aux Britanniques au sud. Ces derniers laissent les troupes françaises du général <strong>Leclerc</strong> reprendre Saigon à l’automne 1945. Au nord, en revanche, la France doit composer : pour obtenir le départ des Chinois, elle négocie.</p>
+<p>Les <strong>accords Sainteny-Hô Chi Minh du 6 mars 1946</strong> reconnaissent la République démocratique du Viêt Nam comme un « État libre » au sein de la Fédération indochinoise et de l’Union française. C’est considérable : la France reconnaît un gouvernement vietnamien. Mais le texte laisse une question ouverte, et c’est la plus brûlante — la <strong>Cochinchine</strong>, colonie et non protectorat, riche et peuplée, sera-t-elle rattachée à ce nouvel État ? Un référendum est promis.</p>
+<p>Il n’aura pas lieu. Dès juin 1946, le haut-commissaire <strong>Thierry d’Argenlieu</strong> proclame unilatéralement une République autonome de Cochinchine, vidant l’accord de sa substance au moment même où Hô Chi Minh se rend en France. La conférence de Fontainebleau, durant l’été, échoue donc avant d’avoir commencé : les Vietnamiens constatent qu’on leur reprend d’une main ce qu’on leur a concédé de l’autre.</p>
+
+<h3>3. La rupture de l’hiver 1946</h3>
+<p>Le 23 novembre 1946, un incident douanier à <strong>Haiphong</strong> dégénère : la marine française bombarde les quartiers vietnamiens de la ville. Le bilan humain est l’objet d’un écart considérable entre les sources. <!-- A VERIFIER : le nombre de victimes du bombardement de Haiphong est très discuté, les estimations allant de quelques centaines à six mille morts --> Le 19 décembre 1946, le Viêt-minh attaque les positions françaises à Hanoï. La guerre commence.</p>
+<p>Ce choix de la rupture n’est pas seulement français. Le Viêt-minh avait lui aussi intérêt à ce que l’affrontement vienne tant que la France était faible, et il avait passé l’année 1946 à organiser ses forces derrière la négociation. Les deux camps ont donc préparé la guerre en négociant, chacun espérant l’aborder dans de meilleures conditions que l’autre.</p>
+<p>Chassé des villes, le Viêt-minh se replie dans le <strong>Viêt Bac</strong>, région montagneuse et forestière du Haut-Tonkin, et adopte la guerre révolutionnaire : harcèlement, contrôle politique des villages, construction patiente d’une armée régulière derrière l’écran de la guérilla. La France tient les villes, les axes et le delta ; elle ne tient pas les campagnes la nuit. Cette dissymétrie définit toute la guerre : le corps expéditionnaire gagne presque toutes les batailles et ne parvient jamais à fixer l’adversaire.</p>
+
+<h3>4. La « solution Bao Dai » et son vice</h3>
+<p>Ne pouvant vaincre militairement ni traiter avec Hô Chi Minh, la France cherche une troisième voie : opposer au Viêt-minh un nationalisme vietnamien non communiste. Elle rappelle l’ex-empereur <strong>Bao Dai</strong> et signe avec lui les <strong>accords de l’Élysée du 8 mars 1949</strong>, qui créent l’<strong>État du Viêt Nam</strong>, « associé » au sein de l’Union française.</p>
+<p>Le dispositif souffre d’une contradiction insoluble. Pour être crédible face au Viêt-minh, Bao Dai aurait besoin d’une indépendance réelle — diplomatie, armée, finances. Mais la France ne peut la lui accorder sans perdre l’objet même de la guerre. Il reçoit donc trop peu pour convaincre les nationalistes, et déjà trop pour rassurer les intérêts coloniaux. L’État du Viêt Nam restera perçu comme une construction française, ce qui livre au Viêt-minh le monopole de la revendication nationale — avantage décisif qu’il conservera jusqu’au bout.</p>
+<p><strong>Fil rouge.</strong> Tant que la guerre reste une affaire franco-vietnamienne, elle est indécise. En octobre 1949, un événement survenu à 2 000 kilomètres de là va en changer la nature.</p>
+`,
+    anecdote: `
+<p>Le 2 septembre 1945, devant la foule de la place Ba Dinh, Hô Chi Minh ouvrit la déclaration d’indépendance vietnamienne par ces mots : « Tous les hommes sont créés égaux. Ils sont doués par le Créateur de certains droits inaliénables ; parmi ces droits, le droit à la vie, le droit à la liberté et le droit à la recherche du bonheur. » Puis il précisa : « Cette immortelle déclaration est extraite de la Déclaration d’indépendance des États-Unis d’Amérique en 1776. » Des officiers américains se tenaient dans la tribune, et un avion de l’US Army survola la cérémonie. Dix ans plus tard, les États-Unis finançaient près des quatre cinquièmes de la guerre menée contre lui.</p>
+`,
+    questions: [
+      {
+        enonce: "Pourquoi le Viêt-minh se présente-t-il comme un front national plutôt que comme un parti communiste ?",
+        options: [
+          "La formule lui permet de rassembler bien au-delà du parti communiste",
+          "Elle lui impose de renoncer à toute action armée jusqu'en 1945",
+          "Elle lui interdit toute alliance avec des non-communistes",
+          "Elle lui vaut la reconnaissance immédiate de Moscou en 1945"
+        ],
+        correctes: [0],
+        explication: "Un front rassemble des patriotes de toutes origines autour d'un seul mot d'ordre, l'indépendance, là où un parti de classe en écarterait la plupart ; c'est ce qui lui donne le monopole de la revendication nationale. Cet élargissement donne au Viêt-minh une représentativité que la France ne parviendra jamais à lui disputer. Moscou ne reconnaît la RDV qu'en 1950."
+      },
+      {
+        enonce: "Qu'est-ce qui vide les accords du 6 mars 1946 de leur portée ?",
+        options: [
+          "La proclamation unilatérale d'une République autonome de Cochinchine en juin 1946",
+          "Le référendum promis sur le rattachement de la Cochinchine n'a jamais lieu",
+          "Les Vietnamiens constatent qu'on leur reprend d'une main ce qu'on leur concède de l'autre",
+          "Hô Chi Minh refuse de se rendre en France pour négocier"
+        ],
+        correctes: [0, 1, 2],
+        explication: "L'accord reconnaissait un État vietnamien, ce qui était considérable, mais renvoyait à un référendum la question décisive de la Cochinchine. En créant un État cochinchinois séparé pendant le voyage de Hô Chi Minh en France, d'Argenlieu tranche la question avant la consultation. Hô Chi Minh s'était bien rendu à Fontainebleau."
+      },
+      {
+        enonce: "Quelle dissymétrie définit la guerre d'Indochine dès 1947 ?",
+        options: [
+          "Le corps expéditionnaire tient les villes et les axes, le Viêt-minh les campagnes",
+          "La France gagne presque toutes les batailles sans parvenir à fixer l'adversaire",
+          "Le Viêt-minh dispose dès 1947 d'une artillerie supérieure",
+          "Le Viêt-minh construit une armée régulière derrière l'écran de la guérilla"
+        ],
+        correctes: [0, 1, 3],
+        explication: "Une guérilla qui refuse le combat décisif prive l'armée régulière de ce qui fait sa supériorité. Pendant que la France remporte des engagements sans résultat stratégique, le Viêt-minh transforme patiemment ses unités en divisions. L'artillerie lourde ne lui viendra qu'après 1950, avec l'aide chinoise."
+      },
+      {
+        enonce: "Pourquoi la « solution Bao Dai » ne peut-elle pas fonctionner ?",
+        options: [
+          "Une indépendance réelle lui ferait perdre à la France l'objet même de la guerre",
+          "Bao Dai reçoit trop peu pour convaincre les nationalistes, et déjà trop pour les intérêts coloniaux",
+          "L'État du Viêt Nam reste perçu comme une construction française",
+          "Bao Dai avait publiquement rejoint le Viêt-minh en 1949"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Le dispositif se heurte à une contradiction insoluble : il faudrait accorder assez pour être crédible, mais accorder assez reviendrait à concéder ce que la guerre vise à conserver. Faute de légitimité propre, Bao Dai laisse au Viêt-minh le monopole de la revendication nationale. Il avait brièvement été conseiller du Viêt-minh en 1945, mais avait rompu."
+      },
+      {
+        enonce: "Quel sens donner à la citation de la Déclaration d'indépendance américaine par Hô Chi Minh, le 2 septembre 1945 ?",
+        options: [
+          "Placer la cause vietnamienne sous le patronage du droit des peuples plutôt que sous celui de Moscou",
+          "Rechercher la neutralité, voire l'appui, des États-Unis contre le retour français",
+          "Annoncer l'adhésion du Viêt Nam au bloc occidental",
+          "Renoncer publiquement à l'orientation communiste du Viêt-minh"
+        ],
+        correctes: [0, 1],
+        explication: "Le choix est diplomatique avant d'être idéologique : en 1945, Washington affiche son hostilité au rétablissement des empires coloniaux, et Hô Chi Minh tente d'en tirer parti. Il ne renonce à rien sur le fond, comme la suite le montrera, mais il choisit le terrain sur lequel il veut être jugé."
+      }
+    ]
+  },
+
+  {
+    numero: 5,
+    titre: "De la guerre coloniale au front de la guerre froide (1949-1953)",
+    problematique: "Comment la victoire de Mao en Chine transforme-t-elle une guerre coloniale en conflit que la France ne peut plus ni gagner ni quitter ?",
+    contenu: `
+<h3>1. Octobre 1949 : une frontière change tout</h3>
+<p>La proclamation de la République populaire de Chine, le 1er octobre 1949, donne au Viêt-minh ce qui lui manquait : une <strong>base arrière contiguë</strong>. Jusque-là, ses unités devaient fabriquer ou capturer leur matériel. Désormais elles disposent d’un sanctuaire où se reposer, de camps d’instruction en territoire chinois, de conseillers, et surtout d’un approvisionnement régulier en armement lourd.</p>
+<p>La conséquence est militaire et politique. Militairement, la guérilla peut devenir une armée de divisions capables de manœuvrer. Politiquement, le conflit change de nature : en janvier-février 1950, Pékin puis Moscou reconnaissent la République démocratique du Viêt Nam ; Washington et Londres reconnaissent l’État du Viêt Nam de Bao Dai. Ce qui était une guerre coloniale devient un <strong>front de la guerre froide</strong>, avec deux parrainages symétriques.</p>
+
+<h3>2. L’aide américaine, soutien et entrave</h3>
+<p>À partir de 1950, les États-Unis financent l’effort français. L’aide croît sans cesse et couvre, à la fin du conflit, la plus grande part du coût de la guerre. <!-- A VERIFIER : la part américaine du financement de la guerre d'Indochine en 1954, souvent évaluée autour de 80 %, varie selon le mode de calcul retenu --></p>
+<div class="tableau">
+<table>
+<caption>Ce que l’aide américaine change, et ce qu’elle verrouille</caption>
+<thead><tr><th>Apport</th><th>Contrepartie</th></tr></thead>
+<tbody>
+<tr><th>Financement massif du corps expéditionnaire</th><td>La France ne peut plus négocier seule une sortie</td></tr>
+<tr><th>Matériel moderne, aviation, blindés</th><td>L’effort devient tributaire d’un allié extérieur</td></tr>
+<tr><th>Couverture diplomatique de la cause française</th><td>La guerre doit être justifiée comme anticommuniste, non comme coloniale</td></tr>
+</tbody>
+</table>
+</div>
+<p>Ce dernier point est le plus lourd. Pour obtenir l’aide, Paris doit présenter la guerre comme une défense du monde libre ; mais ce discours oblige à accorder à Bao Dai une indépendance croissante, qui ruine l’objectif colonial initial. La France finit par se battre pour un Viêt Nam qu’elle ne gouvernera pas.</p>
+
+<h3>3. La RC4, puis de Lattre</h3>
+<p>À l’automne 1950, le Viêt-minh teste sa nouvelle armée sur la <strong>Route coloniale 4</strong>, qui longe la frontière chinoise. L’évacuation de Cao Bang tourne au désastre : colonnes encerclées, postes enlevés les uns après les autres, Lang Son abandonnée avec ses dépôts. La France perd plusieurs milliers d’hommes et le contrôle de la frontière — c’est-à-dire la possibilité d’isoler le Viêt-minh de la Chine. <!-- A VERIFIER : les pertes françaises des combats de la RC4 à l'automne 1950, souvent évaluées à plus de 4 000 hommes, varient selon le périmètre retenu --></p>
+<p>Le général <strong>de Lattre de Tassigny</strong>, nommé en décembre 1950 avec les pleins pouvoirs civils et militaires, redresse la situation. Il stabilise le delta du fleuve Rouge derrière une ligne de blockhaus, brise les offensives frontales de Giap à Vinh Yen et Mao Khê en 1951, et relance la constitution d’une armée vietnamienne. Mais il meurt en janvier 1952. Son échec de fond demeure : Giap, ayant constaté qu’il ne percerait pas le delta, revient à la guerre d’usure dans les zones où la France est faible.</p>
+
+<h3>4. Une guerre sans la nation</h3>
+<p>C’est de cet échec que naît, chez une partie des officiers français, la réflexion sur la <strong>guerre révolutionnaire</strong> : si l’adversaire tire sa force du contrôle politique des populations, il faut lui disputer ce contrôle plutôt que son territoire. La doctrine, élaborée en Indochine, sera transposée en Algérie — avec les mêmes méthodes d’encadrement des villages, et les dérives que l’on sait.</p>
+<p>L’autre réponse est la « jaunification » : constituer une armée nationale vietnamienne qui prendrait le relais du corps expéditionnaire. Ses effectifs croissent rapidement à partir de 1951, mais elle souffre du vice d’origine de l’État qu’elle sert : des cadres français, une autonomie limitée, et donc une légitimité nationale contestée. Transférer la guerre à des Vietnamiens supposait de leur transférer d’abord le pays, ce que Paris n’a jamais consenti à temps.</p>
+<p>Un trait distingue l’Indochine de l’Algérie : le gouvernement n’y envoie <strong>pas de conscrits</strong>. Le corps expéditionnaire est composé d’engagés, de légionnaires, de troupes d’Afrique et d’auxiliaires vietnamiens de plus en plus nombreux. La décision est politique : elle évite que la guerre n’entre dans chaque foyer français.</p>
+<p>Elle a deux effets contraires. D’un côté l’opinion métropolitaine reste largement indifférente, ce qui laisse les mains libres aux gouvernements successifs. De l’autre, la guerre manque en permanence d’effectifs, alors que le Viêt-minh puise dans une mobilisation de masse. Le Parti communiste français la dénonce comme la « sale guerre » ; une partie de la presse et de l’opinion catholique s’en détache ; mais c’est surtout le coût financier, dans un pays qui se reconstruit et finance le réarmement européen, qui mine peu à peu le soutien parlementaire.</p>
+<p><strong>Fil rouge.</strong> En 1953, un nouveau commandant en chef arrive avec l’idée de forcer enfin la décision : obliger Giap à livrer la bataille rangée qu’il a toujours refusée.</p>
+`,
+    anecdote: `
+<p>Le fils unique du général de Lattre, le lieutenant Bernard de Lattre, fut tué le 30 mai 1951 à Ninh Binh, au cours des combats qu’il menait contre l’offensive du Viêt-minh dans le delta. Son père commandait alors l’ensemble du théâtre d’opérations. De Lattre poursuivit sa mission, prononça quelques mois plus tard devant les élèves d’un lycée de Saigon un discours resté célèbre où il appelait les jeunes Vietnamiens à se battre pour leur propre pays, et mourut d’un cancer à Paris en janvier 1952. Il fut fait maréchal de France à titre posthume.</p>
+`,
+    questions: [
+      {
+        enonce: "Pourquoi la victoire de Mao en octobre 1949 change-t-elle la nature de la guerre d'Indochine ?",
+        options: [
+          "Le Viêt-minh dispose d'une base arrière contiguë, avec sanctuaire et instruction",
+          "La guérilla peut devenir une armée de divisions capables de manœuvrer",
+          "Le conflit devient un front de la guerre froide, avec deux parrainages symétriques",
+          "La Chine envoie des divisions combattre aux côtés du Viêt-minh"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Une frontière amie supprime la contrainte majeure d'une guérilla : elle n'a plus à se replier dans un espace qu'elle ne contrôle pas, ni à fabriquer son matériel. Les reconnaissances croisées de janvier-février 1950 achèvent la transformation du conflit. La Chine a fourni armes, conseillers et instruction, non des unités combattantes comme en Corée."
+      },
+      {
+        enonce: "En quoi l'aide américaine est-elle à la fois un soutien et une entrave pour la France ?",
+        options: [
+          "Elle finance l'effort de guerre mais interdit à Paris de négocier seul une sortie",
+          "Elle oblige à justifier la guerre comme anticommuniste, et non comme coloniale",
+          "Ce discours contraint à accorder à Bao Dai une indépendance qui ruine l'objectif colonial",
+          "Elle impose le retrait français immédiat du Tonkin"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Le piège est logique autant que financier : pour obtenir les crédits, il faut tenir le discours du monde libre, et ce discours oblige à concéder au Viêt Nam ce que la guerre visait à conserver. La France finit par se battre pour un pays qu'elle ne gouvernera pas, tout en ayant perdu la liberté de traiter."
+      },
+      {
+        enonce: "Quelle est la portée stratégique de la perte de la Route coloniale 4 à l'automne 1950 ?",
+        options: [
+          "La France perd le contrôle de la frontière chinoise",
+          "Elle perd donc la possibilité d'isoler le Viêt-minh de son soutien chinois",
+          "Le Viêt-minh y éprouve pour la première fois sa nouvelle armée",
+          "Le delta du fleuve Rouge tombe aussitôt aux mains du Viêt-minh"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Le désastre n'est pas seulement une perte d'hommes : il ouvre librement la frontière par laquelle passe désormais l'armement lourd. Isoler l'adversaire de sa base arrière était la seule façon de contenir sa montée en puissance, et cette possibilité disparaît. Le delta sera au contraire stabilisé par de Lattre dès 1951."
+      },
+      {
+        enonce: "Quels effets contraires produit la décision de ne pas envoyer de conscrits en Indochine ?",
+        options: [
+          "L'opinion métropolitaine reste largement indifférente, laissant les mains libres aux gouvernements",
+          "La guerre manque en permanence d'effectifs face à une mobilisation de masse adverse",
+          "Elle rend la guerre populaire en France",
+          "Elle garantit la supériorité numérique du corps expéditionnaire"
+        ],
+        correctes: [0, 1],
+        explication: "Tenir la guerre à distance des foyers français évite la crise politique que provoquera l'Algérie, mais prive le corps expéditionnaire de la ressource humaine dont dispose son adversaire. L'indifférence n'est pas la popularité : c'est surtout le coût financier qui minera progressivement le soutien parlementaire."
+      },
+      {
+        enonce: "Pourquoi le redressement opéré par de Lattre en 1951 ne règle-t-il pas le problème de fond ?",
+        options: [
+          "Giap, constatant qu'il ne percera pas le delta, revient à la guerre d'usure",
+          "Les renforts promis par Washington ne sont jamais arrivés",
+          "De Lattre avait perdu toutes les batailles rangées de 1951",
+          "Le delta du fleuve Rouge est abandonné dès 1951"
+        ],
+        correctes: [0],
+        explication: "La France ne peut pas imposer la bataille décisive, seule manière d'exploiter sa supériorité. De Lattre gagne précisément celles que Giap accepte de livrer frontalement, à Vinh Yen et Mao Khê. Mais l'adversaire en tire la leçon et cesse de les livrer, ce qui restaure la situation antérieure : une armée supérieure qui ne trouve personne en face d'elle. C'est cette impasse que Navarre tentera de forcer."
+      }
+    ]
+  },
+
+  {
+    numero: 6,
+    titre: "Diên Biên Phu et Genève (1954)",
+    problematique: "Pourquoi une bataille perdue par une garnison de quelques milliers d’hommes met-elle fin à un empire en Asie ?",
+    contenu: `
+<h3>1. Le pari du général Navarre</h3>
+<p>Nommé commandant en chef en mai 1953, <strong>Henri Navarre</strong> cherche une sortie honorable : porter des coups assez sérieux pour négocier en position de force. Il choisit d’installer une base aéroterrestre dans la cuvette de <strong>Diên Biên Phu</strong>, au Haut-Tonkin, sur la route du Laos. L’opération Castor, le 20 novembre 1953, y aéroporte les premiers bataillons.</p>
+<p>Le raisonnement est clair : en menaçant les arrières du Viêt-minh et la route du Laos, on l’oblige à venir se battre ; et s’il vient, l’artillerie et l’aviation françaises le broieront dans la plaine. Tout repose sur une hypothèse — que Giap ne pourra pas hisser d’artillerie lourde sur les crêtes qui dominent la cuvette, ni la ravitailler à 300 kilomètres de ses bases. C’est cette hypothèse qui se révélera fausse.</p>
+
+<h3>2. La bataille (13 mars - 7 mai 1954)</h3>
+<figure class="croquis">
+<svg viewBox="0 0 360 272" role="img" aria-label="Croquis de la cuvette de Diên Biên Phu, des crêtes tenues par le Viêt-minh et des points d'appui français">
+  <rect width="360" height="272" fill="#ece1c4"/>
+  <path d="M30,34 L330,28 L340,210 L26,216 Z" fill="#e4d6ae" stroke="#3a3020" stroke-width="1"/>
+  <path d="M30,34 L330,28 L340,210 L26,216 Z" fill="url(#h-a)" opacity=".55"/>
+  <ellipse cx="182" cy="124" rx="96" ry="62" fill="#efe6cc" stroke="#3a3020" stroke-width="1.2"/>
+  <text class="cr-note" x="44" y="56" font-size="8.5" fill="#6d1b26">crêtes tenues par le Viêt-minh</text>
+  <text class="cr-note" x="44" y="66" font-size="8.5" fill="#6d1b26">et son artillerie en casemates</text>
+  <path d="M152,96 L210,150" fill="none" stroke="#3a3020" stroke-width="7" stroke-linecap="round" opacity=".55"/>
+  <text class="cr-note" x="206" y="106" font-size="8">piste d’aviation</text>
+  <path d="M198,112 L212,104" fill="none" stroke="#3a3020" stroke-width=".9"/>
+  <g fill="#1f4a3c" stroke="#14382c" stroke-width=".8">
+    <circle cx="186" cy="74" r="7"/><circle cx="140" cy="86" r="6"/><circle cx="224" cy="96" r="6"/>
+    <circle cx="170" cy="126" r="8"/><circle cx="206" cy="146" r="6"/><circle cx="160" cy="166" r="7"/>
+  </g>
+  <g class="cr-ville" font-size="7.5" fill="#14382c">
+    <text x="194" y="70">Béatrice</text><text x="104" y="82">Gabrielle</text><text x="232" y="92">Anne-Marie</text>
+    <text x="126" y="128">Claudine</text><text x="214" y="150">Éliane</text><text x="120" y="182">Isabelle</text>
+  </g>
+  <g fill="none" stroke="#8c2432" stroke-width="2.8">
+    <path d="M186,44 L186,62" marker-end="url(#f-a)"/>
+    <path d="M110,66 L132,78" marker-end="url(#f-a)"/>
+    <path d="M262,70 L232,86" marker-end="url(#f-a)"/>
+    <path d="M276,160 L220,152" marker-end="url(#f-a)"/>
+    <path d="M96,166 L144,160" marker-end="url(#f-a)"/>
+  </g>
+  <g transform="translate(6,228)">
+    <rect x="0" y="0" width="348" height="40" fill="#f3ead2" stroke="#6b5a34" stroke-width="1"/>
+    <circle cx="16" cy="12" r="6" fill="#1f4a3c" stroke="#14382c" stroke-width=".8"/>
+    <text class="cr-leg" x="30" y="15">Points d’appui français, dans la cuvette</text>
+    <rect x="200" y="7" width="15" height="9" fill="url(#h-a)" stroke="#8c2432" stroke-width="1"/>
+    <text class="cr-leg" x="222" y="15">Hauteurs tenues par le Viêt-minh</text>
+    <path d="M8,30 L26,30" stroke="#8c2432" stroke-width="2.8" marker-end="url(#f-a)"/>
+    <text class="cr-leg" x="32" y="33">Assauts successifs, mars-mai 1954</text>
+  </g>
+</svg>
+<figcaption><b>Diên Biên Phu, mars-mai 1954.</b> Toute la position française tient dans une cuvette dominée de toutes parts. L'artillerie hissée sur les crêtes rend la piste d'aviation inutilisable dès les premiers jours : la garnison ne peut plus être ni renforcée ni évacuée.</figcaption>
+</figure>
+<p>Giap fait l’inverse de ce qu’on attendait. Plutôt que d’attaquer tout de suite, il consacre des mois à faire monter pièce par pièce une artillerie lourde sur les crêtes, à dos d’homme et à bicyclette, et à la mettre en casemates creusées dans la pente — invisible d’en bas, protégée du tir de contrebatterie. Il accumule simultanément des stocks de munitions acheminés par des dizaines de milliers de porteurs.</p>
+<p>L’assaut commence le <strong>13 mars 1954</strong>. Béatrice tombe la première nuit, Gabrielle la suivante. Surtout, l’artillerie viêt rend la <strong>piste d’aviation inutilisable</strong> en quelques jours : la garnison ne peut plus être ravitaillée que par parachutage, ni évacuer ses blessés. Le commandant de l’artillerie française, qui avait garanti la supériorité de ses feux, se suicide. Suivent huit semaines de guerre de tranchées, sous la mousson, les points d’appui tombant les uns après les autres. Le <strong>7 mai 1954</strong>, la position est submergée. Environ onze mille hommes partent en captivité ; une minorité en reviendra. <!-- A VERIFIER : le nombre de prisonniers de Diên Biên Phu et la proportion de survivants de la captivité varient selon les sources --></p>
+
+<h3>3. Genève</h3>
+<p>La conférence de Genève s’était ouverte le 26 avril 1954 sur la Corée, puis sur l’Indochine ; la nouvelle de la chute arrive pendant les travaux. En France, le gouvernement tombe ; <strong>Pierre Mendès France</strong> devient président du Conseil le 18 juin en s’engageant à conclure la paix dans un délai d’un mois, faute de quoi il démissionnera. Les <strong>accords du 21 juillet 1954</strong> sont signés dans ce délai.</p>
+<div class="tableau">
+<table>
+<caption>Genève, juillet 1954 : ce qui est réglé et ce qui est laissé ouvert</caption>
+<thead><tr><th>Décidé</th><th>Laissé en suspens</th></tr></thead>
+<tbody>
+<tr><th>Cessez-le-feu et retrait français</th><td>Aucun règlement politique du Viêt Nam</td></tr>
+<tr><th>Ligne de démarcation provisoire au 17e parallèle</th><td>Elle deviendra une frontière de fait</td></tr>
+<tr><th>Élections générales prévues pour juillet 1956</th><td>Elles n’auront jamais lieu</td></tr>
+<tr><th>Indépendance du Laos et du Cambodge</th><td>Les États-Unis ne signent pas la déclaration finale</td></tr>
+</tbody>
+</table>
+</div>
+<p>Genève met fin à la guerre française, non à la guerre du Viêt Nam. Le Viêt-minh, vainqueur sur le terrain, accepte moins que ce qu’il contrôlait — Pékin et Moscou l’y poussent, soucieux de détente. L’État du Viêt Nam, au Sud, refuse les élections prévues. Les États-Unis s’engagent progressivement à sa place.</p>
+
+<h3>4. Ce que la défaite ouvre</h3>
+<p>L’effet immédiat est moral : une puissance européenne a été vaincue en bataille rangée par une armée issue d’un mouvement colonisé. Le retentissement est immense dans tous les empires. Il est d’autant plus fort que la défaite n’est pas une débandade mais le résultat d’une supériorité adverse en organisation, en artillerie et en logistique.</p>
+<p>Le retentissement dépasse de loin l’Asie. À Alger, à Tunis, à Rabat, à Dakar, la nouvelle circule vite et dit une chose simple : une armée européenne peut être battue. L’année suivante, à Bandung, les délégués des pays d’Asie et d’Afrique citeront Diên Biên Phu comme la preuve que l’ordre colonial n’est pas un ordre naturel.</p>
+<p>La conséquence française est rapide. Le <strong>1er novembre 1954</strong>, trois mois après Genève, une série d’attentats marque en Algérie le début de l’insurrection du FLN. Mendès France et son ministre de l’Intérieur, François Mitterrand, affirment aussitôt que l’Algérie, département français, ne saurait connaître le sort de l’Indochine. La leçon tirée de la défaite n’est donc pas qu’il faut décoloniser, mais qu’il ne faut pas céder une deuxième fois.</p>
+<p><strong>Fil rouge.</strong> Cette affirmation va être mise à l’épreuve au Maghreb, où la France tient trois territoires aux statuts différents — et où elle accordera l’indépendance à deux d’entre eux pour mieux garder le troisième.</p>
+`,
+    anecdote: `
+<p>Pour hisser ses canons de 105 mm sur les crêtes, le Viêt-minh n’employa ni camions ni tracteurs mais des milliers d’hommes tirant les pièces à la corde, de nuit, sur des pistes taillées dans la jungle. Le ravitaillement fut assuré en bonne partie par des bicyclettes de transport renforcées, chargées de deux à trois cents kilos chacune et poussées à la main sur des centaines de kilomètres. L’état-major français avait écarté l’hypothèse d’une artillerie lourde sur les hauteurs parce qu’il raisonnait en termes de routes et de véhicules ; Giap raisonnait en termes d’hommes disponibles. C’est cet écart d’appréciation, plus que le nombre des combattants, qui décida de la bataille.</p>
+`,
+    questions: [
+      {
+        enonce: "Sur quelle hypothèse repose le choix d'installer une base aéroterrestre à Diên Biên Phu ?",
+        options: [
+          "Giap ne pourra pas hisser d'artillerie lourde sur les crêtes dominant la cuvette",
+          "Le Viêt-minh ne dispose d'aucune liaison terrestre avec la Chine en 1953",
+          "Le Viêt-minh refusera toujours la bataille rangée",
+          "Le Viêt-minh ne dispose d'aucune artillerie en 1954"
+        ],
+        correctes: [0],
+        explication: "On le croyait aussi incapable de ravitailler une grande armée à 300 kilomètres de ses bases. Le piège ne fonctionne que si l'adversaire vient se battre sans pouvoir dominer la position : toute la manœuvre vise au contraire à l'obliger à accepter la bataille rangée. L'erreur n'est pas de croire qu'il ne viendra pas, mais de croire qu'il viendra désarmé sur les hauteurs."
+      },
+      {
+        enonce: "Pourquoi la neutralisation de la piste d'aviation est-elle décisive dès les premiers jours ?",
+        options: [
+          "La garnison ne peut plus être ravitaillée que par parachutage",
+          "Elle ne peut plus évacuer ses blessés",
+          "Elle ne peut plus être renforcée ni évacuée",
+          "Elle perd tout contact radio avec Hanoï"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Une base aéroterrestre isolée ne vit que par son pont aérien : la piste supprimée, la position devient un camp assiégé que l'on ne peut ni secourir ni quitter. Le parachutage, imprécis et exposé, ne compense jamais. Les liaisons radio, elles, ont fonctionné jusqu'au bout."
+      },
+      {
+        enonce: "Qu'est-ce que les accords de Genève règlent, et que laissent-ils ouvert ?",
+        options: [
+          "Ils organisent le cessez-le-feu et le retrait français, sans règlement politique du Viêt Nam",
+          "La ligne du 17e parallèle, présentée comme provisoire, deviendra une frontière de fait",
+          "Les élections générales prévues pour 1956 n'auront jamais lieu",
+          "Ils fixent définitivement la réunification du Viêt Nam sous l'autorité du Viêt-minh"
+        ],
+        correctes: [0, 1, 2],
+        explication: "Genève met fin à la guerre française, pas au conflit vietnamien : il n'y a pas d'accord sur le régime du pays, seulement sur l'arrêt des combats et une séparation présentée comme temporaire. Le refus du Sud et le non-engagement américain sur la déclaration finale vident par avance la clause électorale de sa portée."
+      },
+      {
+        enonce: "Pourquoi le Viêt-minh accepte-t-il à Genève moins que ce qu'il contrôlait sur le terrain ?",
+        options: [
+          "Pékin et Moscou l'y poussent, soucieux de détente avec l'Occident",
+          "Son armée avait été détruite à Diên Biên Phu",
+          "Il escompte emporter les élections de 1956 prévues par les accords",
+          "Il avait perdu le contrôle de la totalité du Tonkin"
+        ],
+        correctes: [0, 2],
+        explication: "La délégation vietnamienne est contrainte par ses parrains, qui cherchent alors à desserrer la tension internationale et ne veulent pas d'une crise prolongée. Elle y consent d'autant plus volontiers qu'elle se croit assurée de l'emporter par les urnes deux ans plus tard. Son armée sortait au contraire victorieuse."
+      },
+      {
+        enonce: "Quelle leçon la France tire-t-elle de la défaite, et avec quelle conséquence ?",
+        options: [
+          "Non qu'il faut décoloniser, mais qu'il ne faut pas céder une deuxième fois",
+          "Le gouvernement affirme que l'Algérie, département français, ne connaîtra pas ce sort",
+          "L'insurrection algérienne débute trois mois après Genève",
+          "La France décide d'accorder immédiatement l'indépendance à ses colonies d'Afrique"
+        ],
+        correctes: [0, 1, 2],
+        explication: "La défaite aurait pu convaincre qu'une guerre coloniale ne se gagne pas ; elle convainc surtout qu'il ne faut pas recommencer à reculer. Le statut départemental de l'Algérie fournit l'argument juridique de ce refus, et la guerre qui s'ouvre le 1er novembre 1954 durera près de huit ans."
+      }
+    ]
+  }
+
 ]
 },
 ];
