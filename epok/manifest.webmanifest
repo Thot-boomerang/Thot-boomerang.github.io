@@ -1,0 +1,15 @@
+{
+  "name": "Epok — culture historique",
+  "short_name": "Epok",
+  "description": "Mini-cours d’histoire, QCM et révisions du brevet, hors ligne.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#efe3c8",
+  "theme_color": "#efe3c8",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
