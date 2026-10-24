@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-GLoAa4il6plTzBx8ZdIKj89Llz9vCgzFLuEAdhNjLPY=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-zZZl5AIY68TTG7xppHwWMrwOs2Yl/lJNbJT4o9pOeVk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -894,7 +894,26 @@ body[data-haut="1"] #haut{display:block}
 .qj-barre{height:6px;background:var(--fond-3);border:1px solid var(--laiton);margin:6px 0 0;overflow:hidden}
 .qj-barre i{display:block;height:100%;background:var(--bordeaux);transition:width .2s linear}
 .qj-onglets{margin:16px 0 12px}
-.qj-onglets button{font-size:11px;padding:6px 4px}
+.qj-onglets button{font-size:10.5px;padding:6px 2px;letter-spacing:.02em}
+/* Tableau des medailles du Quiz of the Day. */
+.qj-saison{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 8px;flex-wrap:wrap}
+.qj-saison strong{font:700 15px var(--police-titre);letter-spacing:.06em;text-transform:uppercase}
+.qj-saison span{font-size:12.5px;opacity:.75}
+.qj-med-boite{overflow-x:auto;margin:0 -4px}
+.qj-medailles{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.qj-medailles th{font:600 10.5px var(--police-titre);letter-spacing:.06em;text-transform:uppercase;color:var(--encre-douce,inherit);padding:4px 2px;text-align:center}
+.qj-medailles thead tr:last-child th{font-size:15px;letter-spacing:0;padding-top:0}
+.qj-medailles th.nom,.qj-medailles td.nom{text-align:left}
+.qj-medailles th.sem,.qj-medailles td:nth-child(6){border-left:1px solid var(--trait,rgba(0,0,0,.15))}
+.qj-medailles td{padding:7px 2px;text-align:center;border-top:1px solid var(--trait,rgba(0,0,0,.1))}
+.qj-medailles td.rg{width:22px;font-weight:700}
+.qj-medailles td.nom strong{display:block;font-size:13px;line-height:1.2}
+.qj-medailles td.nom small{display:block;font-size:11px;opacity:.65}
+.qj-medailles td.m1,.qj-medailles td.m2,.qj-medailles td.m3{font-weight:700;width:26px}
+.qj-medailles td.m1{color:#a77d12}.qj-medailles td.m2{color:#6f7680}.qj-medailles td.m3{color:#8f5523}
+.qj-medailles td.zero{opacity:.3;width:26px}
+.qj-medailles tr.moi td{background:color-mix(in srgb,var(--or-vif,#e2b93b) 14%,transparent)}
+.qj-medailles tr.filet td{padding:0;border-top:2px dashed var(--trait,rgba(0,0,0,.2))}
 .qj-corr.ok{border-left-color:var(--vert-juste)}
 .carte.quiz-jour{border-color:var(--bordeaux-pale)}
 /* Encart du Quiz of the Day, en tete de l'accueil. */
@@ -6776,6 +6795,7 @@ function qjAfficher(){
         <li>${QJ_PTS} points par bonne réponse, ajoutés à votre rang. Le corrigé sera visible demain.</li>
         <li><strong>2 classements</strong>&#8239;: celui du jour (au nombre de bonnes réponses, puis au temps) et celui de la semaine, du lundi au dimanche. Votre historique garde votre place de chaque jour joué et de chaque semaine.</li>
         <li><strong>Bonus du podium</strong>&#8239;: 1<sup>er</sup>, 2<sup>e</sup> et 3<sup>e</sup> du jour gagnent ${QJ_PODIUM_JOUR.join(", ").replace(/, (\d+)$/, " et $1")} points à minuit&#8239;; ceux de la semaine ${QJ_PODIUM_SEMAINE.join(", ").replace(/, (\d+)$/, " et $1")} points le dimanche à minuit.</li>
+        <li><strong>Tableau des médailles</strong>&#8239;: par saison de 3 mois, les médailles d’or, d’argent et de bronze du jour et de la semaine, classées comme aux Jeux olympiques.</li>
       </ul>
       <button class="bouton-plein" data-action="qj-commencer"${QJ.prepare ? " disabled" : ""}>${QJ.prepare ? "Préparation…" : "Commencer"}</button>
     </div>`;
@@ -6800,9 +6820,10 @@ function qjAfficher(){
       <p class="minuscule" style="text-align:center">Nouveau quiz dans ${qjAvantMinuit()}. Le corrigé sera visible demain.</p>`);
   parts.push(`<div class="seg qj-onglets" role="group" aria-label="Classement">
       <button type="button" data-action="qj-onglet" data-onglet="jour" aria-pressed="${QJ.onglet === "jour"}">Jour</button>
-      <button type="button" data-action="qj-onglet" data-onglet="semaine" aria-pressed="${QJ.onglet === "semaine"}">Cette semaine</button>
+      <button type="button" data-action="qj-onglet" data-onglet="semaine" aria-pressed="${QJ.onglet === "semaine"}">Semaine</button>
+      <button type="button" data-action="qj-onglet" data-onglet="medailles" aria-pressed="${QJ.onglet === "medailles"}">Médailles</button>
       <button type="button" data-action="qj-onglet" data-onglet="historique" aria-pressed="${QJ.onglet === "historique"}">Historique</button>
-      <button type="button" data-action="qj-onglet" data-onglet="hier" aria-pressed="${QJ.onglet === "hier"}">Corrigé d’hier</button>
+      <button type="button" data-action="qj-onglet" data-onglet="hier" aria-pressed="${QJ.onglet === "hier"}">Corrigé</button>
     </div><div id="qj-classement"></div></div>`);
   v.innerHTML = parts.join("");
   qjRemplirOnglet();
@@ -6813,6 +6834,7 @@ function qjRemplirOnglet(){
   if(!zone || !QJ) return;
   if(QJ.onglet === "hier") return qjCorrigeHier(zone);
   if(QJ.onglet === "historique") return qjHistorique(zone);
+  if(QJ.onglet === "medailles") return qjMedailles(zone);
   if(!compteConnecte()){ zone.innerHTML = `<p class="minuscule">Connectez-vous pour voir les classements.</p>`; return; }
   const jour = QJ.onglet === "jour";
   /* Classement d'un jour passe : choisi par son numero dans le menu. */
@@ -7077,6 +7099,94 @@ function qjMajRangsDiscret(){
   QJ_RANGS_LUS = Date.now();
   qjMajRangs();
 }
+/* ---------- Le tableau des medailles, par saison ----------
+   Une saison dure 3 mois : novembre-janvier, fevrier-avril, mai-juillet,
+   aout-octobre, puis de nouveau novembre-janvier... La saison 1 commence
+   avec le 1er Quiz of the Day (21 octobre 2026) : c'est la seule plus longue.
+   Le tableau compte les medailles de la saison en cours (or, argent, bronze
+   du jour et de la semaine ; une semaine compte dans la saison de son
+   dimanche) et se trie comme aux Jeux olympiques : l'or d'abord, puis
+   l'argent, puis le bronze. Les podiums se lisent dans les classements
+   gardes sur le serveur : rien a ecrire. Un podium qui ne peut plus changer
+   (jour de plus de 3 jours, semaine de plus de 11) est garde sur
+   l'appareil et ne se relit plus. */
+const QJ_CLE_PODIUMS = "epok.qj.podiums.v2";
+const QJ_SAISON_ZERO = 2026 * 12 + 10;   // novembre 2026, en mois
+function qjMois(m){ return `${Math.floor(m / 12)}-${String(m % 12 + 1).padStart(2, "0")}-01`; }
+function qjSaison(date){
+  const m = +date.slice(0, 4) * 12 + (+date.slice(5, 7) - 1), k = Math.max(0, Math.floor((m - QJ_SAISON_ZERO) / 3));
+  return { n: k + 1, debut: k ? qjMois(QJ_SAISON_ZERO + 3 * k) : new Date(QJ_PREMIER).toISOString().slice(0, 10), fin: qjMois(QJ_SAISON_ZERO + 3 * k + 3) };
+}
+function qjJoursAvant(date){ return Math.round((new Date(date + "T12:00:00") - new Date(aujourdhui() + "T12:00:00")) / 864e5); }
+function qjDecaler(date, n){ const d = new Date(date + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); }
+function qjPodiumsGardes(){ try{ return JSON.parse(localStorage.getItem(QJ_CLE_PODIUMS)) || {}; }catch(e){ return {}; } }
+/* Des taches (fonctions qui rendent une promesse), n a la fois. */
+function qjEnFile(taches, n){
+  const res = []; let i = 0;
+  const suivante = () => { if(i >= taches.length) return Promise.resolve(); const k = i++;
+    return taches[k]().then(v => { res[k] = v; }, () => { res[k] = null; }).then(suivante); };
+  return Promise.all(Array.from({ length: n }, suivante)).then(() => res);
+}
+function qjChargerMedailles(saison){
+  const auj = aujourdhui(), garde = qjPodiumsGardes(), cles = [];
+  for(let d = saison.debut; d < auj && d < saison.fin; d = qjDecaler(d, 1)) cles.push("jour/" + d);
+  for(let l = qjLundi(saison.debut); l < qjLundi(auj); l = qjDecaler(l, 7)){
+    const dim = qjDecaler(l, 6);
+    if(dim >= saison.debut && dim < saison.fin) cles.push("semaine/" + l);
+  }
+  const lire = cle => () => garde[cle] ? Promise.resolve(garde[cle]) :
+    requeteJeton("POST", urlDocuments("/" + cle) + ":runQuery", { structuredQuery: { from: [{ collectionId: "scores" }],
+      orderBy: [{ field: { fieldPath: "score" }, direction: "DESCENDING" }], limit: 3 } })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(rep => {
+      const podium = (rep || []).filter(x => x.document).map(x => [decodeURIComponent(x.document.name.split("/").pop()),
+        ((x.document.fields || {}).nom || {}).stringValue || "?"]);
+      if(cle.split("/")[1] <= qjDecaler(auj, cle[0] === "j" ? -3 : -11)) garde[cle] = podium;
+      return podium;
+    });
+  return qjEnFile(cles.map(lire), 6).then(res => {
+    try{ localStorage.setItem(QJ_CLE_PODIUMS, JSON.stringify(garde)); }catch(e){}
+    const m = {};
+    res.forEach((podium, k) => (podium || []).forEach(([uid, nom], r) => {
+      const x = m[uid] = m[uid] || { uid, nom, j: [0, 0, 0], s: [0, 0, 0] };
+      x.nom = nom; x[cles[k][0] === "j" ? "j" : "s"][r]++;
+    }));
+    /* Comme aux JO : or, puis argent, puis bronze (jour et semaine reunis) ;
+       a egalite, les medailles de la semaine departagent. */
+    const cle = x => [x.j[0] + x.s[0], x.j[1] + x.s[1], x.j[2] + x.s[2], x.s[0], x.s[1], x.s[2]];
+    const liste = Object.values(m).sort((p, q) => { const a = cle(p), b = cle(q); for(let i = 0; i < 6; i++) if(a[i] !== b[i]) return b[i] - a[i]; return p.nom.localeCompare(q.nom, "fr"); });
+    liste.forEach((x, i) => { x.rang = i && cle(x).join() === cle(liste[i - 1]).join() ? liste[i - 1].rang : i + 1; });
+    return { liste, incomplet: res.some(p => p === null) };
+  });
+}
+function qjMedailles(zone){
+  const saison = qjSaison(aujourdhui()), reste = qjJoursAvant(saison.fin);
+  const entete = `<p class="qj-saison"><strong>Saison ${saison.n}</strong><span>Prochaine saison dans ${reste} jour${reste > 1 ? "s" : ""}</span></p>`;
+  if(!compteConnecte()){ zone.innerHTML = entete + `<p class="minuscule">Connectez-vous pour voir le tableau des médailles.</p>`; return; }
+  zone.innerHTML = entete + `<p class="minuscule">Chargement du tableau des médailles…</p>`;
+  const frais = QJ.medailles && QJ.medailles.saison === saison.n && Date.now() - QJ.medailles.maj < 5 * 60 * 1000;
+  (frais ? Promise.resolve(QJ.medailles) : qjChargerMedailles(saison).then(r => (QJ && (QJ.medailles = Object.assign(r, { maj: Date.now(), saison: saison.n })), r))).then(r => {
+    const z = document.getElementById("qj-classement");
+    if(!QJ || QJ.onglet !== "medailles" || !z) return;
+    const moi = COMPTE.user.uid, total = x => [...x.j, ...x.s].reduce((t, n) => t + n, 0);
+    const cases = x => [...x.j, ...x.s].map((n, k) => `<td class="${n ? "m" + (k % 3 + 1) : "zero"}">${n || "&#8211;"}</td>`).join("");
+    const ligne = x => `<tr${x.uid === moi ? ` class="moi"` : ""}><td class="rg">${x.rang}</td>
+      <td class="nom"><strong>${esc(x.nom)}${x.uid === moi ? " (vous)" : ""}</strong><small>${total(x)} médaille${total(x) > 1 ? "s" : ""}</small></td>${cases(x)}</tr>`;
+    const top = r.liste.slice(0, 10), mien = r.liste.find(x => x.uid === moi);
+    let corps = top.map(ligne).join("");
+    /* Hors du top 10 : sa propre ligne, sous un filet. */
+    if(mien && !top.includes(mien)) corps += `<tr class="filet"><td colspan="8"></td></tr>` + ligne(mien);
+    const med = ["&#129351;", "&#129352;", "&#129353;"].map(m => `<th scope="col">${m}</th>`).join("");
+    z.innerHTML = entete + (!r.liste.length ? `<p class="secondaire">Aucune médaille encore cette saison&#8239;: les premières tombent à la fin du premier jour.</p>` :
+      `<div class="qj-med-boite"><table class="qj-medailles">
+        <thead><tr><th rowspan="2" scope="col" aria-label="Rang">#</th><th rowspan="2" scope="col" class="nom">Joueur</th>
+          <th colspan="3" scope="colgroup">Jour</th><th colspan="3" scope="colgroup" class="sem">Semaine</th></tr><tr>${med}${med.replace('<th scope="col">', '<th scope="col" class="sem">')}</tr></thead>
+        <tbody>${corps}</tbody></table></div>`)
+      + `<p class="minuscule">Les médailles de la saison&#8239;: un podium par Quiz of the Day fini et par semaine finie (du lundi au dimanche). Comme aux Jeux olympiques, l’or compte d’abord, puis l’argent, puis le bronze.${
+        !mien && r.liste.length ? " Vous n’avez pas encore de médaille cette saison." : ""}${r.incomplet ? " Certains jours n’ont pas pu être lus&#8239;: réessayez plus tard." : ""}</p>`;
+  });
+}
+
 function qjHistorique(zone){
   const dessiner = () => {
     if(!QJ || QJ.onglet !== "historique" || !document.getElementById("qj-classement")) return;
