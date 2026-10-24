@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-lULhyC9xUFb410HmXiz9pzJK1BKrZXs6vMem/+HWRLQ=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-u2oLbVjWltZ3wmgeCONbA7fDbl9DJIWt/y419vk1/vg=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -816,11 +816,6 @@ body[data-haut="1"] #haut{display:block}
   to  {opacity:1;transform:scale(1) translateY(0)}
 }
 @keyframes ouv-sortie{ to{opacity:0;visibility:hidden} }
-@media (prefers-reduced-motion:reduce){
-  #ouverture{animation:ouv-sortie .3s linear .3s forwards}
-  #ouverture svg{animation:ouv-fondu .3s linear both}
-  @keyframes ouv-fondu{from{opacity:0}to{opacity:1}}
-}
 
 /* --- Tableaux ---------------------------------------------------------
    Mis en page comme un tableau imprime : filets fins, en-tete en petites
@@ -1482,7 +1477,6 @@ select{width:100%}
   .onglets{justify-content:center}
   .onglets button{max-width:200px}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01ms!important}}
 
 /* ---------- Cartes EPOK (z0l_cartes.js) ---------- */
 /* Cinq onglets : des libelles un peu plus serres. */
@@ -4792,7 +4786,18 @@ function messageErreurCompte(e){
   return "Erreur" + (c ? " (" + c + ")" : "") + " : " + ((e && e.message) || "inconnue") + ".";
 }
 
-function lireChamp(id){ const el = document.getElementById(id); return el ? el.value : ""; }
+/* Le formulaire de compte que l'eleve a sous les yeux. Il peut y en avoir
+   deux dans la page : celui de l'ecran de compte, par-dessus tout, et
+   celui de la carte Compte des Reglages, dessous (apres une deconnexion
+   depuis les Reglages, par exemple). Lire « document.getElementById »
+   prenait alors les cases vides du formulaire cache : « Creer mon compte »
+   semblait ne rien faire. On lit toujours celui du dessus. */
+function formulaireActif(){
+  return document.querySelector("#ecran-compte .form-compte") || document.querySelector("#carte-compte .form-compte")
+    || document.querySelector(".form-compte") || document;
+}
+function champCompte(id){ return formulaireActif().querySelector("#" + id); }
+function lireChamp(id){ const el = champCompte(id); return el ? el.value : ""; }
 
 /* Une demande au serveur : on bloque les boutons le temps qu'elle dure.
    Les mots de passe tapes sont remis dans leurs cases apres coup (le
@@ -4806,7 +4811,7 @@ function demandeCompte(promesse, reussite, garder){
 /* Remet les mots de passe tapes dans le formulaire redessine. */
 function gardeMdp(mdp, mdp2){
   return () => {
-    const a = document.getElementById("compte-mdp"), b = document.getElementById("compte-mdp2");
+    const a = champCompte("compte-mdp"), b = champCompte("compte-mdp2");
     if(a && mdp) a.value = mdp;
     if(b && mdp2) b.value = mdp2;
   };
@@ -4816,14 +4821,19 @@ function montrerErreurCompte(garder){
   COMPTE.erreurGoogle = false;
   majVuesCompte();
   if(garder) garder();
-  const a = document.querySelector(".form-compte [role='alert']");
+  const a = formulaireActif().querySelector("[role='alert']");
   if(a && a.scrollIntoView) a.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 const MESSAGE_CLASSE = "Écrivez votre classe sous la forme 3A, 3F… (le niveau puis la lettre), ou laissez la case vide.";
 
+/* Le clavier du telephone se ferme avant d'envoyer : sinon la page,
+   en reprenant sa hauteur, deplace les boutons sous le doigt. */
+function fermerClavier(){ const a = document.activeElement; if(a && a.blur && /^(INPUT|TEXTAREA)$/.test(a.tagName)) a.blur(); }
+
 function creerCompteEmail(){
   if(!compteDisponible() || COMPTE.attente) return;
+  fermerClavier();
   const nom = (COMPTE.nom = lireChamp("compte-nom").trim().replace(/\s+/g, " ").slice(0, 60));
   COMPTE.classe = lireChamp("compte-classe").trim().slice(0, 20);
   const classe = formaterClasse(COMPTE.classe);
@@ -4851,6 +4861,7 @@ function creerCompteEmail(){
 
 function connexionEmail(){
   if(!compteDisponible() || COMPTE.attente) return;
+  fermerClavier();
   const email = (COMPTE.email = lireChamp("compte-email").trim());
   const mdp = lireChamp("compte-mdp");
   COMPTE.info = null;
@@ -4871,6 +4882,26 @@ function motDePasseOublie(){
     if(e && e.code === "auth/user-not-found") return null;   // meme reponse
     throw e;
   }), fini);
+}
+
+/* Sur un telephone, toucher « Creer mon compte » quand le clavier est
+   ouvert fermait d'abord le clavier : la page reprenait sa hauteur, le
+   bouton glissait sous le doigt et le toucher se perdait. On garde donc la
+   saisie active le temps du toucher (le clic part normalement), et
+   l'action ferme elle-meme le clavier. La touche Entree du clavier valide
+   aussi le formulaire. */
+const BOUTONS_COMPTE = '.form-compte [data-action="compte-creer"], .form-compte [data-action="compte-entrer"], .form-compte [data-action="compte-oubli"]';
+if(typeof document !== "undefined"){
+  document.addEventListener("pointerdown", ev => {
+    if(ev.target && ev.target.closest && ev.target.closest(BOUTONS_COMPTE)) ev.preventDefault();
+  }, true);
+  document.addEventListener("keydown", ev => {
+    if(ev.key !== "Enter" || !ev.target || !ev.target.closest) return;
+    const f = ev.target.closest(".form-compte");
+    if(!f || ev.target.tagName !== "INPUT" || f.querySelector("[disabled]")) return;
+    const b = f.querySelector('[data-action="compte-creer"], [data-action="compte-entrer"], [data-action="compte-oubli"]');
+    if(b){ ev.preventDefault(); b.click(); }
+  });
 }
 
 /* Formulaire commun a l'ecran d'accueil et aux reglages. */
@@ -5140,7 +5171,7 @@ function carteCompte(){
 function adresseAConfirmer(){ return compteConnecte() && COMPTE.user.emailVerified === false; }
 function blocConfirmation(){
   return `<div class="avis confirmation" style="margin:0">
-    <p style="margin:0 0 10px"><strong>Confirmez votre adresse e-mail</strong> pour apparaître au classement. Un lien vous a été envoyé à
+    <p style="margin:0 0 10px"><strong>Confirmez votre adresse e-mail</strong>&#8239;: elle servira si vous oubliez votre mot de passe. Vous figurez déjà au classement. Un lien vous a été envoyé à
       ${esc(COMPTE.user.email || "")}. <strong>Regardez dans vos spams</strong>&#8239;: il y arrive souvent.</p>
     <div class="rang-boutons">
       <button class="bouton" data-action="compte-verif-envoyer" style="flex:1"${COMPTE.attente ? " disabled" : ""}>Renvoyer l’e-mail</button>
@@ -5182,7 +5213,7 @@ function majVuesCompte(discret){
 function actionCompte(a, el){
   if(a === "compte-connexion"){ connexionGoogle(); return true; }
   if(a === "compte-forme"){
-    const email = document.getElementById("compte-email");
+    const email = champCompte("compte-email");
     if(email) COMPTE.email = email.value.trim();
     COMPTE.forme = el && el.dataset.forme || "creer"; COMPTE.erreur = null; COMPTE.info = null;
     majVuesCompte(); return true;
