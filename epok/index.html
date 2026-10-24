@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-kx787cUIdnAZwQlTRZvp6C66jHRC7b4OdLcpkNu3idE=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-nDlNvPi4OLdC1k/R+FJJSYpqJH/2kwSXEEseIxhWdQk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1457,28 +1457,16 @@ select{width:100%}
 @media (max-width:359px){ .onglets button{font-size:9.5px;letter-spacing:.02em} }
 .pli-carte{text-align:center}
 .pli-ferme{position:relative;display:block;margin:14px auto 10px;padding:0;border:0;background:none;cursor:pointer}
-/* Le booster « Cartes EPOK » : paquet metallise, bords sertis, sans indice. */
-.booster{position:relative;display:block;width:120px;height:178px;margin:0 auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
+/* Le booster « Cartes EPOK » : sachet metallise dessine en SVG (voir booster()). */
+.booster{position:relative;display:block;width:120px;height:178px;margin:0 auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
 .booster.grand{width:190px;height:282px}
-.booster-haut,.booster-corps{position:absolute;left:0;right:0;display:block;
-  background:linear-gradient(125deg,#5c1219 0%,#8f2430 30%,#d8b25c 47%,#f3dc9a 50%,#c79a43 53%,#8f2430 70%,#4f0f15 100%)}
-.booster-haut{top:0;height:13%;border-radius:4px 4px 0 0;
-  -webkit-mask:linear-gradient(#000,#000) 0 7px/100% 100% no-repeat,radial-gradient(circle 4px at 4px 0,transparent 3.5px,#000 4px) 0 0/8px 8px repeat-x;
-  mask:linear-gradient(#000,#000) 0 7px/100% 100% no-repeat,radial-gradient(circle 4px at 4px 0,transparent 3.5px,#000 4px) 0 0/8px 8px repeat-x}
-.booster-haut::after{content:"";position:absolute;left:6%;right:6%;bottom:2px;border-bottom:1.5px dashed rgba(255,240,200,.55)}
-.booster-corps{top:13%;bottom:0;border-radius:0 0 4px 4px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6%;
-  -webkit-mask:linear-gradient(#000,#000) 0 0/100% calc(100% - 7px) no-repeat,radial-gradient(circle 4px at 4px 100%,transparent 3.5px,#000 4px) 0 100%/8px 8px repeat-x;
-  mask:linear-gradient(#000,#000) 0 0/100% calc(100% - 7px) no-repeat,radial-gradient(circle 4px at 4px 100%,transparent 3.5px,#000 4px) 0 100%/8px 8px repeat-x}
-.booster-reflet{position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);animation:reflet 3.2s ease-in-out infinite}
+.booster-haut,.booster-corps{position:absolute;left:0;right:0;display:block}
+.booster-haut{top:0;height:10.14%}
+.booster-corps{top:10.14%;bottom:0;overflow:hidden}
+.booster svg{display:block;width:100%;height:100%}
+.booster-reflet{position:absolute;inset:-40%;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(115deg,transparent 42%,rgba(255,236,190,.28) 50%,transparent 58%);animation:reflet 3.2s ease-in-out infinite}
 @keyframes reflet{0%,30%{transform:translateX(-45%)}70%,100%{transform:translateX(45%)}}
-.booster-logo{position:relative;display:flex;width:38%;padding:7%;border-radius:50%;background:rgba(20,8,8,.55);box-shadow:inset 0 0 0 2px #e6c77a}
-.booster-logo svg{width:100%;height:auto;display:block}
-.booster-titre{position:relative;display:flex;flex-direction:column;align-items:center;font:800 1.65em/1 var(--police-titre);letter-spacing:.14em;color:#fff3cf;
-  text-shadow:0 2px 0 #5c1219,0 0 12px rgba(255,220,140,.6)}
-.booster.grand .booster-titre{font-size:2.6em}
-.booster-titre small{font-size:.42em;letter-spacing:.32em;margin-bottom:4px;color:#f3dc9a}
-.booster-sous{position:relative;font:600 .62em var(--police-titre);letter-spacing:.06em;text-transform:uppercase;color:#f3dc9a;text-align:center;padding:0 8%}
-.booster.grand .booster-sous{font-size:.85em}
 /* Ouverture : le haut s'arrache, le paquet descend et s'efface. */
 .ouv-pli.casse .booster-haut{animation:arrache .55s cubic-bezier(.3,.6,.4,1) forwards}
 .ouv-pli.casse .booster-corps{animation:descend .5s ease-in .5s forwards}
@@ -1550,6 +1538,12 @@ body.ouv-active{overflow:hidden}
   transition:transform var(--duree,400ms) cubic-bezier(.3,.7,.2,1),opacity .5s;z-index:2}
 .ouv-carte.cachee{opacity:0;transform:scale(.55)}
 .ouv-carte.tournee{transform:rotateY(180deg)}
+/* Plaquee : le retournement est joue par ouvPlaquer() ; aucune transition ne s'en mele. */
+.ouv-carte.plaquee{transition:opacity .5s}
+.ouv-onde,.ouv-souffle{position:absolute;z-index:1;pointer-events:none;border-radius:6%/2.7%;opacity:0}
+.ouv-onde{border:3px solid var(--rar);box-shadow:0 0 18px var(--rar),inset 0 0 14px color-mix(in srgb,var(--rar) 60%,transparent)}
+.ouv-onde.o2{border-width:2px;border-color:color-mix(in srgb,var(--rar) 55%,#fff)}
+.ouv-souffle{background:radial-gradient(closest-side,color-mix(in srgb,var(--rar) 55%,transparent),transparent);border-radius:50%}
 .ouv-face{position:absolute;inset:0;border-radius:14px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 /* Dos neutre : rien ne trahit la rarete... sauf au survol (ou au doigt pose). */
 .ouv-dos{display:block;background:#120a0a;box-shadow:0 0 18px rgba(0,0,0,.5);transition:box-shadow .35s;border-radius:5.2%/2.4%}
@@ -7587,14 +7581,12 @@ const CARTES_PAR_N = {};
 function dossierCartes(){
   return (typeof location !== "undefined" && location.protocol === "file:") ? CARTES_SITE : "cartes/";
 }
-/* Dos des cartes (modele « Or & rose des vents ») : une image livree avec
-   l'application et le site, plus une ligne ecrite ici, a partir du nombre
-   reel de cartes et de raretes. Ajouter des cartes la met a jour. */
+/* Dos des cartes : une image allegee (le decor des cartes EPOK, « Collection
+   historique » en haut, le logo au milieu), livree avec l'application et le
+   site. Le nombre de personnages s'ecrit desormais sur le booster. */
 const DOS_CARTE = "cartes/dos.webp";
 function dosCarte(){
-  return `<svg class="dos-svg" viewBox="0 0 270 600" aria-hidden="true">${"<" + "image"} href="${DOS_CARTE}" width="270" height="600"/>
-    <text x="135" y="406" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="8.5" letter-spacing="3" fill="#6b4a1e">${
-      CARTES.length} PERSONNAGE${CARTES.length > 1 ? "S" : ""} &#183; ${RARETES.length} RARETÉS</text></svg>`;
+  return `<svg class="dos-svg" viewBox="0 0 270 600" aria-hidden="true">${"<" + "image"} href="${DOS_CARTE}" width="270" height="600"/></svg>`;
 }
 function imageCarte(n, mini){ return dossierCartes() + (mini ? "mini/" : "grandes/") + n + ".webp"; }
 /* Zones de la carte (en pixels de l'original, 1170 x 2600) montrees comme
@@ -7765,18 +7757,75 @@ function voirCarte(n, el){
 }
 
 /* ---------- Le booster ----------
-   Un paquet scelle « Cartes EPOK », sans aucun indice sur son contenu. */
-function marqueEpok(){
-  const m = typeof document !== "undefined" && document.querySelector(".entete .vignette svg");
-  return m ? m.outerHTML : "";
+   Un sachet metallise scelle, dans le style des cartes EPOK : soudures
+   striees et dentelees en haut et en bas, encoches de dechirure, cadre d'or,
+   medaillon du logo dans une couronne de laurier, rose des vents en filigrane.
+   Rien n'y trahit son contenu ; le nombre de personnages suit le catalogue.
+   Dessine deux fois (haut et corps) pour que le haut s'arrache a l'ouverture. */
+let BOOSTER_N = 0;
+function logoEpok(x, y, s, e, arc){
+  return `<g transform="translate(${x - 50 * s},${y - 50 * s}) scale(${s})"><g transform="translate(-4.328,-4.087) scale(1.11732)">
+    <path d="M21.4,22 H43.78 A1.4,1.4 0 0 1 45.18,23.4 V27.11 A1.4,1.4 0 0 1 43.78,28.51 H27 V46.74 H36.65 A1.4,1.4 0 0 1 38.05,48.14 V51.85 A1.4,1.4 0 0 1 36.65,53.25 H27 V71.49 H43.78 A1.4,1.4 0 0 1 45.18,72.89 V76.6 A1.4,1.4 0 0 1 43.78,78 H21.4 A1.4,1.4 0 0 1 20,76.6 V23.4 A1.4,1.4 0 0 1 21.4,22 Z" fill="${e}"/>
+    <path d="M38.05,50 L55.57,29.13 M38.05,50 L54.06,65.46" fill="none" stroke="${e}" stroke-width="7" stroke-linecap="round"/>
+    <path d="M59.78,21.3 A36,36 0 0 1 62.66,76.27" fill="none" stroke="${arc}" stroke-width="6.4" stroke-linecap="round"/></g></g>`;
+}
+function dessinBooster(id){
+  const OR = "#e5c46e", OS = "#8c6a22", n = CARTES.length;
+  /* Soudures dentelees : pointes vers le haut en haut, vers le bas en bas. */
+  let haut = "M0,0", bas = "M0,274 H200";
+  for(let x = 0; x <= 200; x += 5) haut += ` L${x},${x % 10 ? 4 : 0}`;
+  for(let x = 200; x >= 0; x -= 5) bas += ` L${x},${x % 10 ? 292 : 296}`;
+  haut += " L200,22 L0,22 Z"; bas += " Z";
+  /* Couronne de laurier : 2 tiges qui montent autour du medaillon, une paire
+     de feuilles a chaque noeud, pointees vers le haut de la tige. */
+  const feuilles = [], tiges = [];
+  for(const s of [-1, 1]){
+    const pt = (f, r) => [100 + s * r * Math.sin(f), 160 + r * Math.cos(f)];
+    const [x0, y0] = pt(.35, 46), [x1, y1] = pt(2.55, 46);
+    tiges.push(`<path d="M${x0.toFixed(1)},${y0.toFixed(1)} A46,46 0 0 ${s > 0 ? 0 : 1} ${x1.toFixed(1)},${y1.toFixed(1)}" fill="none" stroke="${OR}" stroke-width="1.2"/>`);
+    for(let k = 0; k < 8; k++){
+      const f = .45 + k * .28, tan = Math.atan2(-Math.sin(f), s * Math.cos(f)) * 180 / Math.PI;
+      for(const c of [-1, 1]){
+        const [x, y] = pt(f, 46 + c * 5.5), ang = tan + c * s * 28;
+        feuilles.push(`<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="6.5" ry="2.4" transform="rotate(${ang.toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`);
+      }
+    }
+  }
+  const rose = Array.from({ length: 8 }, (_, k) => { const a = k * Math.PI / 4, L = k % 2 ? 40 : 66;
+    const p = (r, d) => `${(100 + r * Math.sin(a + d)).toFixed(1)},${(160 - r * Math.cos(a + d)).toFixed(1)}`;
+    return `<path d="M100,160 L${p(9, Math.PI / 2)} L${p(L, 0)} Z"/><path d="M100,160 L${p(9, -Math.PI / 2)} L${p(L, 0)} Z" opacity=".6"/>`; }).join("");
+  const coin = (x, y, sx, sy) => `<path transform="translate(${x},${y}) scale(${sx},${sy})" d="M0,14 C0,6 6,0 14,0 M4,14 C4,9 9,4 14,4 M0,0 L5,5" fill="none" stroke="${OR}" stroke-width="1.2" stroke-linecap="round"/>`;
+  return `<defs>
+      <linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a3c12"/><stop offset=".25" stop-color="#c99a3e"/><stop offset=".45" stop-color="#f6e3a1"/><stop offset=".6" stop-color="#b7862f"/><stop offset="1" stop-color="#4f3410"/></linearGradient>
+      <linearGradient id="${id}f" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#040302"/><stop offset=".12" stop-color="#1d1510"/><stop offset=".5" stop-color="#2c2016"/><stop offset=".88" stop-color="#1d1510"/><stop offset="1" stop-color="#040302"/></linearGradient>
+      <radialGradient id="${id}h" cx=".5" cy=".52" r=".5"><stop offset="0" stop-color="#6b3d18" stop-opacity=".55"/><stop offset="1" stop-color="#6b3d18" stop-opacity="0"/></radialGradient>
+      <pattern id="${id}s" width="3" height="10" patternUnits="userSpaceOnUse"><rect width="1.2" height="10" fill="#000" opacity=".28"/></pattern>
+      <linearGradient id="${id}p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3e6c6"/><stop offset="1" stop-color="#dcc597"/></linearGradient></defs>
+    <path d="${haut}" fill="url(#${id}m)"/><path d="${haut}" fill="url(#${id}s)"/>
+    <path d="${bas}" fill="url(#${id}m)"/><path d="${bas}" fill="url(#${id}s)"/>
+    <path d="M4,22 H196 V27 L190,30 L196,33 V274 H4 V33 L10,30 L4,27 Z" fill="url(#${id}f)"/>
+    <rect x="4" y="34" width="192" height="240" fill="url(#${id}h)"/>
+    <line x1="12" y1="30" x2="188" y2="30" stroke="${OR}" stroke-width=".7" stroke-dasharray="3 3" opacity=".55"/>
+    <g fill="${OR}" opacity=".13">${rose}</g>
+    <rect x="16" y="38" width="168" height="226" rx="9" fill="none" stroke="${OR}" stroke-width="1.8"/>
+    <rect x="21" y="43" width="158" height="216" rx="6" fill="none" stroke="${OS}" stroke-width=".8"/>
+    ${coin(25, 52, 1, 1)}${coin(175, 52, -1, 1)}${coin(25, 254, 1, -1)}${coin(175, 254, -1, -1)}
+    <rect x="72" y="52" width="56" height="15" rx="7.5" fill="url(#${id}p)" stroke="${OR}" stroke-width="1"/>
+    <text x="100" y="62.5" text-anchor="middle" font-family="Georgia,serif" font-size="7" letter-spacing="3" fill="#4a2f12">CARTES</text>
+    <text class="booster-titre" x="100" y="101" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="34" letter-spacing="6" fill="${OR}" stroke="#3a240c" stroke-width=".8" paint-order="stroke">EPOK</text>
+    ${tiges.join("")}<g fill="${OR}">${feuilles.join("")}</g>
+    <circle cx="100" cy="160" r="33" fill="#0f0c0a" stroke="${OR}" stroke-width="2"/><circle cx="100" cy="160" r="28" fill="none" stroke="${OS}" stroke-width=".8"/>
+    ${logoEpok(100, 160, .44, "#f3e3bd", OR)}
+    <path d="M40,214 H160 L168,226 L160,238 H40 L32,226 Z" fill="#141010" stroke="${OR}" stroke-width="1.4"/>
+    <text x="100" y="230.5" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="11" letter-spacing="3.5" fill="${OR}">3 CARTES</text>
+    <text class="booster-sous" x="100" y="251" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="7.6" fill="#f3dc9a">parmi ${n} personnage${n > 1 ? "s" : ""} historique${n > 1 ? "s" : ""}</text>
+    <path d="M4,40 L30,34 L22,58 Z M196,250 L174,268 L184,240 Z" fill="#fff" opacity=".05"/><path d="M4,262 L26,270 L8,240 Z M196,44 L172,36 L190,64 Z" fill="#000" opacity=".25"/>`;
 }
 function booster(grand){
+  const id = "bo" + (++BOOSTER_N);
   return `<span class="booster${grand ? " grand" : ""}" aria-hidden="true">
-    <span class="booster-haut"></span>
-    <span class="booster-corps"><span class="booster-reflet"></span>
-      <span class="booster-logo">${marqueEpok()}</span>
-      <span class="booster-titre"><small>Cartes</small>EPOK</span>
-      <span class="booster-sous">3 personnages historiques</span></span></span>`;
+    <span class="booster-haut"><svg viewBox="0 0 200 30" preserveAspectRatio="none">${dessinBooster(id + "a")}</svg></span>
+    <span class="booster-corps"><svg viewBox="0 30 200 266" preserveAspectRatio="none">${dessinBooster(id + "b")}</svg><span class="booster-reflet"></span></span></span>`;
 }
 
 /* ---------- L'ouverture ----------
@@ -7869,11 +7918,10 @@ function ouvRetourner(){
   const retourner = (attente, duree) => ouvMinuteur(() => {
     el.classList.remove("tremble");
     v.style.setProperty("--ambiance", coul);
-    el.style.setProperty("--duree", duree + "ms");
-    el.classList.add("tournee");
-    ouvMinuteur(() => ouvRevelee(n), duree);
+    ouvPlaquer(el, duree, coul);
+    ouvMinuteur(() => ouvRevelee(n), duree + 120);
   }, attente);
-  if(ri <= 2){ retourner(tremble, ri === 2 ? 800 : 450); return; }
+  if(ri <= 2){ retourner(tremble, ri === 2 ? 1200 : 1000); return; }
   /* La sortie : la carte s'efface, l'ecran prend la couleur, les indices
      tombent du moins parlant au plus parlant. */
   ouvMinuteur(() => {
@@ -7889,7 +7937,39 @@ function ouvRetourner(){
   indices.forEach((h, k) => ouvMinuteur(() => { ind.insertAdjacentHTML("beforeend", h); }, t0 + k * pas));
   const fin = t0 + indices.length * pas + 900;
   ouvMinuteur(() => { ind.classList.add("part"); el.classList.remove("cachee"); }, fin);
-  retourner(fin + 600, 1400);
+  retourner(fin + 600, 1700);
+}
+
+/* Le retournement : on souleve la carte, elle se retourne en l'air, puis on
+   la plaque sur la table ; a l'impact, la scene tressaille et une onde de
+   choc de la couleur de la rarete part de la carte. Web Animations : joue
+   partout, comme les bulles. */
+const OUV_IMPACT = .86;
+function ouvPlaquer(el, duree, coul){
+  el.classList.add("plaquee", "tournee");
+  if(!el.animate) return;
+  el.animate([
+    { transform: "translateY(0) scale(1) rotateX(0deg) rotateY(0deg)", easing: "cubic-bezier(.2,.7,.3,1)" },
+    { transform: "translateY(-8%) scale(1.14) rotateX(16deg) rotateY(0deg)", offset: .28, easing: "cubic-bezier(.45,0,.55,1)" },
+    { transform: "translateY(-10%) scale(1.18) rotateX(10deg) rotateY(180deg)", offset: .7, easing: "cubic-bezier(.7,0,1,.5)" },
+    { transform: "translateY(1%) scale(.94) rotateX(0deg) rotateY(180deg)", offset: OUV_IMPACT, easing: "cubic-bezier(.2,.8,.3,1)" },
+    { transform: "translateY(0) scale(1) rotateX(0deg) rotateY(180deg)" }
+  ], { duration: duree });
+  ouvMinuteur(() => {
+    const scene = el.parentNode;
+    if(!scene) return;
+    const r = el.getBoundingClientRect(), sc = scene.getBoundingClientRect();
+    const place = `left:${r.left - sc.left}px;top:${r.top - sc.top}px;width:${r.width}px;height:${r.height}px;--rar:${coul}`;
+    scene.insertAdjacentHTML("beforeend", `<span class="ouv-onde" aria-hidden="true" style="${place}"></span><span class="ouv-onde o2" aria-hidden="true" style="${place}"></span><span class="ouv-souffle" aria-hidden="true" style="${place}"></span>`);
+    const ondes = scene.querySelectorAll(".ouv-onde, .ouv-souffle");
+    ondes.forEach((o, k) => o.animate(k === 2
+      ? [{ opacity: .9, transform: "scale(.9)" }, { opacity: 0, transform: "scale(1.9)" }]
+      : [{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: `scale(${k ? 2.1 : 1.6})` }],
+      { duration: k === 1 ? 900 : 650, delay: k === 1 ? 90 : 0, easing: "cubic-bezier(.1,.7,.3,1)", fill: "both" }));
+    scene.animate([{ transform: "translate(0,0)" }, { transform: "translate(-5px,4px)" }, { transform: "translate(4px,-3px)" },
+      { transform: "translate(-2px,2px)" }, { transform: "translate(0,0)" }], { duration: 280, easing: "ease-out" });
+    ouvMinuteur(() => ondes.forEach(o => o.remove()), 1100);
+  }, duree * OUV_IMPACT);
 }
 
 function ouvRevelee(n){
