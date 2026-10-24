@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-FoH7nq0T3r9vR5CsgAemIqBIhlFivCdQZfbq8jfTAa4=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-Rq/pYoDVucbcYVPFl6NppqGn1siwUs+ILVz7BWJpoUo=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1551,12 +1551,10 @@ body.ouv-active{overflow:hidden}
 .ouv-carte.tournee{transform:rotateY(180deg)}
 .ouv-face{position:absolute;inset:0;border-radius:14px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 /* Dos neutre : rien ne trahit la rarete... sauf au survol (ou au doigt pose). */
-.ouv-dos{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#3a1418,#120a0a 75%);
-  border:3px solid #b8913f;box-shadow:0 0 18px rgba(0,0,0,.5);font:700 30px var(--police-titre);letter-spacing:.2em;color:#d9b45a;
-  transition:box-shadow .35s,border-color .35s}
-.ouv-dos-logo svg{width:64px;height:auto;display:block}
+.ouv-dos{display:block;background:#120a0a;box-shadow:0 0 18px rgba(0,0,0,.5);transition:box-shadow .35s;border-radius:5.2%/2.4%}
+.dos-svg{display:block;width:100%;height:100%}
 .ouv-carte.en-attente{cursor:pointer}
-.ouv-carte.en-attente:hover .ouv-dos,.ouv-carte.en-attente:active .ouv-dos{border-color:var(--rar);
+.ouv-carte.en-attente:hover .ouv-dos,.ouv-carte.en-attente:active .ouv-dos{
   box-shadow:0 0 30px var(--rar),0 0 70px color-mix(in srgb,var(--rar) 55%,transparent)}
 /* Tremblement avant le retournement, de plus en plus fort selon la rarete. */
 .ouv-carte.tremble{animation:tremble .11s linear infinite}
@@ -7466,6 +7464,15 @@ const CARTES_PAR_N = {};
 function dossierCartes(){
   return (typeof location !== "undefined" && location.protocol === "file:") ? CARTES_SITE : "cartes/";
 }
+/* Dos des cartes (modele « Or & rose des vents ») : une image livree avec
+   l'application et le site, plus une ligne ecrite ici, a partir du nombre
+   reel de cartes et de raretes. Ajouter des cartes la met a jour. */
+const DOS_CARTE = "cartes/dos.webp";
+function dosCarte(){
+  return `<svg class="dos-svg" viewBox="0 0 270 600" aria-hidden="true">${"<" + "image"} href="${DOS_CARTE}" width="270" height="600"/>
+    <text x="135" y="406" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="8.5" letter-spacing="3" fill="#6b4a1e">${
+      CARTES.length} PERSONNAGE${CARTES.length > 1 ? "S" : ""} &#183; ${RARETES.length} RARETÉS</text></svg>`;
+}
 function imageCarte(n, mini){ return dossierCartes() + (mini ? "mini/" : "grandes/") + n + ".webp"; }
 /* Zones de la carte (en pixels de l'original, 1170 x 2600) montrees comme
    indices pendant la « sortie » : decoupees dans l'image elle-meme, donc
@@ -7720,7 +7727,7 @@ function ouvCarte(i){
   scene.innerHTML = `<p class="ouv-compte">${i + 1}/${OUV.ordre.length}</p>
     <div class="ouv-indices" aria-live="polite"></div>
     <div class="ouv-carte en-attente${ri >= 4 ? " holo" : ""}" style="--rar:${r.c}">
-      <div class="ouv-face ouv-dos"><span class="ouv-dos-logo">${marqueEpok()}</span><span>EPOK</span></div>
+      <div class="ouv-face ouv-dos">${dosCarte()}</div>
       <div class="ouv-face ouv-recto"><span class="c-cadre">${IMG} class="c-img" src="${imageCarte(n)}" alt="${esc(c.nom)}">
         <span class="c-repli"><b>${esc(c.nom)}</b><small>PV ${c.pv}</small></span></span></div>
     </div>
