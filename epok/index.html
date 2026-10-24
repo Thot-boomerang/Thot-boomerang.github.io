@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-GlQV0Bq94TL1KFmpqP+xhTZXeny3h6EO60iMNs45VfI=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-ZLpuAffDBUUJajXvqmm+MBC/keN/4MwcETCmh8bVxDA=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -5537,7 +5537,14 @@ const ETAPE_QUIZ_JOUR = { onglet: "accueil", cible: () => document.querySelector
 const ETAPE_CLASSEMENT = { onglet: "accueil", cible: () => document.getElementById("carte-classement"), titre: "Le classement général",
   texte: "Tout en bas de l’accueil, quand vous êtes connecté, comparez vos points à ceux des autres joueurs. Tout le monde y figure, sous son prénom et l’initiale de son nom&#8239;: mettez bien votre vrai prénom et votre nom." };
 
+/* Les cartes EPOK (z0l_cartes.js) : l'onglet Cartes. */
+const ETAPE_CARTES = { onglet: "accueil", cible: ONGLET_CIBLE("cartes"), titre: "Les cartes EPOK",
+  get texte(){ return `Chaque jour, un pack de 3 cartes de personnages historiques à ouvrir, dont 1 rare ou mieux. 6 raretés, de commune à mythique&#8239;: complétez votre album${
+    ETAT.reglages.mode === "brevet" ? " (rien à voir avec les cartes mémoire des révisions)" : ""}&#8239;! Elles ne rapportent pas de points.`; } };
+
 function etapesTuto(nom){
+  /* Pour qui avait deja vu le tutoriel : la nouveaute seule, une fois. */
+  if(nom === "cartes") return [Object.assign({}, ETAPE_CARTES, { titre: "Nouveau&#8239;: les cartes EPOK", fin: "Compris" })];
   if(nom === "brevet") return [
     { titre: "Bienvenue sur EPOK&#8239;!", texte: "En 30 secondes, voici comment réviser le brevet d’histoire-géographie avec l’application." },
     { onglet: "accueil", cible: () => document.querySelector("#vue-accueil .b-plan"), titre: "Votre plan du jour",
@@ -5547,6 +5554,7 @@ function etapesTuto(nom){
     { cible: ONGLET_CIBLE("quiz"), titre: "S’entraîner",
       texte: "Les QCM de chapitre, les frises des repères (les dates et les lieux à connaître pour l’épreuve) et les cartes mémoire." },
     ETAPE_QUIZ_JOUR,
+    ETAPE_CARTES,
     { cible: () => document.getElementById("insigne"), titre: "Vos points et votre rang",
       texte: `Chaque bonne réponse rapporte ${PTS_BONNE}&#8239;points, une fiche lue ${B_PTS_LUE}, un QCM passé ${B_PTS_QCM} (${B_PTS_SANS_FAUTE} de plus sans faute), le podium du Quiz of the Day jusqu’à ${QJ_PODIUM_SEMAINE[0]} de bonus. Plus vous en avez, plus votre rang monte, et un rang gagné ne se perd jamais. Touchez l’insigne pour voir tous les rangs et le barème complet.` },
     ETAPE_CLASSEMENT,
@@ -5564,6 +5572,7 @@ function etapesTuto(nom){
     { cible: ONGLET_CIBLE("quiz"), titre: "Les quiz",
       texte: "Les QCM de vos séances et, quand un cours est terminé, le grand quiz et le giga quiz, qui rapportent beaucoup de points." },
     ETAPE_QUIZ_JOUR,
+    ETAPE_CARTES,
     { cible: () => document.getElementById("insigne"), titre: "Vos points et votre rang",
       texte: `Ce sont les bonnes réponses qui comptent&#8239;: ${PTS_BONNE}&#8239;points chacune. Une séance lue rapporte ${PTS_LUE} points, un QCM passé ${PTS_QCM} (${PTS_SANS_FAUTE} de plus sans faute), un cours terminé ${PTS_TERMINE}. Plus vous en avez, plus votre rang monte, et un rang gagné ne se perd jamais. Touchez l’insigne pour voir tous les rangs et le barème complet.` },
     ETAPE_CLASSEMENT,
@@ -5610,13 +5619,19 @@ function lancerTuto(nom, force){
 }
 /* Apres chaque affichage : la visite de bienvenue si elle n'a pas ete vue. */
 function lancerTutoSiBesoin(){
-  if(!ETAT.reglages.mode || TUTO || tutoCoupe() || tutosVus()[ETAT.reglages.mode]) return;
-  setTimeout(() => { if(!ecranBloquant()) lancerTuto(ETAT.reglages.mode); }, 450);
+  if(!ETAT.reglages.mode || TUTO || tutoCoupe()) return;
+  const vus = tutosVus();
+  /* Tutoriel deja vu, avant l'arrivee des cartes : on montre la nouveaute. */
+  const nom = !vus[ETAT.reglages.mode] ? ETAT.reglages.mode : (!vus.cartes && typeof CARTES !== "undefined" && CARTES.length ? "cartes" : null);
+  if(!nom) return;
+  setTimeout(() => { if(!ecranBloquant()) lancerTuto(nom); }, 450);
 }
 
 function fermerTuto(){
   if(!TUTO) return;
   marquerTuto(TUTO.nom);
+  /* Le tutoriel complet presente deja les cartes. */
+  if(TUTO.nom === "culture" || TUTO.nom === "brevet") marquerTuto("cartes");
   TUTO = null;
   const v = document.getElementById("tuto");
   if(v) v.remove();
