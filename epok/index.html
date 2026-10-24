@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-8vYzj7e8QTE5Bcz9y5Qm9wkvrDVSCZds2Pw1MO0/rec=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-TYl8N2tStG9AgzlH5N6pqlSXJGWq5PaxBfUTquyYNBA=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -8962,9 +8962,11 @@ const RANGS = [
 const NIVEAUX_PAR_RANG = 3;
 const NB_PALIERS = RANGS.length * NIVEAUX_PAR_RANG;      // 33
 
-/* Seuil du palier i (0 = Bois 1). Une courbe en carre : les premiers
-   paliers tombent vite, ce qui encourage, puis l'ecart s'allonge. Les
-   seuils sont FIXES : ajouter des cours ne fait jamais redescendre.
+/* Seuil du palier i (0 = Bois 1). Une courbe exponentielle : chaque
+   palier coute 15 % de plus que le precedent, si bien qu'on monte vite au
+   debut, ce qui encourage, et de plus en plus lentement vers le sommet,
+   comme dans un jeu. Les seuils sont FIXES : ajouter des cours ne fait
+   jamais redescendre.
 
    God 3 demandait 22 000 points, environ 90 % du maximum d'un catalogue
    de 88 cours. L'arrivee du grand et du giga quiz (octobre 2026) a porte
@@ -8972,14 +8974,21 @@ const NB_PALIERS = RANGS.length * NIVEAUX_PAR_RANG;      // 33
    d'octobre 2026, qui donne plus aux bonnes reponses qu'a la lecture) ;
    le sommet est donc releve a
    30 000 : environ 63 cours parfaits avec les deux quiz, ou tout le
-   catalogue sans eux. Pour que ce relevement ne coute un niveau a
-   personne, le plus haut palier atteint est memorise (palierMax). */
-const SEUIL_MAX = 30000, ANCIEN_SEUIL_MAX = 22000;
-function seuilAvec(max, i){ return Math.round(max * Math.pow(i / (NB_PALIERS - 1), 2) / 10) * 10; }
-function seuilPalier(i){ return seuilAvec(SEUIL_MAX, i); }
-function indicePalier(pts, max){
+   catalogue sans eux. Pour que ces changements ne coutent un niveau a
+   personne, le plus haut palier atteint est memorise (palierMax). La
+   courbe exponentielle est partout en dessous de l'ancienne courbe en
+   carre : personne ne recule en passant de l'une a l'autre. */
+const SEUIL_MAX = 30000, ANCIEN_SEUIL_MAX = 22000, RAISON_PALIERS = 1.15;
+function seuilPalier(i){
+  const r = RAISON_PALIERS, n = NB_PALIERS - 1;
+  return Math.round(SEUIL_MAX * (Math.pow(r, i) - 1) / (Math.pow(r, n) - 1) / 10) * 10;
+}
+/* L'ancienne courbe en carre, gardee pour garantir les rangs gagnes avant. */
+function seuilCarre(max, i){ return Math.round(max * Math.pow(i / (NB_PALIERS - 1), 2) / 10) * 10; }
+function indicePalier(pts, seuil){
+  seuil = seuil || seuilPalier;
   let i = 0;
-  while(i < NB_PALIERS - 1 && pts >= seuilAvec(max, i + 1)) i++;
+  while(i < NB_PALIERS - 1 && pts >= seuil(i + 1)) i++;
   return i;
 }
 
@@ -8989,7 +8998,7 @@ function rangActuel(){ return rangDe(pointsTotal(), ETAT.palierMax || 0); }
 /* Memorise le palier quand il monte. Appele a chaque sauvegarde. */
 function noterPalier(){
   if(typeof COURS === "undefined") return;
-  const i = indicePalier(pointsTotal(), SEUIL_MAX);
+  const i = indicePalier(pointsTotal());
   if(typeof ETAT.palierMax !== "number" || i > ETAT.palierMax) ETAT.palierMax = Math.max(i, ETAT.palierMax || 0);
 }
 
@@ -8999,7 +9008,8 @@ function noterPalier(){
 function migrerPalier(){
   if(typeof ETAT.palierMax === "number") return;
   const pts = pointsTotal();
-  ETAT.palierMax = Math.max(indicePalier(pts, ANCIEN_SEUIL_MAX), indicePalier(pts, SEUIL_MAX));
+  ETAT.palierMax = Math.max(indicePalier(pts, i => seuilCarre(ANCIEN_SEUIL_MAX, i)),
+                            indicePalier(pts, i => seuilCarre(SEUIL_MAX, i)), indicePalier(pts));
   if(ETAT.palierMax > 0) sauverEtat();
 }
 
@@ -9012,7 +9022,7 @@ function libellePalier(i){
    (le rang affiche est alors au-dessus de ce que les points donneraient,
    et la jauge part de zero). */
 function rangDe(pts, plancher){
-  const i = Math.max(indicePalier(pts, SEUIL_MAX), Math.min(plancher || 0, NB_PALIERS - 1));
+  const i = Math.max(indicePalier(pts), Math.min(plancher || 0, NB_PALIERS - 1));
   const debut = seuilPalier(i);
   const suivant = i < NB_PALIERS - 1 ? seuilPalier(i + 1) : null;
   return { i, pts, rang: RANGS[Math.floor(i / NIVEAUX_PAR_RANG)], niveau: i % NIVEAUX_PAR_RANG + 1,
