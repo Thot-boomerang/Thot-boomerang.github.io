@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-ZLpuAffDBUUJajXvqmm+MBC/keN/4MwcETCmh8bVxDA=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-FoH7nq0T3r9vR5CsgAemIqBIhlFivCdQZfbq8jfTAa4=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1455,7 +1455,34 @@ select{width:100%}
 .onglets button{font-size:10.5px;letter-spacing:.06em}
 @media (max-width:359px){ .onglets button{font-size:9.5px;letter-spacing:.02em} }
 .pli-carte{text-align:center}
-.pli-ferme{position:relative;display:block;margin:14px auto 10px;padding:0;border:0;background:none;cursor:pointer;width:170px;height:120px}
+.pli-ferme{position:relative;display:block;margin:14px auto 10px;padding:0;border:0;background:none;cursor:pointer}
+/* Le booster « Cartes EPOK » : paquet metallise, bords sertis, sans indice. */
+.booster{position:relative;display:block;width:120px;height:178px;margin:0 auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
+.booster.grand{width:190px;height:282px}
+.booster-haut,.booster-corps{position:absolute;left:0;right:0;display:block;
+  background:linear-gradient(125deg,#5c1219 0%,#8f2430 30%,#d8b25c 47%,#f3dc9a 50%,#c79a43 53%,#8f2430 70%,#4f0f15 100%)}
+.booster-haut{top:0;height:13%;border-radius:4px 4px 0 0;
+  -webkit-mask:linear-gradient(#000,#000) 0 7px/100% 100% no-repeat,radial-gradient(circle 4px at 4px 0,transparent 3.5px,#000 4px) 0 0/8px 8px repeat-x;
+  mask:linear-gradient(#000,#000) 0 7px/100% 100% no-repeat,radial-gradient(circle 4px at 4px 0,transparent 3.5px,#000 4px) 0 0/8px 8px repeat-x}
+.booster-haut::after{content:"";position:absolute;left:6%;right:6%;bottom:2px;border-bottom:1.5px dashed rgba(255,240,200,.55)}
+.booster-corps{top:13%;bottom:0;border-radius:0 0 4px 4px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6%;
+  -webkit-mask:linear-gradient(#000,#000) 0 0/100% calc(100% - 7px) no-repeat,radial-gradient(circle 4px at 4px 100%,transparent 3.5px,#000 4px) 0 100%/8px 8px repeat-x;
+  mask:linear-gradient(#000,#000) 0 0/100% calc(100% - 7px) no-repeat,radial-gradient(circle 4px at 4px 100%,transparent 3.5px,#000 4px) 0 100%/8px 8px repeat-x}
+.booster-reflet{position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);animation:reflet 3.2s ease-in-out infinite}
+@keyframes reflet{0%,30%{transform:translateX(-45%)}70%,100%{transform:translateX(45%)}}
+.booster-logo{position:relative;display:flex;width:38%;padding:7%;border-radius:50%;background:rgba(20,8,8,.55);box-shadow:inset 0 0 0 2px #e6c77a}
+.booster-logo svg{width:100%;height:auto;display:block}
+.booster-titre{position:relative;display:flex;flex-direction:column;align-items:center;font:800 1.65em/1 var(--police-titre);letter-spacing:.14em;color:#fff3cf;
+  text-shadow:0 2px 0 #5c1219,0 0 12px rgba(255,220,140,.6)}
+.booster.grand .booster-titre{font-size:2.6em}
+.booster-titre small{font-size:.42em;letter-spacing:.32em;margin-bottom:4px;color:#f3dc9a}
+.booster-sous{position:relative;font:600 .62em var(--police-titre);letter-spacing:.06em;text-transform:uppercase;color:#f3dc9a;text-align:center;padding:0 8%}
+.booster.grand .booster-sous{font-size:.85em}
+/* Ouverture : le haut s'arrache, le paquet descend et s'efface. */
+.ouv-pli.casse .booster-haut{animation:arrache .55s cubic-bezier(.3,.6,.4,1) forwards}
+.ouv-pli.casse .booster-corps{animation:descend .5s ease-in .5s forwards}
+@keyframes arrache{to{transform:translate(70px,-90px) rotate(28deg);opacity:0}}
+@keyframes descend{to{transform:translateY(60%) scale(.9);opacity:0}}
 .pli-lueur{position:absolute;inset:-35%;border-radius:50%;background:radial-gradient(circle,var(--rar) 0%,transparent 62%);
   opacity:.8;filter:blur(8px);animation:pli-lueur 1.6s ease-in-out infinite alternate;pointer-events:none}
 @keyframes pli-lueur{from{transform:scale(.85);opacity:.55}to{transform:scale(1.08);opacity:.95}}
@@ -1508,16 +1535,14 @@ select{width:100%}
 .c-grande .c-img{object-fit:contain;background:#15110d}
 /* L'ouverture du pli, en plein ecran. */
 body.ouv-active{overflow:hidden}
-.ouv{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;color:#f6efe2;user-select:none;-webkit-user-select:none;
-  background:#090706;background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--rar) 32%,#0b0908) 0%,#060505 72%);
+.ouv{--ambiance:#6b5326;position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;color:#f6efe2;user-select:none;-webkit-user-select:none;
+  background:#090706;background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--ambiance) 32%,#0b0908) 0%,#060505 72%);
   transition:background .6s}
 .ouv-passer{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;color:#f6efe2;border-color:rgba(246,239,226,.4)}
 .ouv-scene{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
   perspective:1300px;overflow:hidden;padding:56px 16px 24px}
 .ouv-pli{position:relative;cursor:pointer}
 .ouv-pli .pli-lueur.grande{inset:-60%}
-.ouv-pli.casse{animation:pli-casse .6s cubic-bezier(.5,0,.75,0) forwards}
-@keyframes pli-casse{40%{transform:scale(1.12)}100%{transform:scale(.2);opacity:0}}
 .ouv-consigne{margin:46px 0 0;font:600 15px var(--police-titre);letter-spacing:.12em;text-transform:uppercase;opacity:.8;animation:pli-lueur 1.2s ease-in-out infinite alternate}
 .ouv-compte{position:absolute;top:calc(18px + env(safe-area-inset-top));left:16px;margin:0;opacity:.7;font-size:13px}
 .ouv-carte{position:relative;height:min(64vh,138vw);aspect-ratio:9/20;transform-style:preserve-3d;
@@ -1525,8 +1550,20 @@ body.ouv-active{overflow:hidden}
 .ouv-carte.cachee{opacity:0;transform:scale(.55)}
 .ouv-carte.tournee{transform:rotateY(180deg)}
 .ouv-face{position:absolute;inset:0;border-radius:14px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-.ouv-dos{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#3a1418,#120a0a 75%);
-  border:3px solid var(--rar);box-shadow:0 0 34px color-mix(in srgb,var(--rar) 55%,transparent);font:700 30px var(--police-titre);letter-spacing:.2em;color:#d9b45a}
+/* Dos neutre : rien ne trahit la rarete... sauf au survol (ou au doigt pose). */
+.ouv-dos{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#3a1418,#120a0a 75%);
+  border:3px solid #b8913f;box-shadow:0 0 18px rgba(0,0,0,.5);font:700 30px var(--police-titre);letter-spacing:.2em;color:#d9b45a;
+  transition:box-shadow .35s,border-color .35s}
+.ouv-dos-logo svg{width:64px;height:auto;display:block}
+.ouv-carte.en-attente{cursor:pointer}
+.ouv-carte.en-attente:hover .ouv-dos,.ouv-carte.en-attente:active .ouv-dos{border-color:var(--rar);
+  box-shadow:0 0 30px var(--rar),0 0 70px color-mix(in srgb,var(--rar) 55%,transparent)}
+/* Tremblement avant le retournement, de plus en plus fort selon la rarete. */
+.ouv-carte.tremble{animation:tremble .11s linear infinite}
+.ouv-carte.tremble.t2{animation-duration:.09s}
+.ouv-carte.tremble.t3{animation:tremble-fort .08s linear infinite}
+@keyframes tremble{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-2px,1px) rotate(-.8deg)}50%{transform:translate(2px,-1px) rotate(.8deg)}75%{transform:translate(-1px,-1px) rotate(-.4deg)}}
+@keyframes tremble-fort{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-4px,2px) rotate(-1.6deg)}50%{transform:translate(4px,-2px) rotate(1.6deg)}75%{transform:translate(-2px,-2px) rotate(-.8deg)}}
 .ouv-recto{transform:rotateY(180deg);background:#15110d;box-shadow:0 0 40px color-mix(in srgb,var(--rar) 65%,transparent)}
 .ouv-recto .c-img{object-fit:contain}
 .holo.revelee .ouv-recto::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.55;
@@ -5754,7 +5791,7 @@ const AIDES = {
     <li><span class="bulle bulle-gris" style="position:static">0 pt</span> pour le plaisir.</li></ul>` },
   cartes: { titre: "Pack du jour", corps: () => `<ul class="aide-liste">
     <li>3 cartes par jour, la 3<sup>e</sup> rare ou mieux.</li>
-    <li>La couleur de la lueur annonce la meilleure carte.</li>
+    <li>Touchez une carte pour la retourner&#8239;: suspense garanti.</li>
     <li>Commune, peu commune, rare, épique, légendaire, mythique&#8239;: 0 point, pour la collection.</li></ul>` },
   quizjour: { titre: "Quiz of the Day", corps: () => `<ul class="aide-liste">
     <li>10 questions, 30 s chacune, 1 seule tentative.</li>
@@ -7528,7 +7565,7 @@ function pliOuvert(){ return !!collection().plis[aujourdhui()]; }
 
 /* vue : « miennes » (mes cartes seulement) ou « toutes » (les absentes en
    grise). Toujours de la meilleure a la moins bonne : PV, puis rarete. */
-const ALBUM = { filtre: "*", vue: "miennes" };
+const ALBUM = { filtres: [], vue: "miennes" };   // filtres : raretes cochees (aucune = toutes)
 function ordreAlbum(a, b){ return (b.pv - a.pv) || (rangRarete(b.r) - rangRarete(a.r)) || (a.n - b.n); }
 
 function miniCarte(n, nb, classe){
@@ -7552,29 +7589,28 @@ function rendreCartes(){
   if(!vue) return;
   if(typeof CARTES === "undefined" || !CARTES.length){ vue.innerHTML = `<div class="carte"><p>Les cartes arrivent bientôt.</p></div>`; return; }
   const m = cartesPossedees(), ouvert = pliOuvert(), pli = pliDuJour();
-  const meilleure = Math.max(...pli.map(n => rangRarete(carteN(n).r)));
   const parts = [];
-  parts.push(`<div class="carte pli-carte${ouvert ? " ouvert" : ""}" style="--rar:${RARETES[meilleure].c}">
+  parts.push(`<div class="carte pli-carte${ouvert ? " ouvert" : ""}">
     <p class="capitales" style="margin:0 0 8px">Pack du jour${aideBouton("cartes")}</p>
     ${ouvert
       ? `<div class="pli-jour">${pli.map(n => miniCarte(n, 1)).join("")}</div>
          <p class="minuscule" style="margin:10px 0 0">Nouveau pack dans ${typeof qjAvantMinuit === "function" ? qjAvantMinuit() : "quelques heures"}.</p>`
-      : `<button type="button" class="pli-ferme" data-action="pli-ouvrir" aria-label="Ouvrir le pack du jour : 3 cartes">
-           <span class="pli-lueur" aria-hidden="true"></span><span class="pli-papier" aria-hidden="true"><span class="pli-sceau">E</span></span></button>
-         <p class="pli-texte"><span class="bulle bulle-or">3 cartes</span> La lueur trahit la meilleure&#8239;!</p>
+      : `<button type="button" class="pli-ferme" data-action="pli-ouvrir" aria-label="Ouvrir le pack du jour : 3 cartes">${booster()}</button>
+         <p class="pli-texte"><span class="bulle bulle-or">3 cartes</span> dont 1 rare ou mieux</p>
          <button class="bouton-plein" data-action="pli-ouvrir">Ouvrir le pack</button>`}
   </div>`);
 
   const total = CARTES.length, nbDiff = Object.keys(m).length;
-  const liste = CARTES.filter(c => (ALBUM.filtre === "*" || c.r === ALBUM.filtre) && (ALBUM.vue === "toutes" || m[c.n]))
+  const liste = CARTES.filter(c => (!ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0) && (ALBUM.vue === "toutes" || m[c.n]))
     .slice().sort(ordreAlbum);
   parts.push(`<div class="carte">
     <p class="capitales" style="margin:0 0 4px">Album</p>
     <p class="album-chiffres"><b>${nbDiff}</b>/${total} cartes &#8226; <b>${scoreCollection(m).toLocaleString("fr-FR")}</b> PV</p>
     <div class="st-classes album-filtres" role="group" aria-label="Filtrer par rareté">
-      <button class="st-puce${ALBUM.filtre === "*" ? " actif" : ""}" data-action="album-filtre" data-r="*">Toutes</button>
+      <button class="st-puce${!ALBUM.filtres.length ? " actif" : ""}" data-action="album-filtre" data-r="*" aria-pressed="${!ALBUM.filtres.length}">Toutes</button>
       ${RARETES.map(r => { const n = CARTES.filter(c => c.r === r.k).length, a = CARTES.filter(c => c.r === r.k && m[c.n]).length;
-        return `<button class="st-puce${ALBUM.filtre === r.k ? " actif" : ""}" data-action="album-filtre" data-r="${r.k}" style="--rar:${r.c}">${r.nom} ${a}/${n}</button>`; }).join("")}
+        const on = ALBUM.filtres.indexOf(r.k) >= 0;
+        return `<button class="st-puce${on ? " actif" : ""}" data-action="album-filtre" data-r="${r.k}" aria-pressed="${on}" style="--rar:${r.c}">${r.nom} ${a}/${n}</button>`; }).join("")}
     </div>
     <div class="album-vues" role="group" aria-label="Cartes affichées">
       <button type="button" data-action="album-vue" data-vue="miennes" aria-pressed="${ALBUM.vue === "miennes"}">Mes cartes</button>
@@ -7598,13 +7634,32 @@ function voirCarte(n, el){
     <p class="minuscule" style="text-align:center;margin:10px 0 0">${r.nom} &#8226; PV ${c.pv}${nb > 1 ? ` &#8226; ${nb} exemplaires` : ""}</p>`, "carte fenetre-carte", el);
 }
 
-/* ---------- L'ouverture, facon FIFA ----------
-   Le pli, dont la lueur annonce la meilleure carte ; on brise le sceau ;
-   les cartes viennent de la plus faible a la plus forte. Commune et peu
-   commune se retournent aussitot, la rare un peu plus lentement ; a partir
-   d'epique, la « sortie » : faisceaux de la couleur, puis les indices
-   (dates, nationalite, PV) avant la carte, qui se retourne lentement. */
+/* ---------- Le booster ----------
+   Un paquet scelle « Cartes EPOK », sans aucun indice sur son contenu. */
+function marqueEpok(){
+  const m = typeof document !== "undefined" && document.querySelector(".entete .vignette svg");
+  return m ? m.outerHTML : "";
+}
+function booster(grand){
+  return `<span class="booster${grand ? " grand" : ""}" aria-hidden="true">
+    <span class="booster-haut"></span>
+    <span class="booster-corps"><span class="booster-reflet"></span>
+      <span class="booster-logo">${marqueEpok()}</span>
+      <span class="booster-titre"><small>Cartes</small>EPOK</span>
+      <span class="booster-sous">3 personnages historiques</span></span></span>`;
+}
+
+/* ---------- L'ouverture ----------
+   On dechire le haut du booster ; les cartes viennent, face cachee, de la
+   plus faible a la plus forte. On touche une carte pour la retourner : elle
+   tremble d'abord (2 s pour une commune ou une peu commune, 3 s pour une
+   rare), puis se retourne. A partir d'epique, apres le tremblement, la
+   « sortie » : l'ecran s'assombrit, les faisceaux de la couleur montent et
+   les indices tombent un a un, les PV, la bande des dates, puis le portrait
+   flou qui se precise, avant que la carte se retourne lentement. Au survol,
+   le dos s'eclaire de la couleur de la rarete. */
 let OUV = null;
+const OUV_TREMBLE = [2000, 2000, 3000, 3000, 3000, 3000];
 
 function ouvrirPli(){
   if(OUV) return;
@@ -7613,18 +7668,15 @@ function ouvrirPli(){
   /* Inscrit des l'ouverture : quitter en cours de route garde les cartes. */
   collection().plis[aujourdhui()] = pli;
   sauverEtat();
-  const meilleure = rangRarete(carteN(ordre[ordre.length - 1]).r);
   OUV = { ordre, i: -1, avant, minuteurs: [] };
   const v = document.createElement("div");
   v.id = "ouverture-pli";
   v.className = "ouv";
   v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", "Ouverture du pack du jour");
-  v.style.setProperty("--rar", RARETES[meilleure].c);
   v.innerHTML = `<button class="bouton petit discret ouv-passer" data-action="ouv-passer">Passer &#187;</button>
     <div class="ouv-scene" data-action="ouv-suite">
-      <div class="ouv-pli"><span class="pli-lueur grande" aria-hidden="true"></span>
-        <span class="pli-papier grand" aria-hidden="true"><span class="pli-sceau">E</span></span></div>
-      <p class="ouv-consigne">Touchez le sceau</p>
+      <div class="ouv-pli">${booster(true)}</div>
+      <p class="ouv-consigne">Touchez le pack pour l’ouvrir</p>
     </div>`;
   document.body.appendChild(v);
   document.body.classList.add("ouv-active");
@@ -7637,32 +7689,25 @@ function ouvSuite(){
   if(!OUV) return;
   const scene = document.querySelector("#ouverture-pli .ouv-scene");
   if(!scene) return;
-  /* Le sceau : il eclate, puis vient la 1re carte. */
+  /* Le booster : on arrache son haut, puis vient la 1re carte. */
   if(OUV.i === -1){
     if(OUV.casse) return;
     OUV.casse = true;
-    const sceau = scene.querySelector(".pli-sceau"), r = sceau.getBoundingClientRect();
-    if(typeof eclatEnPlus === "function" && typeof anime === "function"){
-      const x = r.left + r.width / 2, y = r.top + r.height / 2, coul = getComputedStyle(document.getElementById("ouverture-pli")).getPropertyValue("--rar");
-      for(let i = 0; i < 16; i++){
-        const a = (i / 16) * Math.PI * 2, d = 70 + Math.random() * 60;
-        const g = eclatEnPlus("eclat-goutte ouv-goutte", x, y, 5 + Math.random() * 6);
-        g.style.background = coul;
-        anime(g, [{ transform: "translate(0,0)", opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px) scale(.2)`, opacity: 0 }],
-          { duration: 650, easing: "cubic-bezier(.12,.75,.3,1)" });
-        setTimeout(() => g.remove(), 700);
-      }
-    }
     scene.querySelector(".ouv-pli").classList.add("casse");
-    ouvMinuteur(() => ouvCarte(0), 650);
+    const c = scene.querySelector(".ouv-consigne"); if(c) c.remove();
+    ouvMinuteur(() => ouvCarte(0), 1100);
     return;
   }
   const carte = scene.querySelector(".ouv-carte");
-  if(carte && !carte.classList.contains("revelee")) return;   // on ne saute pas une sortie en cours : « Passer » est la pour ca
+  if(!carte) return;
+  if(carte.classList.contains("en-attente")){ ouvRetourner(); return; }
+  if(!carte.classList.contains("revelee")) return;   // une revelation en cours : « Passer » est la pour aller vite
   if(OUV.i < OUV.ordre.length - 1) ouvCarte(OUV.i + 1);
   else ouvBilan();
 }
 
+/* Une carte arrive, face cachee : rien ne trahit sa rarete, sauf la
+   lueur qui nait au survol de son dos. */
 function ouvCarte(i){
   if(!OUV) return;
   ouvArreter();
@@ -7670,35 +7715,51 @@ function ouvCarte(i){
   const n = OUV.ordre[i], c = carteN(n), ri = rangRarete(c.r), r = RARETES[ri];
   const scene = document.querySelector("#ouverture-pli .ouv-scene");
   const v = document.getElementById("ouverture-pli");
-  v.style.setProperty("--rar", r.c);
-  v.dataset.niveau = ri;
-  const sortie = ri >= 3;
-  scene.innerHTML = `${sortie ? `<div class="ouv-faisceaux" aria-hidden="true"></div>` : ""}
-    <p class="ouv-compte">${i + 1}/${OUV.ordre.length}</p>
-    ${sortie ? `<div class="ouv-indices" aria-live="polite"></div>` : ""}
-    <div class="ouv-carte${ri >= 4 ? " holo" : ""}${sortie ? " cachee" : ""}">
-      <div class="ouv-face ouv-dos"><span>EPOK</span></div>
+  v.dataset.niveau = "attente";
+  v.style.removeProperty("--ambiance");
+  scene.innerHTML = `<p class="ouv-compte">${i + 1}/${OUV.ordre.length}</p>
+    <div class="ouv-indices" aria-live="polite"></div>
+    <div class="ouv-carte en-attente${ri >= 4 ? " holo" : ""}" style="--rar:${r.c}">
+      <div class="ouv-face ouv-dos"><span class="ouv-dos-logo">${marqueEpok()}</span><span>EPOK</span></div>
       <div class="ouv-face ouv-recto"><span class="c-cadre">${IMG} class="c-img" src="${imageCarte(n)}" alt="${esc(c.nom)}">
         <span class="c-repli"><b>${esc(c.nom)}</b><small>PV ${c.pv}</small></span></span></div>
     </div>
-    <p class="ouv-legende"></p>`;
-  const el = scene.querySelector(".ouv-carte");
+    <p class="ouv-legende"><span class="ouv-toucher">Touchez la carte pour la retourner</span></p>`;
+}
+
+function ouvRetourner(){
+  if(!OUV) return;
+  const n = OUV.ordre[OUV.i], ri = rangRarete(carteN(n).r), coul = RARETES[ri].c;
+  const v = document.getElementById("ouverture-pli"), scene = v.querySelector(".ouv-scene");
+  const el = scene.querySelector(".ouv-carte"), leg = scene.querySelector(".ouv-legende");
+  el.classList.remove("en-attente");
+  el.classList.add("tremble", "t" + Math.min(ri, 3));
+  if(leg) leg.innerHTML = "";
+  const tremble = OUV_TREMBLE[ri];
   const retourner = (attente, duree) => ouvMinuteur(() => {
+    el.classList.remove("tremble");
+    v.style.setProperty("--ambiance", coul);
     el.style.setProperty("--duree", duree + "ms");
     el.classList.add("tournee");
     ouvMinuteur(() => ouvRevelee(n), duree);
   }, attente);
-  if(ri <= 1) retourner(120, 380);
-  else if(ri === 2) retourner(450, 800);
-  else {
-    /* Les indices : la bande des dates et de la nationalite, les PV, puis
-       le portrait flou qui se precise. */
-    const ind = scene.querySelector(".ouv-indices");
-    const indices = [decoupe(n, "dates", "ouv-indice"), decoupe(n, "pv", "ouv-indice petit"), decoupe(n, "portrait", "ouv-indice portrait")];
-    indices.forEach((h, k) => ouvMinuteur(() => { ind.insertAdjacentHTML("beforeend", h); }, 500 + k * 1000));
-    ouvMinuteur(() => { ind.classList.add("part"); el.classList.remove("cachee"); }, 500 + indices.length * 1000 + 300);
-    retourner(500 + indices.length * 1000 + 900, 1200);
-  }
+  if(ri <= 2){ retourner(tremble, ri === 2 ? 800 : 450); return; }
+  /* La sortie : la carte s'efface, l'ecran prend la couleur, les indices
+     tombent du moins parlant au plus parlant. */
+  ouvMinuteur(() => {
+    el.classList.remove("tremble"); el.classList.add("cachee");
+    v.dataset.niveau = "sortie";
+    v.style.setProperty("--ambiance", coul);
+    scene.insertAdjacentHTML("afterbegin", `<div class="ouv-faisceaux" aria-hidden="true" style="--rar:${coul}"></div>`);
+  }, tremble);
+  const ind = scene.querySelector(".ouv-indices");
+  ind.style.setProperty("--rar", coul);
+  const indices = [decoupe(n, "pv", "ouv-indice petit"), decoupe(n, "dates", "ouv-indice"), decoupe(n, "portrait", "ouv-indice portrait")];
+  const t0 = tremble + 900, pas = 1700;
+  indices.forEach((h, k) => ouvMinuteur(() => { ind.insertAdjacentHTML("beforeend", h); }, t0 + k * pas));
+  const fin = t0 + indices.length * pas + 900;
+  ouvMinuteur(() => { ind.classList.add("part"); el.classList.remove("cachee"); }, fin);
+  retourner(fin + 600, 1400);
 }
 
 function ouvRevelee(n){
@@ -7709,7 +7770,7 @@ function ouvRevelee(n){
   const c = carteN(n), dejaN = OUV.ordre.slice(0, OUV.i).filter(x => x === n).length + (OUV.avant[n] || 0);
   /* Deja dans l'album : un tampon « Deja tiree » en plein milieu. */
   if(dejaN && el) el.querySelector(".ouv-recto").insertAdjacentHTML("beforeend", `<span class="c-tampon" aria-hidden="true">Déjà tirée</span>`);
-  if(leg) leg.innerHTML = `<span class="ouv-rar">${RARETES[rangRarete(c.r)].nom}</span>${dejaN ? ` <span class="c-nb en-ligne">&times;${dejaN + 1}</span>` : ` <span class="bulle bulle-or">Nouvelle&#8239;!</span>`}
+  if(leg) leg.innerHTML = `<span class="ouv-rar" style="--rar:${RARETES[rangRarete(c.r)].c}">${RARETES[rangRarete(c.r)].nom}</span>${dejaN ? ` <span class="c-nb en-ligne">&times;${dejaN + 1}</span>` : ` <span class="bulle bulle-or">Nouvelle&#8239;!</span>`}
     <span class="ouv-toucher">Touchez pour continuer</span>`;
 }
 
@@ -7744,7 +7805,13 @@ function actionCartes(a, el){
   if(a === "ouv-fermer"){ fermerOuverture(); return true; }
   if(a === "carte-voir"){ if(!OUV) voirCarte(+el.dataset.n, el); return true; }
   if(a === "carte-fermer"){ fermerBulle("fenetre-carte"); return true; }
-  if(a === "album-filtre"){ ALBUM.filtre = el.dataset.r; rendreCartes(); return true; }
+  /* Les raretes s'additionnent ; un 2e appui retire la rarete ; « Toutes » vide le filtre. */
+  if(a === "album-filtre"){
+    const r = el.dataset.r, k = ALBUM.filtres.indexOf(r);
+    ALBUM.filtres = r === "*" ? [] : k >= 0 ? ALBUM.filtres.filter(x => x !== r) : ALBUM.filtres.concat(r);
+    if(ALBUM.filtres.length === RARETES.length) ALBUM.filtres = [];
+    rendreCartes(); return true;
+  }
   if(a === "album-vue"){ ALBUM.vue = el.dataset.vue === "toutes" ? "toutes" : "miennes"; rendreCartes(); return true; }
   return false;
 }
