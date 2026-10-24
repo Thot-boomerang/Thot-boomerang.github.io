@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-WYbKkNmn/JL3lNWCdhtTRIcoSsrpPRXHiS4IpVkp2R4=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-lULhyC9xUFb410HmXiz9pzJK1BKrZXs6vMem/+HWRLQ=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -4993,6 +4993,8 @@ function effacerDistant(){
   /* La ligne du classement part avec la progression. */
   if(typeof urlDocuments === "function" && COMPTE.user)
     requeteJeton("DELETE", urlDocuments("/classement/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
+  if(typeof urlDocuments === "function" && COMPTE.user)
+    requeteJeton("DELETE", urlDocuments("/albums/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
   if(typeof effacerQuotidien === "function" && COMPTE.user) effacerQuotidien();
   return requete("DELETE").then(r => (r.ok || r.status === 404) ? true : erreurHttp(r));
 }
@@ -5054,6 +5056,7 @@ function synchroniser(){
     COMPTE.erreur = null;
     /* Sa ligne du classement general suit (z0j_classement.js). */
     if(typeof publierClassement === "function") publierClassement();
+    if(typeof publierAlbum === "function") publierAlbum();
     if(typeof publierQuotidien === "function") publierQuotidien().then(() => { if(typeof qjMajRangsDiscret === "function") qjMajRangsDiscret(); });
     return true;
   }).catch(e => {
@@ -5212,6 +5215,7 @@ function actionCompte(a, el){
       planifierSynchro(300);
       /* La ligne du classement prend aussitot le nouveau nom. */
       if(typeof publierClassement === "function") publierClassement().then(() => chargerClassement(true));
+      if(typeof publierAlbum === "function") publierAlbum().then(() => chargerAlbums(true));
       if(typeof publierQuotidien === "function") publierQuotidien();
     });
     return true;
@@ -6453,7 +6457,7 @@ function leverSanction(uid){ return requeteJeton("DELETE", urlSanction(uid)); }
 function supprimerCompteJoueur(e){
   const uid = encodeURIComponent(e.uid), auj = aujourdhui();
   return ecrireSanction(e.uid, { etat: "supprime", nom: e.nomBrut || e.nom, email: e.email }).then(() => Promise.all([
-    urlDocuments("/classement/" + uid), urlDocuments("/progressions/" + uid),
+    urlDocuments("/classement/" + uid), urlDocuments("/albums/" + uid), urlDocuments("/progressions/" + uid),
     urlDocuments("/jour/" + auj + "/scores/" + uid), urlDocuments("/semaine/" + qjLundi(auj) + "/scores/" + uid)
   ].map(u => requeteJeton("DELETE", u).catch(() => null))));
 }
@@ -6713,9 +6717,12 @@ function qjLundi(date){
   return iso(d);
 }
 function qjHier(){ const d = new Date(); d.setDate(d.getDate() - 1); return iso(d); }
+/* Le temps qui reste jusqu'a minuit, lu sur l'horloge : la nuit du
+   changement d'heure (fin octobre), la journee dure 25 heures, mais
+   « minuit dans 24 h 15 » a 0 h 15 deroute ; on compte en heures de pendule. */
 function qjAvantMinuit(){
-  const n = new Date(), m = new Date(n); m.setHours(24, 0, 0, 0);
-  const min = Math.max(1, Math.round((m - n) / 60000));
+  const n = new Date();
+  const min = Math.max(1, 24 * 60 - (n.getHours() * 60 + n.getMinutes()));
   return min >= 60 ? Math.floor(min / 60) + " h " + String(min % 60).padStart(2, "0") : min + " min";
 }
 
@@ -7880,6 +7887,85 @@ function pliOuvert(){ return !!collection().plis[aujourdhui()]; }
 /* Le prochain pack offert encore ferme, ou null. */
 function packOffertSuivant(){ return PACKS_OFFERTS.find(k => !collection().plis[k]) || null; }
 
+/* ---------- Classement des collections (novembre 2026) ----------
+   Chaque joueur connecte publie dans albums/{uid} son nom (« Lea M. »),
+   le total des PV de ses cartes differentes et leur nombre ; rien d'autre.
+   Tout joueur connecte voit, dans l'onglet Cartes, les dix plus belles
+   collections et sa place. Les regles Firestore bornent la hausse des PV. */
+const ALBUMS = { liste: null, total: null, devant: null, maj: 0, enCours: false, erreur: null };
+function publierAlbum(){
+  if(typeof compteConnecte !== "function" || !compteConnecte() || typeof CARTES === "undefined" || !CARTES.length) return Promise.resolve(false);
+  const url = urlDocuments("/albums/" + encodeURIComponent(COMPTE.user.uid));
+  const pseudo = pseudoClassement(COMPTE.user.displayName);
+  if(!pseudo) return requeteJeton("DELETE", url).then(() => true, () => false);
+  const m = cartesPossedees();
+  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+    update: {
+      name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/albums/" + COMPTE.user.uid,
+      fields: { nom: { stringValue: pseudo }, pv: { integerValue: String(scoreCollection(m)) },
+                cartes: { integerValue: String(Object.keys(m).length) } }
+    },
+    updateMask: { fieldPaths: ["nom", "pv", "cartes"] },
+    updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
+  }] }).then(r => r.ok, () => false);
+}
+/* Les dix premieres collections, le nombre de joueurs et ceux devant soi. */
+function chargerAlbums(force){
+  if(typeof compteConnecte !== "function" || !compteConnecte() || ALBUMS.enCours) return;
+  if(!force && ALBUMS.liste && Date.now() - ALBUMS.maj < CLASSEMENT_FRAIS) return;
+  ALBUMS.enCours = true;
+  const de = { from: [{ collectionId: "albums" }] };
+  const top = { structuredQuery: Object.assign({}, de, {
+    orderBy: [{ field: { fieldPath: "pv" }, direction: "DESCENDING" }], limit: CLASSEMENT_TOP }) };
+  const compter = ou => ({ structuredAggregationQuery: { structuredQuery: Object.assign({}, de, ou ? { where: ou } : {}),
+    aggregations: [{ alias: "n", count: {} }] } });
+  const plusQueMoi = { fieldFilter: { field: { fieldPath: "pv" }, op: "GREATER_THAN",
+    value: { integerValue: String(scoreCollection()) } } };
+  const lire = r => r.ok ? r.json() : Promise.reject(new Error("réponse " + r.status));
+  const nombre = rep => Number(((((rep || [])[0] || {}).result || {}).aggregateFields || {}).n
+    ? rep[0].result.aggregateFields.n.integerValue : 0);
+  Promise.all([
+    requeteJeton("POST", urlDocuments(":runQuery"), top).then(lire),
+    requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(null)).then(lire),
+    requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(plusQueMoi)).then(lire)
+  ]).then(([lignes, tous, devant]) => {
+    ALBUMS.liste = (lignes || []).filter(x => x.document).map(x => {
+      const f = x.document.fields || {};
+      return { uid: decodeURIComponent(x.document.name.split("/").pop()), nom: (f.nom && f.nom.stringValue) || "?",
+               pv: Number((f.pv && f.pv.integerValue) || 0), cartes: Number((f.cartes && f.cartes.integerValue) || 0) };
+    });
+    ALBUMS.total = nombre(tous); ALBUMS.devant = nombre(devant); ALBUMS.erreur = null;
+  }).catch(() => { ALBUMS.erreur = "Classement des collections indisponible pour l’instant."; })
+    .finally(() => {
+      ALBUMS.enCours = false; ALBUMS.maj = Date.now();
+      const zone = document.getElementById("albums-contenu");
+      if(zone) zone.innerHTML = contenuAlbums();
+    });
+}
+function contenuAlbums(){
+  if(ALBUMS.erreur && !ALBUMS.liste) return `<p class="minuscule" style="margin:0">${esc(ALBUMS.erreur)}</p>`;
+  if(!ALBUMS.liste) return `<p class="minuscule" style="margin:0">Chargement du classement…</p>`;
+  const moi = COMPTE.user ? COMPTE.user.uid : "";
+  if(!ALBUMS.liste.length) return `<p class="secondaire" style="margin:0">Personne n’est encore classé.</p>`;
+  const parts = [`<ol class="st-classement">${ALBUMS.liste.map((e, i) => `<li${e.uid === moi ? ` class="moi"` : ""}>
+      <span class="st-num">${i + 1}</span>
+      <span class="st-nom"><strong>${esc(e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${e.cartes} carte${e.cartes > 1 ? "s" : ""}</small></span>
+      <span class="st-pts">${e.pv.toLocaleString("fr-FR")} PV</span></li>`).join("")}</ol>`];
+  if(!pseudoClassement(COMPTE.user && COMPTE.user.displayName))
+    parts.push(`<p class="minuscule" style="margin:8px 0 0">Indiquez votre prénom et votre nom dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
+  else if(!ALBUMS.liste.some(e => e.uid === moi)) parts.push(`<p class="minuscule" style="margin:8px 0 0"><strong>Vous&#8239;: ${
+      (ALBUMS.devant || 0) + 1}<sup>e</sup></strong> sur ${Math.max(ALBUMS.total || 0, (ALBUMS.devant || 0) + 1)}
+      &#8226; ${scoreCollection().toLocaleString("fr-FR")} PV</p>`);
+  return parts.join("");
+}
+function carteAlbums(){
+  if(typeof compteConfigure !== "function" || !compteConfigure()) return "";
+  const titre = `<p class="capitales" style="margin:0 0 8px">Classement des collections</p>`;
+  if(!compteConnecte()) return `<div class="carte">${titre}<p class="secondaire" style="margin:0">Connectez-vous (Réglages, carte Compte) pour comparer votre collection à celles des autres joueurs.</p></div>`;
+  chargerAlbums(false);
+  return `<div class="carte" id="carte-albums">${titre}<div id="albums-contenu">${contenuAlbums()}</div></div>`;
+}
+
 /* ---------- L'onglet ---------- */
 
 /* vue : « miennes » (mes cartes seulement) ou « toutes » (les absentes en
@@ -7928,6 +8014,8 @@ function rendreCartes(){
          <p class="pli-texte"><span class="bulle bulle-or">3 cartes</span> dont 1 rare ou mieux &#8226; <span class="bulle bulle-or">+${PTS_PACK} pts</span></p>
          <button class="bouton-plein" data-action="pli-ouvrir">Ouvrir le pack</button>`}
   </div>`);
+
+  parts.push(carteAlbums());
 
   const total = CARTES.length, nbDiff = Object.keys(m).length;
   const liste = CARTES.filter(c => (!ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0) && (ALBUM.vue === "toutes" || m[c.n]))
@@ -8364,6 +8452,8 @@ function fermerOuverture(){
   if(v) v.remove();
   document.body.classList.remove("ouv-active");
   if(typeof sauverEtat === "function") sauverEtat(true);
+  /* La collection a grossi : sa ligne du classement suit. */
+  publierAlbum().then(ok => { if(ok) chargerAlbums(true); });
   if(typeof rendre === "function") rendre();
 }
 
