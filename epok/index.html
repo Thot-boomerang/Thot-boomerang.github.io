@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-nDlNvPi4OLdC1k/R+FJJSYpqJH/2kwSXEEseIxhWdQk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-S6xzl6MXypmYRsJRV5CyC5lPmynjugtqfW6AWgrCF+E=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1527,13 +1527,14 @@ body.ouv-active{overflow:hidden}
 .ouv{--ambiance:#6b5326;position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;color:#f6efe2;user-select:none;-webkit-user-select:none;
   background:#090706;background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--ambiance) 32%,#0b0908) 0%,#060505 72%);
   transition:background .6s}
+.ouv-son{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;z-index:3;color:#f6efe2;border-color:rgba(246,239,226,.4);font-size:16px;line-height:1;padding:6px 10px}
 .ouv-passer{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:3;color:#f6efe2;border-color:rgba(246,239,226,.4)}
 .ouv-scene{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
   perspective:1300px;overflow:hidden;padding:56px 16px 24px}
 .ouv-pli{position:relative;cursor:pointer}
 .ouv-pli .pli-lueur.grande{inset:-60%}
 .ouv-consigne{margin:46px 0 0;font:600 15px var(--police-titre);letter-spacing:.12em;text-transform:uppercase;opacity:.8;animation:pli-lueur 1.2s ease-in-out infinite alternate}
-.ouv-compte{position:absolute;top:calc(18px + env(safe-area-inset-top));left:16px;margin:0;opacity:.7;font-size:13px}
+.ouv-compte{position:absolute;top:calc(18px + env(safe-area-inset-top));left:64px;margin:0;opacity:.7;font-size:13px}
 .ouv-carte{position:relative;height:min(64vh,138vw);aspect-ratio:9/20;transform-style:preserve-3d;
   transition:transform var(--duree,400ms) cubic-bezier(.3,.7,.2,1),opacity .5s;z-index:2}
 .ouv-carte.cachee{opacity:0;transform:scale(.55)}
@@ -7581,9 +7582,10 @@ const CARTES_PAR_N = {};
 function dossierCartes(){
   return (typeof location !== "undefined" && location.protocol === "file:") ? CARTES_SITE : "cartes/";
 }
-/* Dos des cartes : une image allegee (le decor des cartes EPOK, « Collection
-   historique » en haut, le logo au milieu), livree avec l'application et le
-   site. Le nombre de personnages s'ecrit desormais sur le booster. */
+/* Dos des cartes : une image (fond peint dans l'esprit du decor des cartes,
+   « Collection historique » en haut, le logo au centre ; voir
+   outils/dos_de_carte.js), livree avec l'application et le site. Le nombre
+   de personnages s'ecrit sur le booster. */
 const DOS_CARTE = "cartes/dos.webp";
 function dosCarte(){
   return `<svg class="dos-svg" viewBox="0 0 270 600" aria-hidden="true">${"<" + "image"} href="${DOS_CARTE}" width="270" height="600"/></svg>`;
@@ -7852,7 +7854,7 @@ function ouvrirPli(){
   v.id = "ouverture-pli";
   v.className = "ouv";
   v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", "Ouverture du pack du jour");
-  v.innerHTML = `<button class="bouton petit discret ouv-passer" data-action="ouv-passer">Passer &#187;</button>
+  v.innerHTML = `${boutonSonOuv()}<button class="bouton petit discret ouv-passer" data-action="ouv-passer">Passer &#187;</button>
     <div class="ouv-scene" data-action="ouv-suite">
       <div class="ouv-pli">${booster(true)}</div>
       <p class="ouv-consigne">Touchez le pack pour l’ouvrir</p>
@@ -7861,8 +7863,12 @@ function ouvrirPli(){
   document.body.classList.add("ouv-active");
 }
 
+function boutonSonOuv(){
+  const on = sonsActifs();
+  return `<button class="bouton petit discret ouv-son" data-action="ouv-son" aria-pressed="${on}" aria-label="${on ? "Couper les sons" : "Remettre les sons"}">${on ? "&#128266;" : "&#128263;"}</button>`;
+}
 function ouvMinuteur(f, ms){ if(OUV) OUV.minuteurs.push(setTimeout(f, ms)); }
-function ouvArreter(){ if(OUV) OUV.minuteurs.forEach(clearTimeout), OUV.minuteurs = []; }
+function ouvArreter(){ if(OUV) OUV.minuteurs.forEach(clearTimeout), OUV.minuteurs = []; ouvCouperSons(); }
 
 function ouvSuite(){
   if(!OUV) return;
@@ -7913,12 +7919,14 @@ function ouvRetourner(){
   const el = scene.querySelector(".ouv-carte"), leg = scene.querySelector(".ouv-legende");
   el.classList.remove("en-attente");
   el.classList.add("tremble", "t" + Math.min(ri, 3));
+  ouvPreparerSon();
+  ouvSonTremble(ri, OUV_TREMBLE[ri]);
   if(leg) leg.innerHTML = "";
   const tremble = OUV_TREMBLE[ri];
   const retourner = (attente, duree) => ouvMinuteur(() => {
     el.classList.remove("tremble");
     v.style.setProperty("--ambiance", coul);
-    ouvPlaquer(el, duree, coul);
+    ouvPlaquer(el, duree, coul, ri);
     ouvMinuteur(() => ouvRevelee(n), duree + 120);
   }, attente);
   if(ri <= 2){ retourner(tremble, ri === 2 ? 1200 : 1000); return; }
@@ -7940,12 +7948,133 @@ function ouvRetourner(){
   retourner(fin + 600, 1700);
 }
 
+/* Les sons de l'ouverture, synthetises (aucun fichier) : le leger cliquetis
+   de la carte qui tremble, le souffle quand elle se retourne en l'air, et
+   l'impact quand on la plaque : un coup sec, un claquement et le grondement
+   de l'onde de choc, qui resonnent de plus en plus avec la rarete. Le son se
+   prepare au toucher de la carte (geste qui l'autorise) ; « Sons » dans les
+   reglages, ou le bouton de l'ouverture, les coupe tous. */
+let OUV_SON = null, OUV_NOEUDS = [];
+function sonsActifs(){ return !(typeof ETAT !== "undefined" && ETAT.reglages && ETAT.reglages.sons === false); }
+function ouvPreparerSon(){
+  if(!sonsActifs()) return;
+  try{
+    const C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return;
+    if(!OUV_SON){
+      OUV_SON = new C();
+      /* Tout passe par un compresseur : l'impact frappe fort sans saturer. */
+      const comp = OUV_SON.createDynamicsCompressor();
+      comp.threshold.value = -10; comp.ratio.value = 6; comp.attack.value = .002; comp.release.value = .2;
+      comp.connect(OUV_SON.destination);
+      OUV_SON.sortie = comp;
+    }
+    if(OUV_SON.state === "suspended") OUV_SON.resume();
+  }catch(e){ OUV_SON = null; }
+}
+function ouvCouperSons(){
+  OUV_NOEUDS.forEach(n => { try{ n.stop(); }catch(e){} });
+  OUV_NOEUDS = [];
+}
+function bruitBlanc(a, sec){
+  const n = Math.max(1, Math.floor(a.sampleRate * sec)), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+  for(let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+/* Une source de bruit filtree, avec son enveloppe ; renvoie [source, filtre, gain]. */
+function sonBruit(a, t, sec, type, freq, q){
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  src.buffer = bruitBlanc(a, sec); f.type = type; f.frequency.value = freq; f.Q.value = q;
+  src.connect(f).connect(g).connect(a.sortie); src.start(t); src.stop(t + sec);
+  OUV_NOEUDS.push(src);
+  return [src, f, g];
+}
+function sonPret(){ return sonsActifs() && OUV_SON && OUV_SON.sortie ? OUV_SON : null; }
+
+/* Le tremblement : un leger cliquetis de carton, discret, qui s'emballe un peu. */
+function ouvSonTremble(ri, ms){
+  const a = sonPret();
+  if(!a) return;
+  try{
+    const t = a.currentTime, sec = ms / 1000, fort = .06 + ri * .01;
+    const [, f, g] = sonBruit(a, t, sec, "bandpass", 2400, 2.5);
+    g.gain.setValueAtTime(0, t);
+    const lfo = a.createOscillator(), prof = a.createGain();
+    lfo.type = "square"; lfo.frequency.setValueAtTime(16, t); lfo.frequency.linearRampToValueAtTime(24 + ri * 2, t + sec);
+    prof.gain.setValueAtTime(fort * .4, t); prof.gain.linearRampToValueAtTime(fort, t + sec * .9); prof.gain.linearRampToValueAtTime(0, t + sec);
+    lfo.connect(prof).connect(g.gain); lfo.start(t); lfo.stop(t + sec); OUV_NOEUDS.push(lfo);
+    f.frequency.linearRampToValueAtTime(2900, t + sec);
+  }catch(e){}
+}
+/* Le retournement en l'air : un souffle qui monte puis retombe. */
+function ouvSonEnvol(ms){
+  const a = sonPret();
+  if(!a) return;
+  try{
+    const t = a.currentTime, sec = ms / 1000;
+    const [, f, g] = sonBruit(a, t, sec, "bandpass", 350, 2.2);
+    f.frequency.setValueAtTime(350, t); f.frequency.exponentialRampToValueAtTime(2600, t + sec * .55); f.frequency.exponentialRampToValueAtTime(600, t + sec);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.45, t + sec * .5); g.gain.exponentialRampToValueAtTime(.0001, t + sec);
+  }catch(e){}
+}
+/* L'impact : le meme volume pour toutes, mais une resonance qui grandit avec
+   la rarete : une salle de plus en plus vaste (reverberation de 0,5 s pour
+   une commune a 3 s pour une mythique) et, a partir de rare, une vibration
+   metallique de gong qui tient de plus en plus longtemps. */
+function reverbe(a, sec){
+  const n = Math.floor(a.sampleRate * sec), buf = a.createBuffer(2, n, a.sampleRate);
+  for(let c = 0; c < 2; c++){ const d = buf.getChannelData(c); for(let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6); }
+  const cv = a.createConvolver(); cv.buffer = buf;
+  return cv;
+}
+function ouvSonPlaque(ri){
+  const a = sonPret();
+  if(!a) return;
+  try{
+    const t = a.currentTime, fort = .8, salle = .5 + ri * .5;
+    /* La salle : tout ce qui frappe y resonne. */
+    const cv = reverbe(a, salle), humide = a.createGain(), coup = a.createGain();
+    humide.gain.value = .25 + ri * .09;
+    coup.connect(a.sortie); coup.connect(cv); cv.connect(humide).connect(a.sortie);
+    /* Le coup sec, sature. */
+    const o = a.createOscillator(), sat = a.createWaveShaper(), go = a.createGain(), courbe = new Float32Array(1024);
+    for(let i = 0; i < 1024; i++){ const x = i / 512 - 1; courbe[i] = Math.tanh(4 * x); }
+    sat.curve = courbe;
+    o.type = "sine"; o.frequency.setValueAtTime(170, t); o.frequency.exponentialRampToValueAtTime(34, t + .18);
+    go.gain.setValueAtTime(fort, t); go.gain.exponentialRampToValueAtTime(.0001, t + .3);
+    o.connect(sat).connect(go).connect(coup); o.start(t); o.stop(t + .4); OUV_NOEUDS.push(o);
+    /* Le claquement du carton. */
+    const [, , gc] = sonBruit(a, t, .06, "highpass", 2200, .7);
+    gc.disconnect(); gc.connect(coup);
+    gc.gain.setValueAtTime(fort * .8, t); gc.gain.exponentialRampToValueAtTime(.0001, t + .06);
+    const [, , gp] = sonBruit(a, t, .14, "bandpass", 650, 1);
+    gp.disconnect(); gp.connect(coup);
+    gp.gain.setValueAtTime(fort * .7, t); gp.gain.exponentialRampToValueAtTime(.0001, t + .14);
+    /* L'onde de choc : un grondement grave, plus long pour les grandes raretes. */
+    const duree = .5 + ri * .25, [, fo, gO] = sonBruit(a, t, duree, "lowpass", 800, .9);
+    gO.disconnect(); gO.connect(coup);
+    fo.frequency.setValueAtTime(800, t); fo.frequency.exponentialRampToValueAtTime(60, t + duree);
+    gO.gain.setValueAtTime(.0001, t); gO.gain.exponentialRampToValueAtTime(.5, t + .03); gO.gain.exponentialRampToValueAtTime(.0001, t + duree);
+    /* A partir de rare : le gong, des partiels inharmoniques qui vibrent longtemps. */
+    if(ri >= 2){
+      const f0 = 96 - ri * 8, tenue = 1 + ri * .55;
+      [1, 2.76, 5.4, 8.93].forEach((p, k) => {
+        const s = a.createOscillator(), gs = a.createGain();
+        s.type = "sine"; s.frequency.value = f0 * p;
+        gs.gain.setValueAtTime(.0001, t); gs.gain.exponentialRampToValueAtTime(.03 * (ri - 1) / (k + 1), t + .01);
+        gs.gain.exponentialRampToValueAtTime(.0001, t + tenue / (1 + k * .4));
+        s.connect(gs).connect(coup); s.start(t); s.stop(t + tenue); OUV_NOEUDS.push(s);
+      });
+    }
+  }catch(e){}
+}
+
 /* Le retournement : on souleve la carte, elle se retourne en l'air, puis on
-   la plaque sur la table ; a l'impact, la scene tressaille et une onde de
-   choc de la couleur de la rarete part de la carte. Web Animations : joue
+   la plaque sur la table ; a l'impact, le bruit du choc, la scene tressaille et
+   une onde de choc de la couleur de la rarete part de la carte. Web Animations : joue
    partout, comme les bulles. */
 const OUV_IMPACT = .86;
-function ouvPlaquer(el, duree, coul){
+function ouvPlaquer(el, duree, coul, ri){
   el.classList.add("plaquee", "tournee");
   if(!el.animate) return;
   el.animate([
@@ -7955,6 +8084,7 @@ function ouvPlaquer(el, duree, coul){
     { transform: "translateY(1%) scale(.94) rotateX(0deg) rotateY(180deg)", offset: OUV_IMPACT, easing: "cubic-bezier(.2,.8,.3,1)" },
     { transform: "translateY(0) scale(1) rotateX(0deg) rotateY(180deg)" }
   ], { duration: duree });
+  ouvMinuteur(() => ouvSonEnvol(duree * (OUV_IMPACT - .2)), duree * .2);
   ouvMinuteur(() => {
     const scene = el.parentNode;
     if(!scene) return;
@@ -7966,6 +8096,7 @@ function ouvPlaquer(el, duree, coul){
       ? [{ opacity: .9, transform: "scale(.9)" }, { opacity: 0, transform: "scale(1.9)" }]
       : [{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: `scale(${k ? 2.1 : 1.6})` }],
       { duration: k === 1 ? 900 : 650, delay: k === 1 ? 90 : 0, easing: "cubic-bezier(.1,.7,.3,1)", fill: "both" }));
+    ouvSonPlaque(ri || 0);
     scene.animate([{ transform: "translate(0,0)" }, { transform: "translate(-5px,4px)" }, { transform: "translate(4px,-3px)" },
       { transform: "translate(-2px,2px)" }, { transform: "translate(0,0)" }], { duration: 280, easing: "ease-out" });
     ouvMinuteur(() => ondes.forEach(o => o.remove()), 1100);
@@ -8012,6 +8143,13 @@ function actionCartes(a, el){
   if(a === "pli-ouvrir"){ ouvrirPli(); return true; }
   if(a === "ouv-suite"){ ouvSuite(); return true; }
   if(a === "ouv-passer"){ ouvBilan(); return true; }
+  if(a === "ouv-son"){
+    ETAT.reglages.sons = !sonsActifs();
+    if(!ETAT.reglages.sons) ouvCouperSons(); else ouvPreparerSon();
+    sauverEtat();
+    el.outerHTML = boutonSonOuv();
+    return true;
+  }
   if(a === "ouv-fermer"){ fermerOuverture(); return true; }
   if(a === "carte-voir"){ if(!OUV) voirCarte(+el.dataset.n, el); return true; }
   if(a === "carte-fermer"){ fermerBulle("fenetre-carte"); return true; }
@@ -8121,6 +8259,8 @@ function etatVierge(){
       vitesseVoix: 1,
       voixNom: "",
       signesSeconde: SIGNES_PAR_SECONDE,
+      /* Sons de l'ouverture des packs (tremblement, retournement, impact). */
+      sons: true,
       /* « culture » : le catalogue ; « brevet » : les revisions de 3e
          (voir z0f_brevet.js) ; null : pas encore choisi, l'ecran de choix
          s'affiche au premier lancement. */
@@ -8186,6 +8326,7 @@ function fusionnerEtat(base, lu){
     e.reglages.signesSeconde = (typeof g.signesSeconde === "number"
       && g.signesSeconde > 5 && g.signesSeconde < 40) ? g.signesSeconde : SIGNES_PAR_SECONDE;
     e.reglages.mode = (g.mode === "brevet" || g.mode === "culture") ? g.mode : null;
+    e.reglages.sons = g.sons !== false;
   }
   /* Progression d'avant le choix du mode (octobre 2026) : elle vient du
      catalogue, on reste en mode Culture sans reposer la question. */
@@ -9338,6 +9479,13 @@ function rendreReglages(){
         aria-checked="${ETAT.reglages.uneSeanceParJour ? "true" : "false"}"
         aria-label="Rappel de rythme"></button>
     </div>`}
+    <div class="champ">
+      <span class="txt"><strong>Sons</strong>
+        <small>Les bruits de l’ouverture des packs&#8239;: la carte qui tremble, se retourne et se plaque.</small></span>
+      <button class="interrupteur" role="switch" data-action="bascule-sons"
+        aria-checked="${ETAT.reglages.sons !== false ? "true" : "false"}"
+        aria-label="Sons"></button>
+    </div>
     <div class="champ" style="display:block">
       <span class="txt"><strong>Apparence</strong>
         <small>La veillée repose les yeux le soir&#8239;; « automatique » suit le réglage du téléphone.</small></span>
@@ -11165,6 +11313,10 @@ document.addEventListener("click", function(ev){
   else if(a === "bascule-relecture"){
     ETAT.reglages.relecture = !ETAT.reglages.relecture;
     sauverEtat(); rendreCours();
+  }
+  else if(a === "bascule-sons"){
+    ETAT.reglages.sons = ETAT.reglages.sons === false;
+    sauverEtat(); rendre();
   }
   else if(a === "bascule-rythme"){
     ETAT.reglages.uneSeanceParJour = !ETAT.reglages.uneSeanceParJour;
