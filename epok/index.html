@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-oYKXJcsffpV/dcbHC48zSW+HGBPrV1YzS8cC2wIij0U=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-GlQV0Bq94TL1KFmpqP+xhTZXeny3h6EO60iMNs45VfI=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1149,6 +1149,10 @@ body[data-choix="1"]{overflow:hidden}
 .compte-duree{display:inline-block;margin:0 0 14px;padding:4px 14px;border:1px solid var(--bordeaux);border-radius:999px;
   font-weight:700;font-size:14.5px;color:var(--bordeaux);background:var(--fond-2)}
 .compte-onglets{margin:0 0 14px}
+/* Connexion Google mise en avant, en tete du formulaire. */
+.bouton-google{display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;padding:13px 16px}
+.g-logo{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;
+  font:700 15px/1 Arial,sans-serif;color:#4285f4;flex:0 0 auto}
 .champ-compte{display:block;margin:0 0 12px}
 .champ-compte span{display:block;font-size:13.5px;color:var(--texte-2);margin:0 0 4px}
 .champ-compte input{width:100%;box-sizing:border-box;min-height:46px;padding:8px 12px;font:inherit;color:var(--texte);
@@ -4666,12 +4670,14 @@ function compteRetour(adresse){
   }catch(e){ erreur = "adresse de retour illisible"; }
   if(!jeton){
     COMPTE.erreur = "Connexion interrompue" + (erreur ? " : " + erreur : ".");
+    COMPTE.erreurGoogle = true;
     majVuesCompte();
     return;
   }
   const cred = window.firebase.auth.GoogleAuthProvider.credential(jeton);
   COMPTE.auth.signInWithCredential(cred).catch(e => {
     COMPTE.erreur = "Connexion refusée : " + (e && e.message ? e.message : "erreur inconnue");
+    COMPTE.erreurGoogle = true;
     majVuesCompte();
   });
 }
@@ -4694,6 +4700,7 @@ function connexionGoogle(){
     }
     if(code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
     COMPTE.erreur = "Connexion impossible : " + (e && e.message ? e.message : "erreur inconnue");
+    COMPTE.erreurGoogle = true;
     majVuesCompte();
   });
 }
@@ -4727,7 +4734,7 @@ function lireChamp(id){ const el = document.getElementById(id); return el ? el.v
    Les mots de passe tapes sont remis dans leurs cases apres coup (le
    formulaire est redessine) et l'erreur est amenee sous les yeux. */
 function demandeCompte(promesse, reussite, garder){
-  COMPTE.attente = true; COMPTE.erreur = null; COMPTE.info = null; majVuesCompte();
+  COMPTE.attente = true; COMPTE.erreur = null; COMPTE.erreurGoogle = false; COMPTE.info = null; majVuesCompte();
   if(garder) garder();
   return promesse.then(r => { if(reussite) reussite(r); }, e => { COMPTE.erreur = messageErreurCompte(e); })
     .finally(() => { COMPTE.attente = false; majVuesCompte(); if(COMPTE.erreur){ if(garder) garder(); montrerErreurCompte(); } });
@@ -4742,6 +4749,7 @@ function gardeMdp(mdp, mdp2){
 }
 /* Une erreur s'affiche juste au-dessus du bouton ; on l'amene a l'ecran. */
 function montrerErreurCompte(garder){
+  COMPTE.erreurGoogle = false;
   majVuesCompte();
   if(garder) garder();
   const a = document.querySelector(".form-compte [role='alert']");
@@ -4815,7 +4823,14 @@ function formulaireCompte(){
       ${messages}
       <button class="bouton-plein" data-action="compte-oubli"${off}>${COMPTE.attente ? "Envoi…" : "Envoyer le lien"}</button>
       <p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="connexion">Retour à la connexion</button></p></div>`;
+  /* Google d'abord : 1 clic, rien a retenir, pas d'e-mail a confirmer.
+     Une erreur s'affiche pres du bouton qui l'a causee. */
+  const google = !!COMPTE.erreurGoogle;
   return `<div class="form-compte">
+    <button class="bouton-plein bouton-google" data-action="compte-connexion"${off}><span class="g-logo" aria-hidden="true">G</span>Continuer avec Google</button>
+    <p class="minuscule" style="margin:6px 0 0;text-align:center">Le plus simple&#8239;: 1 clic, aucun mot de passe à retenir.</p>
+    ${google ? messages : ""}
+    <div class="compte-ou"><span>ou avec une adresse e-mail</span></div>
     <div class="seg compte-onglets">${onglet("creer", "Créer un compte")}${onglet("connexion", "Se connecter")}</div>
     ${f === "creer" ? `<label class="champ-compte"><span>Votre vrai prénom et votre nom</span>
       <input id="compte-nom" type="text" autocomplete="name" maxlength="60" placeholder="par exemple Léa Martin" value="${esc(COMPTE.nom)}">
@@ -4827,13 +4842,11 @@ function formulaireCompte(){
       <input id="compte-mdp" type="password" autocomplete="${f === "creer" ? "new-password" : "current-password"}"></label>
     ${f === "creer" ? `<label class="champ-compte"><span>Confirmer le mot de passe</span>
       <input id="compte-mdp2" type="password" autocomplete="new-password"></label>` : ""}
-    ${messages}
-    <button class="bouton-plein" data-action="${f === "creer" ? "compte-creer" : "compte-entrer"}"${off}>${
+    ${google ? "" : messages}
+    <button class="bouton" data-action="${f === "creer" ? "compte-creer" : "compte-entrer"}"${off}>${
       COMPTE.attente ? "Un instant…" : f === "creer" ? "Créer mon compte" : "Se connecter"}</button>
     ${f === "creer" ? `<p class="minuscule" style="margin:8px 0 0">Votre professeur verra votre nom, votre classe, votre progression et votre rang.</p>` : ""}
-    ${f === "connexion" ? `<p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="oubli">Mot de passe oublié&#8239;?</button></p>` : ""}
-    <div class="compte-ou"><span>ou</span></div>
-    <button class="bouton" data-action="compte-connexion"${off}>Continuer avec Google</button></div>`;
+    ${f === "connexion" ? `<p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="oubli">Mot de passe oublié&#8239;?</button></p>` : ""}</div>`;
 }
 
 /* ---------- Ecran de compte obligatoire ---------- */
@@ -4849,7 +4862,7 @@ function contenuEcranCompte(){
     <p class="choix-question">Votre compte</p>
     <p class="compte-duree">Moins d’une minute, une seule fois.</p>
     <p class="secondaire" style="margin:0 0 18px;text-align:left">Votre compte garde votre progression, vos points et votre rang&#8239;:
-      vous ne les perdez jamais, même en changeant de téléphone ou en réinstallant Epok. Une adresse e-mail et un mot de passe suffisent.</p>
+      vous ne les perdez jamais, même en changeant de téléphone ou en réinstallant Epok. Un clic avec Google suffit.</p>
     <div class="carte" id="carte-compte-accueil" style="text-align:left">${formulaireCompte()}</div>
   </div>`;
 }
