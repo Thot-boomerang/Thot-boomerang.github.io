@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-zZZl5AIY68TTG7xppHwWMrwOs2Yl/lJNbJT4o9pOeVk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-8vYzj7e8QTE5Bcz9y5Qm9wkvrDVSCZds2Pw1MO0/rec=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1224,9 +1224,9 @@ body[data-choix="1"]{overflow:hidden}
 .st-corps{max-width:640px;margin:0 auto 40px}
 .st-tete{display:flex;justify-content:space-between;gap:8px}
 .st-classes{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
-.st-puce{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--laiton);
+.st-puce,.st-saison{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--laiton);
   background:var(--fond-2);color:var(--texte);cursor:pointer}
-.st-puce.actif{background:var(--bordeaux);border-color:var(--bordeaux);color:#fff}
+.st-puce.actif,.st-saison.actif{background:var(--bordeaux);border-color:var(--bordeaux);color:#fff}
 .st-tuiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
 .st-tuile{border:1px solid var(--laiton);background:var(--fond-2);padding:10px 12px}
 .st-tuile b{display:block;font-family:var(--police-titre);font-size:28px;line-height:1.1;color:var(--texte)}
@@ -1242,12 +1242,16 @@ body[data-choix="1"]{overflow:hidden}
 .st-classement{list-style:none;margin:0;padding:0}
 .st-classement li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--laiton)}
 .st-classement li:last-child{border-bottom:none}
-.st-num{flex:0 0 30px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;
-  border:1.5px solid var(--laiton);font-family:var(--police-titre);font-weight:700;font-size:14px;color:var(--bordeaux);font-variant-numeric:tabular-nums}
-/* Les trois premiers : medailles d'or, d'argent et de bronze. */
-.st-classement li:nth-child(1) .st-num{background:radial-gradient(circle at 35% 30%,#fff3c4,#e2b93b 55%,#a77d12);border-color:#8a6510;color:#4a3405;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.st-classement li:nth-child(2) .st-num{background:radial-gradient(circle at 35% 30%,#ffffff,#c9ced6 55%,#8b929c);border-color:#6f7680;color:#2f343a;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.st-classement li:nth-child(3) .st-num{background:radial-gradient(circle at 35% 30%,#ffe2c4,#cd8a4a 55%,#8f5523);border-color:#7a4519;color:#3d2008;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.st-num{position:relative;flex:0 0 32px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  font:700 15px/1 var(--police-titre);font-feature-settings:"lnum" 1,"tnum" 1;font-variant-numeric:lining-nums tabular-nums;color:var(--texte-2)}
+/* Les trois premiers : de vraies medailles, piece a double bord et ruban. */
+.st-classement li:nth-child(-n+3) .st-num{border-radius:50%;border:1.5px solid;margin-top:6px;font-size:15.5px;
+  box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.4),inset 0 0 0 3.5px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.3);text-shadow:0 1px 0 rgba(255,255,255,.55)}
+.st-classement li:nth-child(-n+3) .st-num::before{content:"";position:absolute;bottom:100%;left:50%;width:18px;height:9px;transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--bordeaux) 0 34%,#f3e6c6 34% 66%,var(--bordeaux) 66%);clip-path:polygon(0 0,100% 0,72% 100%,28% 100%)}
+.st-classement li:nth-child(1) .st-num{background:radial-gradient(circle at 35% 30%,#fff3c4,#e2b93b 55%,#a77d12);border-color:#8a6510;color:#4a3405}
+.st-classement li:nth-child(2) .st-num{background:radial-gradient(circle at 35% 30%,#ffffff,#c9ced6 55%,#8b929c);border-color:#6f7680;color:#2f343a}
+.st-classement li:nth-child(3) .st-num{background:radial-gradient(circle at 35% 30%,#ffe2c4,#cd8a4a 55%,#8f5523);border-color:#7a4519;color:#3d2008}
 .qj-histo{list-style:none;margin:0;padding:0}
 .qj-histo li{display:flex;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--laiton);font-size:14px}
 .qj-histo li:last-child{border-bottom:none}
@@ -5487,6 +5491,31 @@ function statsQuiz(E){
       ratees.map(x => `<tr><td>${esc(x.it.q.enonce)} <small>${esc(qjTitre(x.d))}</small></td><td><strong>${pct(x.ok, x.n)} %</strong> <small>(${x.ok}/${x.n})</small></td></tr>`).join("")}</tbody></table></div>` : ""}`;
 }
 
+/* Les tableaux des medailles, saison par saison (tous les joueurs, toutes
+   classes confondues), de la saison en cours a la saison 1. */
+function statsMedailles(){
+  if(typeof qjSaison !== "function") return "";
+  const enCours = qjSaison(aujourdhui()).n, n = STATS.saisonMed || enCours, saison = qjSaisonNumero(n);
+  STATS.medailles = STATS.medailles || {};
+  const r = STATS.medailles[n];
+  if(!r && !STATS.medEnCours){
+    STATS.medEnCours = true;
+    qjChargerMedailles(saison).then(x => { STATS.medailles[n] = x; }, () => {}).then(() => {
+      STATS.medEnCours = false;
+      if(document.getElementById("stats-prof")) rendreStats();
+    });
+  }
+  const puces = Array.from({ length: enCours }, (_, k) => enCours - k).map(k => `<button type="button" class="st-saison${k === n ? " actif" : ""}"
+    data-action="b-stats-saison" data-saison="${k}">Saison ${k}${k === enCours ? " (en cours)" : ""}</button>`).join("");
+  const reste = qjJoursAvant(saison.fin);
+  return filet("Tableaux des médailles") + `<div class="st-classes">${puces}</div><div class="carte">
+    <p class="minuscule" style="margin:0 0 8px">${n === enCours ? "Saison en cours&#8239;: prochaine saison dans " + reste + " jour" + (reste > 1 ? "s" : "") + "." : "Saison terminée."}
+      Tous les joueurs médaillés, classés comme aux Jeux olympiques.</p>
+    ${!r ? `<p class="minuscule" style="margin:0">Chargement…</p>` : !r.liste.length ? `<p class="secondaire" style="margin:0">Aucune médaille pendant cette saison.</p>`
+      : qjTableMedailles(r.liste, COMPTE.user ? COMPTE.user.uid : "", 0)}
+    ${r && r.incomplet ? `<p class="minuscule" style="margin:8px 0 0">Certains jours n’ont pas pu être lus&#8239;: actualisez plus tard.</p>` : ""}</div>`;
+}
+
 /* ---------- Ecran ---------- */
 
 function tuile(valeur, libelle, detail){
@@ -5548,6 +5577,7 @@ function contenuStats(){
     <span class="st-pts">${e.points.toLocaleString("fr-FR")} pts</span></li>`).join("")}</ol></div>`);
 
   parts.push(statsQuiz(E));
+  parts.push(statsMedailles());
   parts.push(statsCartes(E));
 
   parts.push(filet("Comptes et noms"));
@@ -5660,10 +5690,11 @@ function fermerStats(){
 function actionStats(a, el){
   if(a === "b-prof-stats"){ ouvrirStats(); return true; }
   if(a === "b-stats-fermer"){ fermerStats(); return true; }
-  if(a === "b-stats-actualiser"){ chargerStats(); return true; }
+  if(a === "b-stats-actualiser"){ STATS.medailles = {}; chargerStats(); return true; }
   if(a === "b-stats-annee"){ STATS.annee = el.dataset.annee === "*" ? null : el.dataset.annee; STATS.classe = null; STATS.jour = null; rendreStats(); return true; }
   if(a === "b-stats-classe"){ STATS.classe = el.dataset.classe === "*" ? null : el.dataset.classe; STATS.jour = null; rendreStats(); return true; }
   if(a === "b-compte-avertir" || a === "b-compte-lever" || a === "b-compte-supprimer"){ actionCompteProf(a, el.dataset.uid); return true; }
+  if(a === "b-stats-saison"){ STATS.saisonMed = +el.dataset.saison; rendreStats(); return true; }
   if(a === "b-stats-jour"){ STATS.jour = STATS.jour === el.dataset.jour ? null : el.dataset.jour; rendreStats(); return true; }
   return false;
 }
@@ -7117,6 +7148,7 @@ function qjSaison(date){
   const m = +date.slice(0, 4) * 12 + (+date.slice(5, 7) - 1), k = Math.max(0, Math.floor((m - QJ_SAISON_ZERO) / 3));
   return { n: k + 1, debut: k ? qjMois(QJ_SAISON_ZERO + 3 * k) : new Date(QJ_PREMIER).toISOString().slice(0, 10), fin: qjMois(QJ_SAISON_ZERO + 3 * k + 3) };
 }
+function qjSaisonNumero(n){ return qjSaison(n <= 1 ? new Date(QJ_PREMIER).toISOString().slice(0, 10) : qjMois(QJ_SAISON_ZERO + 3 * (n - 1))); }
 function qjJoursAvant(date){ return Math.round((new Date(date + "T12:00:00") - new Date(aujourdhui() + "T12:00:00")) / 864e5); }
 function qjDecaler(date, n){ const d = new Date(date + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); }
 function qjPodiumsGardes(){ try{ return JSON.parse(localStorage.getItem(QJ_CLE_PODIUMS)) || {}; }catch(e){ return {}; } }
@@ -7159,6 +7191,22 @@ function qjChargerMedailles(saison){
     return { liste, incomplet: res.some(p => p === null) };
   });
 }
+/* Le tableau : les « max » premiers (tous si max est nul) ; hors du lot, la
+   ligne de « moi » s'ajoute sous un filet. */
+function qjTableMedailles(liste, moi, max){
+  const total = x => [...x.j, ...x.s].reduce((t, n) => t + n, 0);
+  const cases = x => [...x.j, ...x.s].map((n, k) => `<td class="${n ? "m" + (k % 3 + 1) : "zero"}">${n || "&#8211;"}</td>`).join("");
+  const ligne = x => `<tr${x.uid === moi ? ` class="moi"` : ""}><td class="rg">${x.rang}</td>
+    <td class="nom"><strong>${esc(x.nom)}${x.uid === moi ? " (vous)" : ""}</strong><small>${total(x)} médaille${total(x) > 1 ? "s" : ""}</small></td>${cases(x)}</tr>`;
+  const top = max ? liste.slice(0, max) : liste, mien = liste.find(x => x.uid === moi);
+  let corps = top.map(ligne).join("");
+  if(mien && !top.includes(mien)) corps += `<tr class="filet"><td colspan="8"></td></tr>` + ligne(mien);
+  const med = ["&#129351;", "&#129352;", "&#129353;"].map(m => `<th scope="col">${m}</th>`).join("");
+  return `<div class="qj-med-boite"><table class="qj-medailles">
+    <thead><tr><th rowspan="2" scope="col" aria-label="Rang">#</th><th rowspan="2" scope="col" class="nom">Joueur</th>
+      <th colspan="3" scope="colgroup">Jour</th><th colspan="3" scope="colgroup" class="sem">Semaine</th></tr><tr>${med}${med.replace('<th scope="col">', '<th scope="col" class="sem">')}</tr></thead>
+    <tbody>${corps}</tbody></table></div>`;
+}
 function qjMedailles(zone){
   const saison = qjSaison(aujourdhui()), reste = qjJoursAvant(saison.fin);
   const entete = `<p class="qj-saison"><strong>Saison ${saison.n}</strong><span>Prochaine saison dans ${reste} jour${reste > 1 ? "s" : ""}</span></p>`;
@@ -7168,20 +7216,9 @@ function qjMedailles(zone){
   (frais ? Promise.resolve(QJ.medailles) : qjChargerMedailles(saison).then(r => (QJ && (QJ.medailles = Object.assign(r, { maj: Date.now(), saison: saison.n })), r))).then(r => {
     const z = document.getElementById("qj-classement");
     if(!QJ || QJ.onglet !== "medailles" || !z) return;
-    const moi = COMPTE.user.uid, total = x => [...x.j, ...x.s].reduce((t, n) => t + n, 0);
-    const cases = x => [...x.j, ...x.s].map((n, k) => `<td class="${n ? "m" + (k % 3 + 1) : "zero"}">${n || "&#8211;"}</td>`).join("");
-    const ligne = x => `<tr${x.uid === moi ? ` class="moi"` : ""}><td class="rg">${x.rang}</td>
-      <td class="nom"><strong>${esc(x.nom)}${x.uid === moi ? " (vous)" : ""}</strong><small>${total(x)} médaille${total(x) > 1 ? "s" : ""}</small></td>${cases(x)}</tr>`;
-    const top = r.liste.slice(0, 10), mien = r.liste.find(x => x.uid === moi);
-    let corps = top.map(ligne).join("");
-    /* Hors du top 10 : sa propre ligne, sous un filet. */
-    if(mien && !top.includes(mien)) corps += `<tr class="filet"><td colspan="8"></td></tr>` + ligne(mien);
-    const med = ["&#129351;", "&#129352;", "&#129353;"].map(m => `<th scope="col">${m}</th>`).join("");
+    const moi = COMPTE.user.uid, mien = r.liste.find(x => x.uid === moi);
     z.innerHTML = entete + (!r.liste.length ? `<p class="secondaire">Aucune médaille encore cette saison&#8239;: les premières tombent à la fin du premier jour.</p>` :
-      `<div class="qj-med-boite"><table class="qj-medailles">
-        <thead><tr><th rowspan="2" scope="col" aria-label="Rang">#</th><th rowspan="2" scope="col" class="nom">Joueur</th>
-          <th colspan="3" scope="colgroup">Jour</th><th colspan="3" scope="colgroup" class="sem">Semaine</th></tr><tr>${med}${med.replace('<th scope="col">', '<th scope="col" class="sem">')}</tr></thead>
-        <tbody>${corps}</tbody></table></div>`)
+      qjTableMedailles(r.liste, moi, 10))
       + `<p class="minuscule">Les médailles de la saison&#8239;: un podium par Quiz of the Day fini et par semaine finie (du lundi au dimanche). Comme aux Jeux olympiques, l’or compte d’abord, puis l’argent, puis le bronze.${
         !mien && r.liste.length ? " Vous n’avez pas encore de médaille cette saison." : ""}${r.incomplet ? " Certains jours n’ont pas pu être lus&#8239;: réessayez plus tard." : ""}</p>`;
   });
