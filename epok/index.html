@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-Rq/pYoDVucbcYVPFl6NppqGn1siwUs+ILVz7BWJpoUo=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-kx787cUIdnAZwQlTRZvp6C66jHRC7b4OdLcpkNu3idE=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1218,6 +1218,7 @@ body[data-choix="1"]{overflow:hidden}
 .st-graphe .choisi .st-plein{fill:var(--or-vif)}
 .st-graphe .st-barre{cursor:pointer}
 .st-graphe .st-axe{stroke:var(--laiton);stroke-width:1}
+.st-rar{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--rar);margin:0 6px 1px 0;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 .st-graphe .st-lettre{font-size:10px;fill:var(--texte-2)}
 .st-classement{list-style:none;margin:0;padding:0}
 .st-classement li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--laiton)}
@@ -5289,7 +5290,11 @@ function ficheEleve(doc){
     brevet: chapitresRediges().map(c => ({ id: c.id, lu: !!etatChapitre(c.id).lu, moitie: validationsChapitre(c.id) === 1, reussi: chapitreMaitrise(c.id) })),
     cours: Object.keys(e.cours).filter(id => coursParId(id))
       .map(id => ({ id, commence: coursCommence(id), termine: coursTermine(id) })),
-    maj: ((doc.fields || {}).maj || {}).timestampValue || null
+    maj: ((doc.fields || {}).maj || {}).timestampValue || null,
+    /* Cartes EPOK et Quiz of the Day, pour leurs statistiques. */
+    plis: (e.collection && e.collection.plis) || {},
+    quotidien: e.quotidien || {},
+    qjSemaines: e.qjSemaines || {}
   }));
 }
 
@@ -5301,6 +5306,7 @@ function chargerStats(){
     STATS.eleves = docs.map(ficheEleve).filter(f => f && profs.indexOf(f.email.toLowerCase()) < 0);
     STATS.sanctions = sanctions || {};
     STATS.maj = new Date();
+    chargerQuestionsStats();
   }).catch(e => {
     STATS.erreur = e && e.message === "refus"
       ? "Firebase refuse la lecture des progressions. Dans la console Firebase, Firestore, onglet Règles, collez les nouvelles règles qui autorisent le professeur à les lire, puis cliquez Publier."
@@ -5327,7 +5333,7 @@ function activite(eleves){
 }
 
 function dateCourte(j){
-  const m = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "7.", "oct.", "nov.", "déc."];
+  const m = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   const [a, mo, d] = j.split("-").map(Number);
   return d + " " + m[mo - 1];
 }
@@ -5351,6 +5357,120 @@ function graphiqueActivite(serie){
     + ` text-anchor="${i === 0 ? "start" : i === 29 ? "end" : "middle"}">${i === 29 ? "aujourd’hui" : dateCourte(serie[i].j)}</text>`).join("");
   const maxi = `<text x="${g}" y="${haut - 6}" class="st-lettre">max. ${max} élève${max > 1 ? "s" : ""} par jour</text>`;
   return `<svg viewBox="0 0 ${L} ${H}" class="st-graphe" role="img" aria-label="Élèves actifs par jour sur 30 jours">${maxi}${barres}${axe}${etiq}</svg>`;
+}
+
+/* Une serie de barres sur 30 jours, sans interaction : la valeur de chaque
+   jour s'affiche au survol (title). */
+function graphiqueSerie(serie, unite, aria){
+  const L = 340, H = 120, haut = 18, bas = 22, g = 8, pas = (L - g * 2) / serie.length, larg = Math.max(3, pas - 2);
+  const max = Math.max(1, ...serie.map(s => s.n));
+  const y = v => haut + (H - haut - bas) * (1 - v / max);
+  const barres = serie.map((s, i) => s.n ? `<rect x="${(g + i * pas).toFixed(1)}" y="${y(s.n).toFixed(1)}" width="${larg.toFixed(1)}" height="${Math.max(1, (H - bas) - y(s.n)).toFixed(1)}" rx="2" class="st-plein"><title>${dateCourte(s.j)} : ${s.n} ${unite}</title></rect>` : "").join("");
+  const etiq = [0, 14, serie.length - 1].map(i => `<text x="${(g + i * pas + larg / 2).toFixed(1)}" y="${H - 6}" class="st-lettre" text-anchor="${i === 0 ? "start" : i === serie.length - 1 ? "end" : "middle"}">${i === serie.length - 1 ? "aujourd’hui" : dateCourte(serie[i].j)}</text>`).join("");
+  return `<svg viewBox="0 0 ${L} ${H}" class="st-graphe" role="img" aria-label="${aria}"><text x="${g}" y="${haut - 6}" class="st-lettre">max. ${max} ${unite} par jour</text>${barres}
+    <line x1="${g}" x2="${L - g}" y1="${H - bas}" y2="${H - bas}" class="st-axe"/>${etiq}</svg>`;
+}
+const pct = (a, b) => (b ? Math.round(a * 1000 / b) / 10 : 0).toLocaleString("fr-FR");
+const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+function puceRarete(k){ const r = RARETES[rangRarete(k)] || RARETES[0]; return `<span class="st-rar" style="--rar:${r.c}" title="${r.nom}"></span>`; }
+
+/* ---------- Cartes EPOK ---------- */
+function statsCartes(E){
+  if(typeof CARTES === "undefined" || !CARTES.length) return "";
+  const joueurs = E.filter(e => Object.keys(e.plis).length);
+  if(!joueurs.length) return filet("Cartes EPOK") + `<div class="carte"><p class="secondaire" style="margin:0">Aucun pack ouvert pour l’instant.</p></div>`;
+  const auj = aujourdhui(), tirages = {}, parRar = {}, possede = {}, rares = [];
+  let packs = 0, packsAuj = 0;
+  joueurs.forEach(e => Object.keys(e.plis).forEach(d => {
+    packs++; if(d === auj) packsAuj++;
+    e.plis[d].forEach(n => {
+      const c = carteN(n); if(!c) return;
+      tirages[n] = (tirages[n] || 0) + 1;
+      parRar[c.r] = (parRar[c.r] || 0) + 1;
+      (possede[n] = possede[n] || new Set()).add(e.uid);
+      if(rangRarete(c.r) >= 4) rares.push({ d, e, c });
+    });
+  }));
+  const tirees = packs * PLI_NB, differentes = Object.keys(tirages).length;
+  const serie = [];
+  for(let i = 29; i >= 0; i--){ const j = joursAvant(i); serie.push({ j, n: joueurs.reduce((t, e) => t + (e.plis[j] ? 1 : 0), 0) }); }
+  /* Part attendue de chaque rarete, sur les 3 cartes du pack. */
+  const attendu = RARETES.map((r, i) => ((PLI_NB - 1) * PLI_CHANCES[i] + PLI_CHANCES_3E[i]) / (PLI_NB * 10));
+  const classees = CARTES.map(c => ({ c, n: tirages[c.n] || 0, j: possede[c.n] ? possede[c.n].size : 0 }));
+  const plus = classees.filter(x => x.n).sort((a, b) => b.n - a.n || rangRarete(b.c.r) - rangRarete(a.c.r) || b.c.pv - a.c.pv).slice(0, 10);
+  const moins = classees.slice().sort((a, b) => a.n - b.n || rangRarete(a.c.r) - rangRarete(b.c.r) || a.c.pv - b.c.pv).slice(0, 10);
+  const jamais = classees.filter(x => !x.n).length;
+  const collection = joueurs.map(e => { const m = {}; Object.values(e.plis).forEach(p => p.forEach(n => { m[n] = 1; }));
+    return { e, diff: Object.keys(m).length, pv: Object.keys(m).reduce((t, n) => t + ((carteN(+n) || {}).pv || 0), 0), packs: Object.keys(e.plis).length }; })
+    .sort((a, b) => b.diff - a.diff || b.pv - a.pv).slice(0, 5);
+  const ligneCarte = x => `<tr><td>${puceRarete(x.c.r)}${esc(x.c.nom)} <small>PV ${x.c.pv}</small></td><td><strong>${x.n}</strong></td><td>${x.j}</td></tr>`;
+  return filet("Cartes EPOK") + `<div class="st-tuiles">${tuile(packs.toLocaleString("fr-FR"), "packs ouverts", packsAuj + " aujourd’hui")}
+      ${tuile(joueurs.length, "collectionneurs", pct(joueurs.length, E.length) + " % des comptes")}
+      ${tuile(tirees.toLocaleString("fr-FR"), "cartes tirées", (Math.round(packs * 10 / joueurs.length) / 10).toLocaleString("fr-FR") + " packs par collectionneur")}
+      ${tuile(differentes + "/" + CARTES.length, "cartes différentes trouvées", pluriel(jamais, "carte") + " jamais sortie" + (jamais > 1 ? "s" : ""))}
+      ${tuile(parRar.legendaire || 0, "légendaires tirées")}${tuile(parRar.mythique || 0, "mythiques tirées")}</div>
+    <div class="carte"><p class="capitales" style="margin:0 0 6px">Packs ouverts par jour, sur 30 jours</p>${graphiqueSerie(serie, "packs", "Packs ouverts par jour sur 30 jours")}</div>
+    <div class="carte"><p class="capitales" style="margin:0 0 8px">Raretés tirées</p><table class="st-table"><thead><tr><th>Rareté</th><th>Tirées</th><th>Part</th><th>Attendu</th></tr></thead><tbody>${
+      RARETES.map((r, i) => `<tr><td>${puceRarete(r.k)}${r.nom}</td><td><strong>${parRar[r.k] || 0}</strong></td><td>${pct(parRar[r.k] || 0, tirees)} %</td><td>${attendu[i].toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %</td></tr>`).join("")
+    }</tbody></table></div>
+    <div class="carte"><p class="capitales" style="margin:0 0 8px">Les plus tirées</p><table class="st-table"><thead><tr><th>Carte</th><th>Tirages</th><th>Élèves</th></tr></thead><tbody>${plus.map(ligneCarte).join("")}</tbody></table></div>
+    <div class="carte"><p class="capitales" style="margin:0 0 8px">Les moins tirées</p>${jamais ? `<p class="minuscule" style="margin:0 0 8px">${pluriel(jamais, "carte")} ne ${jamais > 1 ? "sont" : "est"} encore jamais sortie${jamais > 1 ? "s" : ""}.</p>` : ""}
+      <table class="st-table"><thead><tr><th>Carte</th><th>Tirages</th><th>Élèves</th></tr></thead><tbody>${moins.map(ligneCarte).join("")}</tbody></table></div>
+    <div class="carte"><p class="capitales" style="margin:0 0 8px">Meilleurs collectionneurs</p><table class="st-table"><thead><tr><th>Élève</th><th>Cartes</th><th>PV</th><th>Packs</th></tr></thead><tbody>${
+      collection.map(x => `<tr><td>${esc(x.e.nom)}</td><td><strong>${x.diff}</strong></td><td>${x.pv.toLocaleString("fr-FR")}</td><td>${x.packs}</td></tr>`).join("")}</tbody></table></div>
+    ${rares.length ? `<div class="carte"><p class="capitales" style="margin:0 0 8px">Dernières légendaires et mythiques</p><table class="st-table"><thead><tr><th>Carte</th><th>Élève</th><th>Jour</th></tr></thead><tbody>${
+      rares.sort((a, b) => b.d.localeCompare(a.d)).slice(0, 10).map(x => `<tr><td>${puceRarete(x.c.r)}${esc(x.c.nom)}</td><td>${esc(x.e.nom)}</td><td>${dateCourte(x.d)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+}
+
+/* ---------- Quiz of the Day ---------- */
+/* Les questions des 7 derniers jours joues : de quoi trouver les plus ratees. */
+function chargerQuestionsStats(){
+  if(!STATS.eleves || typeof qjQuestions !== "function") return;
+  const jours = [...new Set([].concat(...STATS.eleves.map(e => Object.keys(e.quotidien).filter(d => e.quotidien[d].fini))))].sort().reverse().slice(0, 7);
+  STATS.qjItems = STATS.qjItems || {};
+  Promise.all(jours.filter(d => !STATS.qjItems[d]).map(d => qjQuestions(d).then(l => { STATS.qjItems[d] = l; }, () => {})))
+    .then(() => { if(document.getElementById("stats-prof")) rendreStats(); });
+}
+function statsQuiz(E){
+  const parties = [];
+  E.forEach(e => Object.keys(e.quotidien).forEach(d => { const q = e.quotidien[d]; if(q && q.fini) parties.push({ e, d, q }); }));
+  if(!parties.length) return filet("Quiz of the Day") + `<div class="carte"><p class="secondaire" style="margin:0">Aucun Quiz of the Day joué pour l’instant.</p></div>`;
+  const auj = aujourdhui(), joueurs = new Set(parties.map(p => p.e.uid));
+  const moy = parties.reduce((t, p) => t + p.q.justes, 0) / parties.length;
+  const temps = parties.reduce((t, p) => t + (p.q.temps || 0), 0) / parties.length;
+  const sansFaute = parties.filter(p => p.q.justes === QJ_NB).length;
+  const serie = [];
+  for(let i = 29; i >= 0; i--){ const j = joursAvant(i); serie.push({ j, n: parties.filter(p => p.d === j).length }); }
+  const parJour = {};
+  parties.forEach(p => { const x = parJour[p.d] || (parJour[p.d] = { n: 0, t: 0, max: 0, sf: 0 }); x.n++; x.t += p.q.justes; x.max = Math.max(x.max, p.q.justes); if(p.q.justes === QJ_NB) x.sf++; });
+  const jours = Object.keys(parJour).sort().reverse().slice(0, 14);
+  /* Par eleve : parties, moyenne, podiums (places definitives de 1 a 3). */
+  const fideles = [...joueurs].map(uid => { const l = parties.filter(p => p.e.uid === uid), e = l[0].e;
+      const podiums = l.filter(p => p.q.rangFinal && p.q.rang >= 1 && p.q.rang <= 3).length
+        + Object.values(e.qjSemaines).filter(w => w && w.final && w.rang >= 1 && w.rang <= 3).length;
+      return { e, n: l.length, moy: l.reduce((t, p) => t + p.q.justes, 0) / l.length, podiums }; })
+    .sort((a, b) => b.n - a.n || b.moy - a.moy).slice(0, 8);
+  /* Questions les plus ratees, sur les jours dont les questions sont chargees. */
+  const questions = [];
+  Object.keys(STATS.qjItems || {}).forEach(d => (STATS.qjItems[d] || []).forEach((it, i) => {
+    const l = parties.filter(p => p.d === d && Array.isArray(p.q.choix));
+    if(l.length) questions.push({ d, it, n: l.length, ok: l.filter(p => qjJuste(it, p.q.choix[i])).length });
+  }));
+  const ratees = questions.sort((a, b) => a.ok / a.n - b.ok / b.n || b.n - a.n).slice(0, 5);
+  const f1 = x => x.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+  return filet("Quiz of the Day") + `<div class="st-tuiles">${tuile(parties.length.toLocaleString("fr-FR"), "quiz joués", pluriel(joueurs.size, "joueur") + " différent" + (joueurs.size > 1 ? "s" : ""))}
+      ${tuile(parties.filter(p => p.d === auj).length, "joueurs aujourd’hui", esc(qjTitre(auj)))}
+      ${tuile(f1(moy) + "/" + QJ_NB, "note moyenne", Math.round(temps) + " s par quiz en moyenne")}
+      ${tuile(sansFaute, "sans-faute (10/10)", pct(sansFaute, parties.length) + " % des quiz")}</div>
+    <div class="carte"><p class="capitales" style="margin:0 0 6px">Joueurs par jour, sur 30 jours</p>${graphiqueSerie(serie, "joueurs", "Joueurs du Quiz of the Day par jour sur 30 jours")}</div>
+    <div class="carte"><p class="capitales" style="margin:0 0 8px">Les derniers quiz</p><table class="st-table"><thead><tr><th>Quiz</th><th>Joueurs</th><th>Moyenne</th><th>Meilleur</th><th>10/10</th></tr></thead><tbody>${
+      jours.map(d => `<tr><td>${esc(qjTitre(d))} <small>${dateCourte(d)}</small></td><td>${parJour[d].n}</td><td><strong>${f1(parJour[d].t / parJour[d].n)}</strong></td><td>${parJour[d].max}/${QJ_NB}</td><td>${parJour[d].sf}</td></tr>`).join("")
+    }</tbody></table></div>
+    <div class="carte"><p class="capitales" style="margin:0 0 8px">Les plus fidèles</p><table class="st-table"><thead><tr><th>Élève</th><th>Quiz</th><th>Moyenne</th><th>Podiums</th></tr></thead><tbody>${
+      fideles.map(x => `<tr><td>${esc(x.e.nom)}</td><td><strong>${x.n}</strong></td><td>${f1(x.moy)}/${QJ_NB}</td><td>${x.podiums}</td></tr>`).join("")}</tbody></table>
+      <p class="minuscule" style="margin:8px 0 0">Podiums&#8239;: places définitives de 1<sup>er</sup> à 3<sup>e</sup>, du jour et de la semaine.</p></div>
+    ${ratees.length ? `<div class="carte"><p class="capitales" style="margin:0 0 8px">Les questions les plus ratées (7 derniers quiz)</p><table class="st-table"><thead><tr><th>Question</th><th>Réussite</th></tr></thead><tbody>${
+      ratees.map(x => `<tr><td>${esc(x.it.q.enonce)} <small>${esc(qjTitre(x.d))}</small></td><td><strong>${pct(x.ok, x.n)} %</strong> <small>(${x.ok}/${x.n})</small></td></tr>`).join("")}</tbody></table></div>` : ""}`;
 }
 
 /* ---------- Ecran ---------- */
@@ -5412,6 +5532,9 @@ function contenuStats(){
     <span class="st-num">${i + 1}</span>
     <span class="st-nom"><strong>${esc(e.nom)}</strong><small>${esc(e.rang.libelle)}${e.classe ? " &#8226; " + esc(e.classe) : ""}</small></span>
     <span class="st-pts">${e.points.toLocaleString("fr-FR")} pts</span></li>`).join("")}</ol></div>`);
+
+  parts.push(statsQuiz(E));
+  parts.push(statsCartes(E));
 
   parts.push(filet("Comptes et noms"));
   parts.push(contenuComptes(E));
