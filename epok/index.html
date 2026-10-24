@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-/6AmwmqBRTyBQLYip+D1Tx+6g2fy/L64E5NVIMXl0Vs=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-4i9axqGONj+7gGr1TCHDeMpACdx/wTEoBriOucd35y8=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -6214,7 +6214,7 @@ function chargerClassement(force){
       return { uid: decodeURIComponent(x.document.name.split("/").pop()),
                nom: (f.nom && f.nom.stringValue) || "?",
                points: Number((f.points && f.points.integerValue) || 0),
-               palier: Number((f.palier && f.palier.integerValue) || 0) };
+               palier: indicePalier(Number((f.points && f.points.integerValue) || 0)) };
     });
     CLASSEMENT_GENERAL.total = nombre(tous);
     CLASSEMENT_GENERAL.devant = nombre(devant);
@@ -6269,7 +6269,7 @@ function paliersDe(uids){
     .then(l => {
       const p = {};
       (l || []).forEach(x => { if(x && x.found){ const f = x.found.fields || {};
-        p[decodeURIComponent(x.found.name.split("/").pop())] = Number((f.palier && f.palier.integerValue) || 0); } });
+        p[decodeURIComponent(x.found.name.split("/").pop())] = indicePalier(Number((f.points && f.points.integerValue) || 0)); } });
       return p;
     }, () => ({}));
 }
@@ -8530,9 +8530,8 @@ function fusionnerEtat(base, lu){
   if(lu.questions && typeof lu.questions === "object") e.questions = lu.questions;
   if(lu.verifies && typeof lu.verifies === "object") e.verifies = lu.verifies;
   if(lu.dernier && typeof lu.dernier === "object") e.dernier = lu.dernier;
-  /* Une progression d'avant octobre 2026 n'a pas de palier garanti :
-     null le signale a migrerPalier(), qui le calcule avec les anciens
-     seuils des que le catalogue est lisible. */
+  /* Plus haut palier atteint, garde pour memoire : le rang affiche se lit
+     desormais sur les points seuls (novembre 2026). */
   e.palierMax = (typeof lu.palierMax === "number" && lu.palierMax >= 0) ? Math.floor(lu.palierMax) : null;
   e.visites = nettoyerVisites(lu.visites);
   e.classe = nettoyerClasse(lu.classe);
@@ -8903,7 +8902,7 @@ function scoreMoyen(){
    rien de plus, et aucun point ne se perd jamais.
    Bareme d'octobre 2026 : lire rapportait 10, passer un QCM 5 et une bonne
    reponse 1 ; ce sont desormais les bonnes reponses qui comptent le plus.
-   Le rang deja atteint reste garanti (palierMax). */
+   Le rang se lit sur les points, et sur eux seuls. */
 const PTS_LUE = 2, PTS_QCM = 1, PTS_BONNE = 3, PTS_SANS_FAUTE = 5, PTS_TERMINE = 30, PTS_MAITRISE = 100;
 
 /* ---------- Grand quiz et giga quiz (octobre 2026) ----------
@@ -8973,51 +8972,29 @@ const NB_PALIERS = RANGS.length * NIVEAUX_PAR_RANG;      // 33
    par le professeur (novembre 2026) ; les niveaux 2 et 3 partagent l'ecart
    jusqu'au rang suivant en 3 parts egales (arrondi a 10). God 2 et 3
    prolongent le dernier ecart, 6 000 points. Les seuils sont FIXES :
-   ajouter des cours ne fait jamais redescendre, et le plus haut palier
-   atteint est memorise (palierMax), si bien que relever un seuil ne coute
-   un niveau a personne. */
+   ajouter des cours ne fait jamais redescendre. Le rang se lit sur les
+   points seuls (novembre 2026) : un rang garanti par une ancienne echelle
+   ne survit plus, sinon un eleve afficherait Or 2 avec 1 870 points. */
 const SEUILS_RANGS = [0, 200, 800, 1500, 2500, 5000, 8000, 12000, 18000, 26000, 32000, 38000];
-const ANCIEN_SEUIL_MAX = 22000, SEUIL_CARRE_MAX = 30000, RAISON_PALIERS = 1.15;
 function seuilPalier(i){
   const r = Math.floor(i / NIVEAUX_PAR_RANG), n = i % NIVEAUX_PAR_RANG;
   const a = SEUILS_RANGS[r], b = SEUILS_RANGS[r + 1];
   return Math.round((a + (b - a) * n / NIVEAUX_PAR_RANG) / 10) * 10;
 }
-/* La courbe exponentielle d'octobre 2026 (15 % de plus par palier,
-   sommet a 30 000), gardee pour garantir les rangs gagnes avec elle. */
-function seuilExpo(i){
-  const r = RAISON_PALIERS, n = NB_PALIERS - 1;
-  return Math.round(SEUIL_CARRE_MAX * (Math.pow(r, i) - 1) / (Math.pow(r, n) - 1) / 10) * 10;
-}
-/* L'ancienne courbe en carre, gardee pour garantir les rangs gagnes avant. */
-function seuilCarre(max, i){ return Math.round(max * Math.pow(i / (NB_PALIERS - 1), 2) / 10) * 10; }
-function indicePalier(pts, seuil){
-  seuil = seuil || seuilPalier;
+function indicePalier(pts){
   let i = 0;
-  while(i < NB_PALIERS - 1 && pts >= seuil(i + 1)) i++;
+  while(i < NB_PALIERS - 1 && pts >= seuilPalier(i + 1)) i++;
   return i;
 }
 
-/* Le rang du lecteur : ses points, et jamais moins que son palier garanti. */
-function rangActuel(){ return rangDe(pointsTotal(), ETAT.palierMax || 0); }
+/* Le rang du lecteur : ses points, rien d'autre. */
+function rangActuel(){ return rangDe(pointsTotal()); }
 
 /* Memorise le palier quand il monte. Appele a chaque sauvegarde. */
 function noterPalier(){
   if(typeof COURS === "undefined") return;
   const i = indicePalier(pointsTotal());
   if(typeof ETAT.palierMax !== "number" || i > ETAT.palierMax) ETAT.palierMax = Math.max(i, ETAT.palierMax || 0);
-}
-
-/* Progression d'avant octobre 2026 (ou import d'une telle progression) :
-   on fixe le palier garanti avec les ANCIENS seuils, ceux sous lesquels
-   le rang a ete gagne. On n'ecrit que s'il y a quelque chose a garantir. */
-function migrerPalier(){
-  if(typeof ETAT.palierMax === "number") return;
-  const pts = pointsTotal();
-  ETAT.palierMax = Math.max(indicePalier(pts, i => seuilCarre(ANCIEN_SEUIL_MAX, i)),
-                            indicePalier(pts, i => seuilCarre(SEUIL_CARRE_MAX, i)),
-                            indicePalier(pts, seuilExpo), indicePalier(pts));
-  if(ETAT.palierMax > 0) sauverEtat();
 }
 
 function libellePalier(i){
@@ -11734,7 +11711,6 @@ function appliquerImport(texte){
   }
   if(!confirm("Remplacer la progression actuelle par celle du fichier ?")) return;
   ETAT = fusionnerEtat(etatVierge(), donnees);
-  migrerPalier();
   sauverEtat();
   appliquerCharte();
   aller("accueil");
@@ -11757,7 +11733,6 @@ function avisAccueil(texte, ok){
 }
 
 /* ---------- Demarrage ---------- */
-migrerPalier();
 noterVisite();
 if(typeof document !== "undefined") document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "visible") noterVisite();
