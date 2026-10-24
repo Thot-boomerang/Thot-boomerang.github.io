@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-tIdcRlHTMdM8fgBwBO3nrjXrY+NMgB29pa9Jmd5C8hM=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-WYbKkNmn/JL3lNWCdhtTRIcoSsrpPRXHiS4IpVkp2R4=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -5990,7 +5990,7 @@ const AIDES = {
     <li>Les cours de votre choix, vos erreurs d’abord.</li>
     <li><span class="bulle bulle-gris" style="position:static">0 pt</span> pour le plaisir.</li></ul>` },
   cartes: { titre: "Pack du jour", corps: () => `<ul class="aide-liste">
-    <li>3 cartes par jour, la 3<sup>e</sup> rare ou mieux.</li>
+    <li>3 cartes par jour, la 3<sup>e</sup> rare ou mieux, et 2 packs offerts au départ.</li>
     <li>Touchez une carte pour la retourner&#8239;: suspense garanti.</li>
     <li>6 raretés, de commune à mythique&#8239;: <span class="bulle bulle-or" style="position:static">+${PTS_PACK} pts</span> par pack.</li></ul>` },
   quizjour: { titre: "Quiz of the Day", corps: () => `<ul class="aide-liste">
@@ -7733,8 +7733,12 @@ const CARTES = [
    Le pli du jour est tire au sort a partir d'une graine propre au joueur
    et de la date : recharger la page redonne les memes cartes. Une fois
    ouvert, il est inscrit dans la progression (ETAT.collection.plis), qui
-   suit le joueur d'un appareil a l'autre. Les cartes ne rapportent aucun
-   point : le classement reste celui du travail, pas de la chance.
+   suit le joueur d'un appareil a l'autre. Chaque pack ouvert rapporte 5
+   points, quelles que soient les cartes : la chance ne compte pas.
+
+   2 packs sont offerts a l'arrivee (novembre 2026), a tous, anciens
+   joueurs compris : inscrits sous les cles « offert-1 » et « offert-2 »,
+   tires comme les autres, ils ne s'ouvrent qu'une fois chacun.
    ========================================================================== */
 
 const RARETES = [
@@ -7750,6 +7754,7 @@ const RARETES = [
 const PLI_CHANCES = [550, 270, 120, 45, 12, 3];
 const PLI_CHANCES_3E = [0, 0, 700, 210, 70, 20];
 const PLI_NB = 3;
+const PACKS_OFFERTS = ["offert-1", "offert-2"];
 const CARTES_SITE = "https://thot-boomerang.github.io/epok/cartes/";
 
 /* « <img » n'est jamais ecrit tel quel dans le code : le prechargeur du
@@ -7796,7 +7801,7 @@ function nettoyerCollection(c){
   if(typeof c.graine === "string" && /^[0-9a-z]{4,16}$/.test(c.graine)) r.graine = c.graine;
   Object.keys(c.plis || {}).forEach(d => {
     const p = c.plis[d];
-    if(/^\d{4}-\d{2}-\d{2}$/.test(d) && Array.isArray(p) && p.length === PLI_NB && p.every(n => Number.isInteger(n) && carteN(n)))
+    if((/^\d{4}-\d{2}-\d{2}$/.test(d) || PACKS_OFFERTS.indexOf(d) >= 0) && Array.isArray(p) && p.length === PLI_NB && p.every(n => Number.isInteger(n) && carteN(n)))
       r.plis[d] = p.slice();
   });
   return r;
@@ -7872,6 +7877,8 @@ function pliDuJour(){
   return collection().plis[d] || tirerPli(d);
 }
 function pliOuvert(){ return !!collection().plis[aujourdhui()]; }
+/* Le prochain pack offert encore ferme, ou null. */
+function packOffertSuivant(){ return PACKS_OFFERTS.find(k => !collection().plis[k]) || null; }
 
 /* ---------- L'onglet ---------- */
 
@@ -7902,6 +7909,16 @@ function rendreCartes(){
   if(typeof CARTES === "undefined" || !CARTES.length){ vue.innerHTML = `<div class="carte"><p>Les cartes arrivent bientôt.</p></div>`; return; }
   const m = cartesPossedees(), ouvert = pliOuvert(), pli = pliDuJour();
   const parts = [];
+  const offert = packOffertSuivant();
+  if(offert){
+    const reste = PACKS_OFFERTS.filter(k => !collection().plis[k]).length;
+    parts.push(`<div class="carte pli-carte pli-offert">
+    <p class="capitales" style="margin:0 0 8px">Bienvenue&#8239;: ${reste === PACKS_OFFERTS.length ? reste + " packs offerts" : "encore " + reste + " pack offert"}</p>
+    <button type="button" class="pli-ferme" data-action="pli-offert" aria-label="Ouvrir un pack offert : 3 cartes">${booster()}</button>
+    <p class="pli-texte"><span class="bulle bulle-or">3 cartes</span> dont 1 rare ou mieux &#8226; <span class="bulle bulle-or">+${PTS_PACK} pts</span></p>
+    <button class="bouton-plein" data-action="pli-offert">Ouvrir le pack offert</button>
+  </div>`);
+  }
   parts.push(`<div class="carte pli-carte${ouvert ? " ouvert" : ""}">
     <p class="capitales" style="margin:0 0 8px">Pack du jour${aideBouton("cartes")}</p>
     ${ouvert
@@ -8030,18 +8047,21 @@ function booster(grand){
 let OUV = null;
 const OUV_TREMBLE = [2000, 2000, 3000, 3000, 3000, 3000];
 
-function ouvrirPli(){
+function ouvrirPli(cle){
   if(OUV) return;
-  const avant = cartesPossedees(), pli = pliDuJour();
+  cle = cle || aujourdhui();
+  const offert = PACKS_OFFERTS.indexOf(cle) >= 0;
+  if(collection().plis[cle] && offert) return;
+  const avant = cartesPossedees(), pli = collection().plis[cle] || tirerPli(cle);
   const ordre = pli.slice().sort((a, b) => rangRarete(carteN(a).r) - rangRarete(carteN(b).r) || carteN(a).pv - carteN(b).pv);
   /* Inscrit des l'ouverture : quitter en cours de route garde les cartes. */
-  collection().plis[aujourdhui()] = pli;
+  collection().plis[cle] = pli;
   sauverEtat();
-  OUV = { ordre, i: -1, avant, minuteurs: [] };
+  OUV = { ordre, i: -1, avant, minuteurs: [], titre: offert ? "Pack offert" : "Pack du jour" };
   const v = document.createElement("div");
   v.id = "ouverture-pli";
   v.className = "ouv";
-  v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", "Ouverture du pack du jour");
+  v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", "Ouverture du " + OUV.titre.toLowerCase());
   v.innerHTML = `${boutonSonOuv()}<button class="bouton petit discret ouv-passer" data-action="ouv-passer">Passer &#187;</button>
     <div class="ouv-scene" data-action="ouv-suite">
       <div class="ouv-pli">${booster(true)}</div>
@@ -8331,7 +8351,7 @@ function ouvBilan(){
   v.dataset.niveau = "bilan";
   const scene = v.querySelector(".ouv-scene");
   scene.removeAttribute("data-action");
-  scene.innerHTML = `<p class="ouv-titre">Pack du jour</p>
+  scene.innerHTML = `<p class="ouv-titre">${OUV.titre}</p>
     <div class="pli-jour">${OUV.ordre.map((n, k) => miniCarte(n, 1, (OUV.avant[n] || OUV.ordre.slice(0, k).indexOf(n) >= 0) ? "deja" : "neuve")).join("")}</div>
     <button class="bouton-plein" data-action="ouv-fermer" style="margin-top:18px">Ranger dans l’album</button>`;
   const passer = v.querySelector(".ouv-passer"); if(passer) passer.remove();
@@ -8349,6 +8369,7 @@ function fermerOuverture(){
 
 function actionCartes(a, el){
   if(a === "pli-ouvrir"){ ouvrirPli(); return true; }
+  if(a === "pli-offert"){ const k = packOffertSuivant(); if(k) ouvrirPli(k); return true; }
   if(a === "ouv-suite"){ ouvSuite(); return true; }
   if(a === "ouv-passer"){ ouvBilan(); return true; }
   if(a === "ouv-son"){
@@ -11156,7 +11177,7 @@ function rendre(){
     const point = b.querySelector(".point");
     /* Sur Cartes : le pli du jour attend d'etre ouvert. */
     const voulu = (b.dataset.onglet === "accueil" && rienAujourdhui && ongletAllume !== "accueil")
-      || (b.dataset.onglet === "cartes" && ongletAllume !== "cartes" && typeof pliOuvert === "function" && CARTES.length && !pliOuvert());
+      || (b.dataset.onglet === "cartes" && ongletAllume !== "cartes" && typeof pliOuvert === "function" && CARTES.length && (!pliOuvert() || packOffertSuivant()));
     if(voulu && !point){
       const p = document.createElement("span");
       p.className = "point"; p.setAttribute("aria-hidden","true");
