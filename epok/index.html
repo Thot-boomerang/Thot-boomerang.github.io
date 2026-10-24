@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-u2oLbVjWltZ3wmgeCONbA7fDbl9DJIWt/y419vk1/vg=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-oQUb9wz3BL4UVOfKshA2Oo5m/gB3rVfWhLmia5xjmTQ=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -3546,8 +3546,7 @@ const BREVET = [
 
    La liste des chapitres ouverts est un document Firestore public en
    lecture, config/brevet, que seul le professeur peut modifier (regles
-   dans serveur/firestore.rules ; son adresse dans config-compte.js,
-   « professeurs »). L'application le relit a l'ouverture et quand elle
+   dans serveur/firestore.rules, seul endroit ou figure son adresse). L'application le relit a l'ouverture et quand elle
    revient au premier plan, et garde la derniere liste connue pour
    fonctionner hors ligne. Tant qu'aucun projet n'est configure, ou
    avant la premiere lecture, c'est DEBLOCAGE_DEFAUT qui s'applique ; il
@@ -3571,10 +3570,30 @@ function retenirDeblocage(ids, date){
   DEBLOCAGE = { ids: ids.slice(), maj: new Date().toISOString(), date: date === undefined ? (DEBLOCAGE && DEBLOCAGE.date) || null : date };
   try{ localStorage.setItem(CLE_DEBLOCAGE, JSON.stringify(DEBLOCAGE)); }catch(e){}
 }
+/* Professeur ou non : c'est le serveur qui le dit (novembre 2026). Son
+   adresse etait ecrite dans config-compte.js, lisible par tous ; elle n'est
+   plus que dans les regles Firestore, que personne ne peut lire. Les regles
+   ne laissent lire config/prof qu'au professeur : 404 (permis, document
+   absent) ou 200, c'est lui ; 403, c'est un eleve. La reponse est gardee
+   sur l'appareil, par compte, pour fonctionner hors ligne. */
+const CLE_PROF = "epok.prof.v1";
 function estProfesseur(){
   if(typeof compteConnecte !== "function" || !compteConnecte()) return false;
-  const moi = (COMPTE.user.email || "").toLowerCase();
-  return !!moi && (CONFIG_COMPTE.professeurs || []).some(a => String(a).toLowerCase() === moi);
+  if(typeof COMPTE.prof === "boolean" && COMPTE.profUid === COMPTE.user.uid) return COMPTE.prof;
+  try{ return localStorage.getItem(CLE_PROF) === COMPTE.user.uid; }catch(e){ return false; }
+}
+function verifierProfesseur(){
+  if(typeof compteConnecte !== "function" || !compteConnecte() || typeof requeteJeton !== "function") return Promise.resolve(false);
+  const uid = COMPTE.user.uid;
+  return requeteJeton("GET", urlDocuments("/config/prof")).then(r => {
+    if(r.status !== 200 && r.status !== 404 && r.status !== 403) return estProfesseur();
+    const prof = r.status !== 403;
+    if(!COMPTE.user || COMPTE.user.uid !== uid) return false;
+    COMPTE.prof = prof; COMPTE.profUid = uid;
+    try{ if(prof) localStorage.setItem(CLE_PROF, uid); else if(localStorage.getItem(CLE_PROF) === uid) localStorage.removeItem(CLE_PROF); }catch(e){}
+    if(typeof majVuesCompte === "function") majVuesCompte();
+    return prof;
+  }, () => estProfesseur());
 }
 /* Ouvert : pour le professeur connecte, ou pour tous par le serveur. */
 function chapitreOuvert(id){ return estProfesseur() || DEBLOCAGE.ids.indexOf(id) >= 0; }
@@ -3657,6 +3676,7 @@ function carteProfesseur(){
         <button class="bouton-plein" data-action="b-prof-verif-relire" style="flex:1"${PROF.enCours ? " disabled" : ""}>J’ai cliqué sur le lien</button>
       </div></div>` : ""}
     <button class="bouton-plein" data-action="b-prof-stats" style="margin:4px 0 14px">Statistiques</button>
+    ${typeof blocImportQJ === "function" ? blocImportQJ() : ""}
     <p class="capitales" style="margin:0 0 6px">Date de l’épreuve d’histoire-géographie</p>
     <div class="b-code-ligne" style="margin:0 0 14px"><input type="date" id="b-prof-date" class="b-date" value="${esc(dateEpreuve() || "")}">
       <button class="bouton" data-action="b-prof-date" style="width:auto;padding:0 16px"${PROF.enCours ? " disabled" : ""}>Enregistrer</button></div>
@@ -4693,8 +4713,8 @@ function compteInit(){
       COMPTE.etatConnu = true;
       if(u) cacherEcranCompte();
       else if(doitProposerCompte()) afficherEcranCompte();
-      if(compteConnecte() && !avant) synchroniser();
-      if(!compteConnecte()) COMPTE.derniere = null;
+      if(compteConnecte() && !avant){ synchroniser(); if(typeof verifierProfesseur === "function") verifierProfesseur(); }
+      if(!compteConnecte()){ COMPTE.derniere = null; COMPTE.prof = undefined; }
       majVuesCompte();
     });
     /* De retour en ligne : on rattrape ce qui n'a pas pu partir. */
@@ -5375,8 +5395,8 @@ function chargerStats(){
     return m;
   }, () => null);
   Promise.all([lireToutesProgressions(), chargerSanctions(), publie]).then(([docs, sanctions, pub]) => {
-    const profs = (CONFIG_COMPTE.professeurs || []).map(a => String(a).toLowerCase());
-    STATS.eleves = docs.map(ficheEleve).filter(f => f && profs.indexOf(f.email.toLowerCase()) < 0);
+    /* Le professeur lui-meme n'est pas un eleve. */
+    STATS.eleves = docs.map(ficheEleve).filter(f => f && f.uid !== COMPTE.user.uid);
     STATS.publie = pub;
     STATS.sanctions = sanctions || {};
     STATS.maj = new Date();
@@ -5499,10 +5519,10 @@ function statsCartes(E){
 /* ---------- Quiz of the Day ---------- */
 /* Les questions des 7 derniers jours joues : de quoi trouver les plus ratees. */
 function chargerQuestionsStats(){
-  if(!STATS.eleves || typeof qjQuestions !== "function") return;
+  if(!STATS.eleves || typeof qjCorrige !== "function") return;
   const jours = [...new Set([].concat(...STATS.eleves.map(e => Object.keys(e.quotidien).filter(d => e.quotidien[d].fini))))].sort().reverse().slice(0, 7);
   STATS.qjItems = STATS.qjItems || {};
-  Promise.all(jours.filter(d => !STATS.qjItems[d]).map(d => qjQuestions(d).then(l => { STATS.qjItems[d] = l; }, () => {})))
+  Promise.all(jours.filter(d => !STATS.qjItems[d]).map(d => qjCorrige(d).then(l => { STATS.qjItems[d] = l; }, () => {})))
     .then(() => { if(document.getElementById("stats-prof")) rendreStats(); });
 }
 function statsQuiz(E){
@@ -6520,7 +6540,12 @@ function supprimerCompteJoueur(e){
      relancer l'application ne permet pas de le refaire ; a minuit, un quiz
      inacheve est clos, les questions restantes comptees fausses ;
    - le corrige n'est visible que le lendemain, pour que les reponses ne
-     circulent pas le jour meme.
+     circulent pas le jour meme ;
+   - depuis novembre 2026, le serveur verifie tout : les questions et le
+     corrige ne sont plus dans l'application (voir << Les questions, sur le
+     serveur >>), les reponses partent une a une et le score est recalcule
+     par les regles Firestore. Changer son score dans la requete, ou lire
+     le corrige dans le code, ne marche plus.
 
    Classements du jour et de la semaine (du lundi au dimanche a minuit),
    dans Firestore : jour/{date}/scores/{uid} et semaine/{lundi}/scores/{uid}.
@@ -6552,124 +6577,222 @@ function qjGraine(texte){
   for(let i = 0; i < texte.length; i++){ h = Math.imul(h ^ texte.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
   return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; };
 }
-/* Une question qui renvoie a ce qu'on vient de lire (<< cette seance >>,
-   << la carte >>) n'a pas de sens hors de son cours : on l'ecarte. */
-const QJ_HORS_CONTEXTE = /\b(cette|la|de la) s[ée]ance\b|\bce cours\b|ci-dessus|ci-dessous|\b(la|cette) (carte|frise)\b|\b(le|ce) (tableau|texte|document|graphique)\b/i;
-
-/* Les cours candidats d'un jour : chacun recoit un rang tire de la date et
-   de son identifiant. Ajouter un cours au catalogue ne bouleverse donc pas
-   le tirage des autres. */
-function qjCandidats(date){
-  return COURS.map(c => ({ c, r: qjGraine(date + "|" + c.id)() }))
-    .sort((a, b) => a.r - b.r).slice(0, 16).map(x => x.c);
-}
-/* ---------- La banque ----------
-   Les questions de chaque jour sont preparees a l'avance dans une banque
-   de culture generale historique (source/quotidien/) : un fichier par
-   mois, assets/quotidien/AAAA-MM.js, charge a la demande comme un cours
-   (balise script, ou PontEpok.lireQuotidien dans l'APK). Un jour absent
-   de la banque retombe sur un tirage dans les questions des cours. */
-const QJ_BANQUE = {};          // { "2026-10": { "2026-10-21": [[niv, theme, enonce, bonne, f1, f2, f3, expl], ...] } }
+/* ---------- Les questions, sur le serveur (novembre 2026) ----------
+   Avant, les dix questions de chaque jour ET leurs reponses etaient livrees
+   avec l'application (quotidien/AAAA-MM.js, a peine voilees), et le score
+   etait calcule ici puis envoye tel quel : on pouvait lire le corrige, ou
+   changer son score dans la requete. Desormais tout est dans Firestore,
+   importe par le professeur (source/quotidien/securiser.js) :
+   - qj/{date}           le numero du jour (le quiz est pret) ;
+   - qj/{date}/q/{k}     la question k, lisible seulement une fois la
+                         reponse k-1 donnee, et 40 s durant ;
+   - qj_cles/{date}      le corrige (bonnes reponses, explications),
+                         illisible tant que le jour n'est pas fini ;
+   - jour/{date}/reponses/{uid}  la partie : depart et reponses, une a une,
+                         a l'heure du serveur, sans retour en arriere ;
+   - jour/{date}/scores/{uid}    le score, que les regles RECALCULENT a
+                         partir de la partie et du corrige : l'application ne
+                         connait pas les bonnes reponses, elle essaie les 11
+                         scores possibles et le serveur n'accepte que le vrai. */
 const QJ_NIVEAUX = { T: "Très facile", F: "Facile", M: "Moyenne", D: "Difficile" };
-const QJ_NUMEROS = {};         // { "2026-10-21": 1, ... } : le numero du quiz, tel que dans packs.txt
-window.EPOK_QJ_RECEVOIR = paquet => {
-  if(!paquet || !paquet.mois || !paquet.jours) return;
-  const jours = {};
-  Object.keys(paquet.jours).forEach(j => {
-    const x = paquet.jours[j];
-    jours[j] = typeof x === "string" ? VOILE.devoiler(x, "qj#" + j) : x;   // jour voile (z0a_voile.js)
-  });
-  QJ_BANQUE[paquet.mois] = jours;
-  Object.assign(QJ_NUMEROS, paquet.numeros || {});
-};
-/* Numero du quiz d'un jour : celui de la banque, sinon compte depuis le
-   premier (21 octobre 2026). Avant cette date, pas de numero. */
+/* Numero du quiz d'un jour, compte depuis le premier (21 octobre 2026).
+   Avant cette date, pas de numero. */
 const QJ_PREMIER = Date.UTC(2026, 9, 21);
 function qjNumero(date){
-  if(QJ_NUMEROS[date]) return QJ_NUMEROS[date];
   const t = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10));
   const n = Math.round((t - QJ_PREMIER) / 864e5) + 1;
   return n >= 1 ? n : null;
 }
 const QJ_NOM = "Quiz of the Day";
 function qjTitre(date){ const n = qjNumero(date); return QJ_NOM + (n ? " #" + n : ""); }
-const qjMoisEnCours = {};
-function qjChargerMois(mois){
-  if(QJ_BANQUE[mois] || !/^\d{4}-\d{2}$/.test(mois)) return Promise.resolve(!!QJ_BANQUE[mois]);
-  if(qjMoisEnCours[mois]) return qjMoisEnCours[mois];
-  return qjMoisEnCours[mois] = new Promise(fini => {
-    let rendu = false;
-    const secours = () => {
-      if(QJ_BANQUE[mois]) return true;
-      try{
-        if(typeof PontEpok === "undefined" || !PontEpok.lireQuotidien) return false;
-        const t = PontEpok.lireQuotidien(mois), a = t.indexOf("(") + 1, b = t.lastIndexOf(")");
-        if(a > 0 && b > a) window.EPOK_QJ_RECEVOIR(JSON.parse(t.slice(a, b)));
-      }catch(e){}
-      return !!QJ_BANQUE[mois];
-    };
-    const rendre = () => { if(rendu) return; rendu = true; clearTimeout(minuteur); delete qjMoisEnCours[mois]; fini(secours()); };
-    const minuteur = setTimeout(rendre, 10000);
-    const b = document.createElement("script");
-    b.onload = rendre; b.onerror = rendre;
-    b.src = "quotidien/" + mois + ".js";
-    document.head.appendChild(b);
-  });
+
+function qjErreur(r){ return Object.assign(new Error("réponse " + r.status), { statut: r.status }); }
+function qjDoc(chemin){
+  return requeteJeton("GET", urlDocuments("/" + chemin)).then(r => r.ok ? r.json() : Promise.reject(qjErreur(r)));
 }
-/* Les dix questions du jour tirees de la banque, ou null. La bonne reponse
-   y est ecrite en premier : l'ordre affiche est melange, fixe pour le jour. */
-function qjDeLaBanque(date){
-  const l = (QJ_BANQUE[date.slice(0, 7)] || {})[date];
-  if(!l || l.length < QJ_NB) return null;
-  return l.slice(0, QJ_NB).map((x, k) => {
-    const alea = qjGraine(date + "@" + k);
-    return { banque: true, niveau: x[0], theme: x[1], titre: QJ_NIVEAUX[x[0]] + " • " + x[1],
-             q: { enonce: x[2], options: x.slice(3, 7), correctes: [0], explication: x[7] },
-             ordre: [0, 1, 2, 3].map(o => ({ o, r: alea() })).sort((a, b) => a.r - b.r).map(y => y.o) };
+function qjValeur(v){
+  if(!v) return null;
+  if("integerValue" in v) return Number(v.integerValue);
+  if("doubleValue" in v) return Number(v.doubleValue);
+  if("stringValue" in v) return v.stringValue;
+  if("timestampValue" in v) return v.timestampValue;
+  if("booleanValue" in v) return v.booleanValue;
+  if("arrayValue" in v) return (v.arrayValue.values || []).map(qjValeur);
+  return null;
+}
+function qjChamps(doc){
+  const r = {};
+  Object.keys((doc && doc.fields) || {}).forEach(k => { r[k] = qjValeur(doc.fields[k]); });
+  return r;
+}
+function qjEncoder(v){
+  if(typeof v === "number") return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if(Array.isArray(v)) return { arrayValue: v.length ? { values: v.map(qjEncoder) } : {} };
+  return { stringValue: String(v) };
+}
+function qjChampsEncodes(o){ const f = {}; Object.keys(o).forEach(k => { f[k] = qjEncoder(o[k]); }); return f; }
+function qjNomDoc(chemin){ return "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents" + chemin; }
+function qjCommit(writes){
+  return requeteJeton("POST", urlDocuments(":commit"), { writes: Array.isArray(writes) ? writes : [writes] })
+    .then(r => r.ok ? true : Promise.reject(qjErreur(r)));
+}
+const QJ_HEURE = [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }];
+
+/* Une question : niveau, theme, enonce, 4 reponses dans l'ordre du jour.
+   Les bonnes reponses ne sont connues qu'avec le corrige (cle). */
+function qjItem(f, k, cle){
+  return { banque: true, niveau: f.n, theme: f.t, titre: (QJ_NIVEAUX[f.n] || "") + " • " + (f.t || ""),
+    q: { enonce: f.e || "", options: (f.o || []).slice(0, 4),
+         correctes: cle ? [Number((cle.r || [])[k])] : null, explication: cle ? (cle.x || [])[k] || "" : null },
+    ordre: [0, 1, 2, 3] };
+}
+function qjLireQuestion(date, k){ return qjDoc("qj/" + date + "/q/" + k).then(d => qjItem(qjChamps(d), k, null)); }
+/* Le quiz d'un jour est-il pret sur le serveur ? */
+function qjPret(date){ return qjDoc("qj/" + date).then(() => true, e => (e.statut === 404 ? false : Promise.reject(e))); }
+/* Le corrige d'un jour fini (le professeur, lui, le lit a tout moment). */
+function qjCorrige(date){
+  return qjDoc("qj_cles/" + date).then(c => {
+    const cle = qjChamps(c);
+    return Promise.all(Array.from({ length: QJ_NB }, (_, k) => qjDoc("qj/" + date + "/q/" + k).then(d => qjItem(qjChamps(d), k, cle))));
   });
 }
 
-/* Un jour au-dela de la banque preparee (le lot suivant n'est pas encore
-   la) reprend le quiz du meme rang dans le cycle precedent, 72 jours plus
-   tot, jusqu'a retrouver un jour prepare : toujours des questions de
-   culture generale, jamais celles des cours. Avant le premier quiz, ou si
-   rien n'est trouve, on retombe sur un tirage dans les cours. */
-const QJ_CYCLE = 72;
-function qjQuestions(date, essais){
-  essais = essais || 0;
-  return qjChargerMois(date.slice(0, 7)).then(() => {
-    const l = qjDeLaBanque(date);
-    if(l) return l;
-    const n = qjNumero(date);
-    if(n && n > QJ_CYCLE && essais < 12){
-      const d = new Date(date + "T12:00:00"); d.setDate(d.getDate() - QJ_CYCLE);
-      return qjQuestions(iso(d), essais + 1);
-    }
-    return qjQuestionsDesCours(date);
+/* ---------- La partie, sur le serveur ---------- */
+
+function qjCheminPartie(date){ return "/jour/" + date + "/reponses/" + COMPTE.user.uid; }
+function qjLirePartie(date){
+  return requeteJeton("GET", urlDocuments(qjCheminPartie(date)))
+    .then(r => r.status === 404 ? null : r.ok ? r.json().then(qjChamps) : Promise.reject(qjErreur(r)));
+}
+/* Le depart, a l'heure du serveur (une seule fois : sinon, la partie deja
+   commencee, relue). */
+function qjDepart(date){
+  return qjCommit({ update: { name: qjNomDoc(qjCheminPartie(date)), fields: { choix: { arrayValue: {} } } },
+    currentDocument: { exists: false },
+    updateTransforms: [{ fieldPath: "debut", setToServerValue: "REQUEST_TIME" }].concat(QJ_HEURE) })
+    .then(() => ({ choix: [] }), e => qjLirePartie(date).then(p => { if(!p) throw e; return p; }));
+}
+/* Ajoute une reponse a la partie : la liste complete, la derniere est la
+   nouvelle (0 a 3, ou -1 : temps ecoule, application quittee). */
+function qjEnvoyerChoix(date, liste){
+  const n = liste.length - 1;
+  return qjCommit({ update: { name: qjNomDoc(qjCheminPartie(date)), fields: { choix: qjEncoder(liste) } },
+    updateMask: { fieldPaths: ["choix"] },
+    updateTransforms: QJ_HEURE.concat([{ fieldPath: "t" + n, setToServerValue: "REQUEST_TIME" }]) });
+}
+/* Le temps compte par le serveur : de la reponse precedente (ou du depart)
+   a chaque reponse, 30 s au plus par question. Le meme calcul que les
+   regles Firestore, au millieme pres. */
+function qjMs(t){ return Math.floor(Date.parse(String(t).replace(/(\.\d{3})\d+/, "$1"))); }
+function qjTempsServeur(p){
+  let avant = qjMs(p.debut), s = 0;
+  for(let k = 0; k < QJ_NB; k++){
+    const t = qjMs(p["t" + k]), dt = t - avant;
+    s += dt >= 30000 ? 30 : Math.ceil(dt / 1000);
+    avant = t;
+  }
+  return s;
+}
+/* Le dernier jour joue (score verifie) de la meme semaine, avant date. */
+function qjPrecedent(date){
+  const lundi = qjLundi(date);
+  const l = Object.keys(ETAT.quotidien || {}).filter(d => d < date && d >= lundi && ETAT.quotidien[d].verifie && ETAT.quotidien[d].cumul).sort();
+  return l.length ? l[l.length - 1] : "";
+}
+function qjNoterScore(date, f){
+  const e = ETAT.quotidien[date];
+  Object.assign(e, { justes: f.justes, temps: f.temps, cumul: f.cumul, cumulTemps: f.cumulTemps, jours: f.jours,
+                     verifie: true, envoye: true, fini: true });
+  delete e.hors;
+  sauverEtat(true);
+}
+/* Le score d'un jour fini : le serveur le recalcule ; on essaie les 11
+   scores possibles, il n'accepte que le vrai. Une partie d'un jour passe
+   laissee inachevee est completee de reponses perdues. */
+function qjPublierScore(date){
+  const e = ETAT.quotidien[date], uid = COMPTE.user.uid;
+  const completer = p => {
+    if(!p || p.choix.length >= QJ_NB || date >= aujourdhui()) return Promise.resolve(p);
+    return qjEnvoyerChoix(date, p.choix.concat([-1])).then(() => qjLirePartie(date)).then(completer);
+  };
+  return qjLirePartie(date).then(completer).then(p => {
+    if(!p){ e.hors = true; sauverEtat(true); return false; }   // jamais commence sur le serveur
+    if(p.choix.length < QJ_NB) return false;
+    const temps = qjTempsServeur(p), lundi = qjLundi(date), precedent = qjPrecedent(date);
+    const pe = precedent ? ETAT.quotidien[precedent] : { cumul: 0, cumulTemps: 0, jours: 0 };
+    const nom = pseudoClassement(COMPTE.user.displayName);
+    const ligne = j => ({ nom, justes: j, temps, score: j * 1000 + 999 - temps, cumul: pe.cumul + 3 * j,
+                          cumulTemps: pe.cumulTemps + temps, jours: pe.jours + 1, precedent, lundi });
+    const essai = j => qjCommit({ update: { name: qjNomDoc("/jour/" + date + "/scores/" + uid), fields: qjChampsEncodes(ligne(j)) },
+      currentDocument: { exists: false }, updateTransforms: QJ_HEURE }).then(() => j, () => null);
+    return Promise.all(Array.from({ length: QJ_NB + 1 }, (_, j) => essai(j))).then(r => {
+      const j = r.find(x => x !== null);
+      if(j !== undefined){ qjNoterScore(date, ligne(j)); return true; }
+      /* Deja publie (depuis un autre appareil) : on relit la ligne. */
+      return qjDoc("jour/" + date + "/scores/" + uid).then(d => { qjNoterScore(date, qjChamps(d)); return true; }, () => false);
+    });
   });
 }
-function qjQuestionsDesCours(date){
-  return new Promise(res => {
-    const cands = qjCandidats(date);
-    const fin = () => {
-      const items = [];
-      for(const c0 of cands){
-        if(items.length >= QJ_NB) break;
-        const c = coursParId(c0.id);
-        if(!c || !c.seances.every(s => s.questions)) continue;
-        const alea = qjGraine(date + "#" + c.id);
-        const toutes = [];
-        c.seances.forEach(s => s.questions.forEach((q, index) => { if(!QJ_HORS_CONTEXTE.test(q.enonce)) toutes.push({ s, q, index }); }));
-        if(!toutes.length) continue;
-        const pris = toutes[Math.floor(alea() * toutes.length)];
-        const ordre = [0, 1, 2, 3].map(o => ({ o, r: alea() })).sort((a, b) => a.r - b.r).map(x => x.o);
-        items.push({ coursId: c.id, titre: c.titre, seance: pris.s.numero, index: pris.index, q: pris.q, ordre });
-      }
-      res(items);
+/* La ligne de la semaine : le cumul du dernier jour verifie. */
+function qjPublierSemaine(){
+  const lundi = qjLundi(aujourdhui());
+  const l = Object.keys(ETAT.quotidien || {}).filter(d => d >= lundi && ETAT.quotidien[d].verifie && ETAT.quotidien[d].cumul).sort();
+  if(!l.length) return Promise.resolve(false);
+  const d = l[l.length - 1], e = ETAT.quotidien[d];
+  if(e.semaineEnvoyee) return Promise.resolve(true);
+  return qjCommit({ update: { name: qjNomDoc("/semaine/" + lundi + "/scores/" + COMPTE.user.uid), fields: qjChampsEncodes({
+      nom: pseudoClassement(COMPTE.user.displayName), points: e.cumul, jours: e.jours, temps: e.cumulTemps,
+      score: e.cumul * 10000 + 9999 - e.cumulTemps, dernier: d }) }, updateTransforms: QJ_HEURE })
+    .then(() => { e.semaineEnvoyee = true; sauverEtat(true); return true; }, () => false);
+}
+
+/* ---------- Import des questions (professeur) ----------
+   Le fichier qotd-import.json (source/quotidien/securiser.js) : pour chaque
+   jour, son numero, ses 10 questions et son corrige. Ecrit par lots de 450. */
+const QJI = { message: null, enCours: false, pret: null, lu: "" };
+function qjEtatImport(){
+  if(!compteConnecte() || QJI.lu === aujourdhui()) return;
+  QJI.lu = aujourdhui();
+  qjPret(aujourdhui()).then(ok => { QJI.pret = ok; if(typeof majCarteProfesseur === "function") majCarteProfesseur(); }, () => {});
+}
+function qjImporter(fichier){
+  if(!fichier || QJI.enCours) return;
+  QJI.enCours = true; QJI.message = "Lecture du fichier…"; majCarteProfesseur();
+  fichier.text().then(t => {
+    const f = JSON.parse(t);
+    if(!f || f.v !== 1 || !f.jours) throw new Error("ce n’est pas un fichier qotd-import.json");
+    const writes = [];
+    Object.keys(f.jours).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).forEach(d => {
+      const j = f.jours[d];
+      if(!j || !Array.isArray(j.q) || j.q.length !== QJ_NB || !Array.isArray(j.r) || j.r.length !== QJ_NB) throw new Error("jour " + d + " incomplet");
+      writes.push({ update: { name: qjNomDoc("/qj/" + d), fields: qjChampsEncodes({ num: j.num }) } });
+      writes.push({ update: { name: qjNomDoc("/qj_cles/" + d), fields: qjChampsEncodes({ r: j.r.map(Number), x: (j.x || []).map(String) }) } });
+      j.q.forEach((q, k) => writes.push({ update: { name: qjNomDoc("/qj/" + d + "/q/" + k), fields: qjChampsEncodes({ n: q[0], t: q[1], e: q[2], o: q[3] }) } }));
+    });
+    let fait = 0;
+    const lot = () => {
+      if(fait >= writes.length) return Promise.resolve();
+      const l = writes.slice(fait, fait + 450);
+      return qjCommit(l).then(() => { fait += l.length; QJI.message = "Import : " + Math.round(fait * 100 / writes.length) + " %"; majCarteProfesseur(); return lot(); });
     };
-    avecLesCours(cands.map(c => c.id), fin, fin);
-  });
+    return lot().then(() => Object.keys(f.jours).length);
+  }).then(n => { QJI.message = n + " quiz importés : questions et corrigés sont sur le serveur."; QJI.lu = ""; },
+    e => { QJI.message = "Échec de l’import : " + (e && e.statut === 403 ? "Firebase refuse (publiez les nouvelles règles Firestore)" : (e && e.message) || "erreur"); })
+    .finally(() => { QJI.enCours = false; majCarteProfesseur(); qjEtatImport(); });
 }
+function blocImportQJ(){
+  qjEtatImport();
+  return `<p class="capitales" style="margin:0 0 6px">Quiz of the Day&#8239;: questions et corrigés</p>
+    <p class="minuscule" style="margin:0 0 8px">${QJI.pret === true ? "Le quiz d’aujourd’hui est prêt sur le serveur." : QJI.pret === false
+      ? "<strong>Le quiz d’aujourd’hui n’est pas sur le serveur</strong>&#8239;: importez le fichier qotd-import.json." : "Vérification…"}
+      Le fichier contient les réponses&#8239;: ne le partagez pas.</p>
+    <label class="bouton" style="margin:0 0 14px;display:block;text-align:center${QJI.enCours ? ";opacity:.6;pointer-events:none" : ""}">Importer qotd-import.json
+      <input type="file" id="qj-import" accept=".json,application/json" style="display:none"></label>
+    ${QJI.message ? `<p class="avis${/^Échec/.test(QJI.message) ? "" : " ok"}" style="margin:0 0 14px">${esc(QJI.message)}</p>` : ""}`;
+}
+if(typeof document !== "undefined") document.addEventListener("change", ev => {
+  if(ev.target && ev.target.id === "qj-import" && ev.target.files && ev.target.files[0]) qjImporter(ev.target.files[0]);
+});
 
 /* ---------- Ce qui est garde ---------- */
 
@@ -6677,7 +6800,7 @@ function qjAujourdhui(){ return (ETAT.quotidien || {})[aujourdhui()] || null; }
 function pointsQuotidien(){
   let p = 0;
   Object.values(ETAT.quotidien || {}).forEach(e => {
-    p += QJ_PTS * (e.justes || 0);
+    if(e.verifie !== false) p += QJ_PTS * (e.justes || 0);   // pas encore verifie par le serveur : 0
     if(e.rangFinal) p += qjBonus(QJ_PODIUM_JOUR, e.rang);
   });
   Object.values(ETAT.qjSemaines || {}).forEach(w => { if(w && w.final) p += qjBonus(QJ_PODIUM_SEMAINE, w.rang); });
@@ -6693,6 +6816,11 @@ function nettoyerQuotidien(q){
              fini: e.fini === true,
              choix: Array.isArray(e.choix) ? e.choix.slice(0, QJ_NB).map(c => Array.isArray(c) ? c.filter(Number.isInteger).slice(0, 4) : null) : [],
              envoye: e.envoye === true };
+    /* Score verifie par le serveur (novembre 2026) et cumul de sa semaine. */
+    if(e.verifie === true || e.verifie === false) r[k].verifie = e.verifie;
+    ["cumul", "cumulTemps", "jours"].forEach(c => { if(Number.isInteger(e[c]) && e[c] >= 0) r[k][c] = e[c]; });
+    if(e.semaineEnvoyee === true) r[k].semaineEnvoyee = true;
+    if(e.hors === true) r[k].hors = true;
     if(Number.isInteger(e.enCours) && e.enCours >= 0 && e.enCours < QJ_NB) r[k].enCours = e.enCours;
     if(Number.isInteger(e.rang) && e.rang > 0){ r[k].rang = e.rang; r[k].classes = Math.max(e.rang, Number(e.classes) || 0); r[k].rangFinal = e.rangFinal === true; }
   });
@@ -6720,7 +6848,8 @@ function fusionnerQuotidien(a, b){
   const r = {};
   new Set(Object.keys(a || {}).concat(Object.keys(b || {}))).forEach(k => {
     const x = (a || {})[k], y = (b || {})[k];
-    r[k] = !x ? y : !y ? x : ((y.justes || 0) > (x.justes || 0) ? Object.assign({}, y, { fini: x.fini || y.fini }) : Object.assign({}, x, { fini: x.fini || y.fini }));
+    const meilleur = !x ? y : !y ? x : (y.verifie && !x.verifie) ? y : (x.verifie && !y.verifie) ? x : ((y.justes || 0) > (x.justes || 0) ? y : x);
+    r[k] = !x || !y ? meilleur : Object.assign({}, meilleur, { fini: x.fini || y.fini });
   });
   return r;
 }
@@ -6735,8 +6864,8 @@ function qjCloreAbandons(){
     const e = ETAT.quotidien[d];
     if(e.fini || d >= auj) return;
     delete e.enCours;
-    e.temps = Math.min(QJ_NB * QJ_SECONDES, e.temps + Math.max(0, QJ_NB - (e.choix || []).length) * QJ_SECONDES);
-    e.fini = true; change = true;
+    e.fini = true; if(e.verifie === undefined && !e.envoye) e.verifie = false;
+    change = true;
   });
   if(change) sauverEtat();
 }
@@ -6763,35 +6892,16 @@ function qjPeutPublier(){
   return typeof compteConnecte === "function" && compteConnecte()
     && participeClassement() && !!pseudoClassement(COMPTE.user && COMPTE.user.displayName);
 }
-/* La ligne du jour se cree une seule fois (les regles refusent de la
-   modifier) ; celle de la semaine se recalcule a partir des jours joues. */
+/* Les scores des jours finis, un a un dans l'ordre (le cumul de la
+   semaine s'enchaine), puis la ligne de la semaine. */
 function publierQuotidien(){
   qjCloreAbandons();
-  /* Un eleve qui se retire du classement : ses lignes du jour et de la
-     semaine partent avec. */
   if(compteConnecte() && !participeClassement()) return effacerQuotidien();
   if(!qjPeutPublier()) return Promise.resolve(false);
-  const uid = encodeURIComponent(COMPTE.user.uid), nom = pseudoClassement(COMPTE.user.displayName);
-  const envois = [];
-  const lundi = qjLundi(aujourdhui());
-  Object.keys(ETAT.quotidien || {}).forEach(d => {
-    const e = ETAT.quotidien[d];
-    if(!e.fini || e.envoye || qjLundi(d) !== lundi) return;
-    envois.push(requeteJeton("PATCH", urlDocuments("/jour/" + d + "/scores/" + uid) + "?currentDocument.exists=false", { fields: {
-      nom: { stringValue: nom }, justes: { integerValue: String(e.justes) }, temps: { integerValue: String(e.temps) },
-      score: { integerValue: String(e.justes * 1000 + (999 - e.temps)) }, maj: { timestampValue: new Date().toISOString() } } })
-      .then(r => { if(r.ok || r.status === 409 || r.status === 400){ e.envoye = true; sauverEtat(true); } }, () => {}));
-  });
-  const jours = Object.keys(ETAT.quotidien || {}).filter(d => ETAT.quotidien[d].fini && qjLundi(d) === lundi);
-  if(jours.length){
-    const pts = jours.reduce((t, d) => t + QJ_PTS * ETAT.quotidien[d].justes, 0);
-    const temps = jours.reduce((t, d) => t + ETAT.quotidien[d].temps, 0);
-    envois.push(requeteJeton("PATCH", urlDocuments("/semaine/" + lundi + "/scores/" + uid), { fields: {
-      nom: { stringValue: nom }, points: { integerValue: String(pts) }, jours: { integerValue: String(jours.length) },
-      temps: { integerValue: String(temps) }, score: { integerValue: String(pts * 10000 + (9999 - temps)) },
-      maj: { timestampValue: new Date().toISOString() } } }).catch(() => {}));
-  }
-  return Promise.all(envois).then(() => true);
+  const jours = Object.keys(ETAT.quotidien || {}).filter(d => { const e = ETAT.quotidien[d]; return e.fini && e.verifie === false && !e.hors; }).sort();
+  let chaine = Promise.resolve();
+  jours.forEach(d => { chaine = chaine.then(() => qjPublierScore(d).catch(() => false)); });
+  return chaine.then(() => qjPublierSemaine()).then(() => true, () => false);
 }
 
 function effacerQuotidien(){
@@ -6841,6 +6951,10 @@ function carteQuizJour(){
     ? `<p style="margin:0 0 4px"><strong>Quiz commencé&#8239;: question ${Math.min(QJ_NB, (e.choix || []).length + 1)} sur ${QJ_NB}</strong></p>
        <p class="minuscule" style="margin:0 0 10px">Reprenez-le avant minuit&#8239;: à minuit, les questions restantes seront comptées fausses.</p>
        <button class="bouton-plein" data-action="qj-reprendre">Reprendre le quiz</button>`
+    : e.verifie === false
+    ? `<p style="margin:0 0 4px"><strong>Quiz terminé&#8239;: score en cours de vérification</strong></p>
+       <p class="minuscule" style="margin:0 0 10px">Le serveur calcule votre score dès que vous êtes en ligne.</p>
+       <button class="bouton" data-action="qj-classements">Voir le classement</button>`
     : `<p style="margin:0 0 4px"><strong>Aujourd’hui&#8239;: ${e.justes}/${QJ_NB}</strong>
         &#8226; +${QJ_PTS * e.justes} pts${e.rang ? ` &#8226; ${e.rang}<sup>e</sup> sur ${e.classes}` : ""}</p>
        <p class="minuscule" style="margin:0 0 10px">Nouveau quiz dans ${qjAvantMinuit()}.</p>
@@ -6900,17 +7014,27 @@ function qjAfficher(){
         <li><strong>Bonus du podium</strong>&#8239;: 1<sup>er</sup>, 2<sup>e</sup> et 3<sup>e</sup> du jour gagnent ${QJ_PODIUM_JOUR.join(", ").replace(/, (\d+)$/, " et $1")} points à minuit&#8239;; ceux de la semaine ${QJ_PODIUM_SEMAINE.join(", ").replace(/, (\d+)$/, " et $1")} points le dimanche à minuit.</li>
         <li><strong>Tableau des médailles</strong>&#8239;: par saison de 3 mois, les médailles d’or, d’argent et de bronze du jour et de la semaine, classées comme aux Jeux olympiques.</li>
       </ul>
-      <button class="bouton-plein" data-action="qj-commencer"${QJ.prepare ? " disabled" : ""}>${QJ.prepare ? "Préparation…" : "Commencer"}</button>
+      ${QJ.raison ? `<p class="avis">${esc(QJ.raison)}</p>` : ""}
+      ${qjPeutJouer() ? `<button class="bouton-plein" data-action="qj-commencer"${QJ.prepare ? " disabled" : ""}>${QJ.prepare ? "Préparation…" : "Commencer"}</button>`
+        : `<p class="avis">${typeof compteConnecte === "function" && compteConnecte()
+            ? "Indiquez votre prénom et votre nom (Réglages, carte Compte) pour jouer : le score est vérifié et classé par le serveur."
+            : "Connectez-vous pour jouer : le Quiz of the Day se joue en ligne, le score est vérifié par le serveur."}</p>
+          <button class="bouton-plein" data-action="onglet-reglages">Aller aux Réglages</button>`}
     </div>`;
+    return;
+  }
+  if(QJ.vue === "envoi"){
+    v.innerHTML = `<div class="qj-boite"><h2>${qjTitre(QJ.date)}</h2><p class="secondaire">${QJ.i >= QJ_NB ? "Envoi de vos réponses…" : "Question " + (QJ.i + 1) + " / " + QJ_NB + "…"}</p></div>`;
     return;
   }
   if(QJ.vue === "question") return qjAfficherQuestion();
   if(QJ.vue === "pause"){
     v.innerHTML = `<div class="qj-boite">${fermer}
       <h2>${qjTitre(QJ.date)}</h2>
-      <p class="avis"><strong>Système anti-triche.</strong> ${esc(QJ.raison || "")} La question ${QJ.i} est comptée fausse.</p>
-      <p class="minuscule">Score provisoire&#8239;: ${qjAujourdhui() ? qjAujourdhui().justes : 0}/${QJ_NB}. Restez dans l’application jusqu’à la fin du quiz.</p>
-      <button class="bouton-plein" data-action="qj-suivante">Question suivante (${QJ.i + 1}/${QJ_NB})</button>
+      ${QJ.reseau ? `<p class="avis">${esc(QJ.raison || "")}</p>`
+        : QJ.raison ? `<p class="avis"><strong>Système anti-triche.</strong> ${esc(QJ.raison)} La question ${QJ.i} est comptée fausse.</p>` : ""}
+      <p class="minuscule">Restez dans l’application jusqu’à la fin du quiz. Le score est calculé par le serveur à la fin.</p>
+      <button class="bouton-plein" data-action="qj-suivante">${QJ.reseau ? "Continuer" : QJ.i >= QJ_NB ? "Voir mon score" : "Question suivante (" + (QJ.i + 1) + "/" + QJ_NB + ")"}</button>
     </div>`;
     return;
   }
@@ -6918,7 +7042,9 @@ function qjAfficher(){
   const e = qjAujourdhui();
   const parts = [`<div class="qj-boite">${fermer}<h2>${qjTitre(QJ.date)}</h2>`];
   if(QJ.raison) parts.push(`<p class="avis">${esc(QJ.raison)}</p>`);
-  if(e) parts.push(`<div class="score"><span class="chiffre">${e.justes} / ${QJ_NB}</span>
+  if(e && e.verifie === false) parts.push(`<div class="score"><p class="secondaire" style="margin:0">${QJ.verification
+      ? "Vérification de votre score par le serveur…" : "Votre score sera vérifié par le serveur dès que la connexion reviendra."}</p></div>`);
+  else if(e) parts.push(`<div class="score"><span class="chiffre">${e.justes} / ${QJ_NB}</span>
       <p class="minuscule" style="margin:4px 0 0">+${QJ_PTS * e.justes} points &#8226; ${Math.floor(e.temps / 60)} min ${String(e.temps % 60).padStart(2, "0")}</p></div>
       <p class="minuscule" style="text-align:center">Nouveau quiz dans ${qjAvantMinuit()}. Le corrigé sera visible demain.</p>`);
   parts.push(`<div class="seg qj-onglets" role="group" aria-label="Classement">
@@ -7005,7 +7131,8 @@ function qjBrancherMenu(){
 function qjCorrigeHier(zone){
   const hier = qjHier(), e = (ETAT.quotidien || {})[hier];
   zone.innerHTML = `<p class="minuscule">Chargement du corrigé…</p>`;
-  qjQuestions(hier).then(items => {
+  if(!compteConnecte()){ zone.innerHTML = `<p class="minuscule">Connectez-vous pour voir le corrigé.</p>`; return; }
+  qjCorrige(hier).then(items => {
     if(!QJ || QJ.onglet !== "hier") return;
     zone.innerHTML = `<p class="minuscule">${e ? "Votre score d’hier&#8239;: " + e.justes + "/" + QJ_NB + "." : "Vous n’avez pas joué hier."}</p>` +
       items.map((it, i) => {
@@ -7019,26 +7146,44 @@ function qjCorrigeHier(zone){
             : `<span class="rep faux">aucune (temps écoulé ou quiz arrêté)</span>`}</p>` : ""}
           ${it.q.explication ? `<p class="expl">${tx(it.q.explication)}</p>` : ""}</div>`;
       }).join("");
+  }, () => {
+    /* Le corrige s'ouvre une fois le jour fini partout (vers 1 h du matin). */
+    if(QJ && QJ.onglet === "hier") zone.innerHTML = `<p class="minuscule">Le corrigé d’hier n’est pas encore disponible&#8239;: il s’ouvre dans la nuit, revenez un peu plus tard.</p>`;
   });
 }
 
-/* ---------- Le deroulement ---------- */
+/* ---------- Le deroulement ----------
+   Chaque question est lue au serveur quand vient son tour, chaque reponse
+   y part aussitot (QJ.envoyes : celles que le serveur a deja). Quitter
+   l'application compte la question en cours fausse : la reponse -1 part
+   quand on demande la question suivante (la suivante ne s'ouvre qu'apres). */
 
+/* Pour jouer : un compte, et un nom pour le classement. */
+function qjPeutJouer(){ return qjPeutPublier(); }
 function qjCommencer(){
   if(!QJ || qjAujourdhui()) return qjAfficher();
-  QJ.prepare = true; qjAfficher();
-  qjQuestions(QJ.date).then(items => {
+  if(!qjPeutJouer()) return qjAfficher();
+  QJ.prepare = true; QJ.raison = null; qjAfficher();
+  qjPret(QJ.date).then(pret => {
+    if(!pret) throw Object.assign(new Error("pas pret"), { pasPret: true });
+    return qjDepart(QJ.date);
+  }).then(p => {
     if(!QJ) return;
     QJ.prepare = false;
-    if(items.length < QJ_NB){ QJ.raison = "Le quiz n’a pas pu être préparé\u202f: certains cours sont introuvables."; QJ.vue = "classement"; return qjAfficher(); }
-    QJ.items = items; QJ.i = 0; QJ.choix = []; QJ.temps = [];
+    QJ.items = []; QJ.choix = (p.choix || []).map(c => c >= 0 ? [c] : []);
+    QJ.envoyes = QJ.choix.length; QJ.i = QJ.choix.length; QJ.temps = QJ.choix.map(() => 0);
     /* Commence pour de bon : enregistre tout de suite. */
     ETAT.quotidien = ETAT.quotidien || {};
-    ETAT.quotidien[QJ.date] = { justes: 0, temps: 0, fini: false, choix: [], envoye: false };
+    ETAT.quotidien[QJ.date] = { justes: 0, temps: 0, fini: false, choix: QJ.choix.slice(), envoye: false, verifie: false };
     sauverEtat();
     qjProteger(true);
-    QJ.vue = "question";
-    qjQuestionSuivante();
+    qjAvancer();
+  }, e => {
+    if(!QJ) return;
+    QJ.prepare = false;
+    QJ.raison = e && e.pasPret ? "Le quiz d’aujourd’hui n’est pas encore prêt sur le serveur. Réessayez un peu plus tard."
+      : "Pas de connexion au serveur : le Quiz of the Day se joue en ligne. Réessayez une fois connecté.";
+    qjAfficher();
   });
 }
 
@@ -7047,9 +7192,54 @@ function qjProteger(oui){
   document.body.classList.toggle("qj-actif", !!oui);
 }
 
+/* Envoie au serveur les reponses qu'il n'a pas encore, une a une. */
+function qjEnvoyerEnAttente(){
+  if(!QJ || QJ.envoyes >= QJ.choix.length) return Promise.resolve();
+  const liste = QJ.choix.slice(0, QJ.envoyes + 1).map(c => c && c.length ? c[0] : -1);
+  return qjEnvoyerChoix(QJ.date, liste).then(() => { QJ.envoyes++; }, e => {
+    /* Refuse : la reponse etait peut-etre deja partie (connexion coupee
+       au retour). On se recale sur la partie du serveur. */
+    if(!e || e.statut !== 403) throw e;
+    return qjLirePartie(QJ.date).then(p => {
+      if(!p) throw e;
+      if(p.choix.length < liste.length){
+        /* Reponse arrivee trop tard (plus de 35 s) : le serveur n'accepte
+           plus que -1. La question est perdue, on l'envoie comme telle. */
+        if(liste[liste.length - 1] === -1 || p.choix.length !== QJ.envoyes) throw e;
+        QJ.choix[QJ.envoyes] = [];
+        qjEnregistrer(false);
+        return;
+      }
+      QJ.envoyes = p.choix.length;
+      QJ.choix = p.choix.map(c => c >= 0 ? [c] : []).concat(QJ.choix.slice(p.choix.length));
+    });
+  }).then(qjEnvoyerEnAttente);
+}
+/* La suite : envoyer ce qui attend, puis lire et montrer la question. */
+function qjAvancer(){
+  if(!QJ) return;
+  QJ.vue = "envoi"; qjAfficher();
+  qjEnvoyerEnAttente().then(() => {
+    if(!QJ) return;
+    if(QJ.i >= QJ_NB) return qjFinir();
+    return qjLireQuestion(QJ.date, QJ.i).then(it => { if(!QJ) return; QJ.items[QJ.i] = it; qjQuestionSuivante(); }, e => {
+      if(!e || e.statut !== 403) throw e;
+      /* Delai depasse (application restee en pause) : la question est perdue. */
+      QJ.choix[QJ.i] = []; QJ.temps[QJ.i] = QJ_SECONDES; QJ.i++;
+      qjEnregistrer(false);
+      return qjAvancer();
+    });
+  }).catch(() => {
+    if(!QJ) return;
+    QJ.vue = "pause"; QJ.reseau = true;
+    QJ.raison = "Connexion au serveur perdue. Vérifiez votre connexion, puis touchez « Continuer ».";
+    qjAfficher();
+  });
+}
+
 function qjQuestionSuivante(){
   clearInterval(QJ.minuteur);
-  QJ.vue = "question";
+  QJ.vue = "question"; QJ.reseau = false;
   QJ.debutQ = Date.now();
   /* La question affichee est notee : si l'application est fermee pendant
      qu'elle est a l'ecran, elle sera comptee fausse a la reprise. */
@@ -7073,40 +7263,47 @@ function qjAfficherQuestion(){
     <div class="qj-barre"><i style="width:100%"></i></div>
     <p class="minuscule" style="margin:10px 0 4px">${tx(it.titre)}</p>
     <h3>${tx(it.q.enonce)}</h3>
-    <p class="consigne">${it.banque ? "Une seule réponse" : "Une ou plusieurs réponses"}</p>
-    ${it.ordre.map(o => `<label class="option"><input type="${it.banque ? "radio" : "checkbox"}" name="qj" data-qj="${o}"><span>${tx(it.q.options[o])}</span></label>`).join("")}
+    <p class="consigne">Une seule réponse</p>
+    ${it.ordre.map(o => `<label class="option"><input type="radio" name="qj" data-qj="${o}"><span>${tx(it.q.options[o])}</span></label>`).join("")}
     <button class="bouton-plein" data-action="qj-valider" style="margin-top:12px">Valider</button>
   </div>`;
 }
-/* choix : les options cochees, ou null quand le temps est ecoule. */
+/* choix : l'option cochee (liste d'au plus un indice), ou null quand le
+   temps est ecoule. */
 function qjRepondre(choix){
   if(!QJ || QJ.vue !== "question") return;
   clearInterval(QJ.minuteur);
-  QJ.choix[QJ.i] = choix === null ? [] : choix;
+  QJ.choix[QJ.i] = choix === null ? [] : choix.slice(0, 1);
   QJ.temps[QJ.i] = Math.min(QJ_SECONDES, Math.round((Date.now() - QJ.debutQ) / 1000));
   QJ.i++;
   qjEnregistrer(false);
-  if(QJ.i >= QJ_NB) return qjFinir();
-  qjQuestionSuivante();
+  qjAvancer();
 }
+/* Juste, d'apres un corrige (le jour fini seulement). */
 function qjJuste(it, choix){
+  if(!it || !it.q.correctes) return false;
   const a = (choix || []).slice().sort().join(), b = it.q.correctes.slice().sort().join();
   return !!choix && choix.length > 0 && a === b;
 }
+/* Garde la partie sur l'appareil. Le score, lui, vient du serveur. */
 function qjEnregistrer(fini){
-  const justes = QJ.items.reduce((t, it, i) => t + (qjJuste(it, QJ.choix[i]) ? 1 : 0), 0);
-  const temps = QJ.temps.reduce((t, x) => t + (x || 0), 0) + (fini ? (QJ_NB - QJ.temps.length) * QJ_SECONDES : 0);
-  ETAT.quotidien[QJ.date] = { justes, temps: Math.min(QJ_NB * QJ_SECONDES, temps), fini, choix: QJ.choix.slice(), envoye: false };
+  const e = ETAT.quotidien[QJ.date] || {};
+  ETAT.quotidien[QJ.date] = Object.assign(e, { choix: QJ.choix.slice(), fini: !!fini || !!e.fini });
+  if(e.verifie === undefined) e.verifie = false;
   sauverEtat();
 }
 function qjFinir(raison){
   clearInterval(QJ.minuteur);
   qjProteger(false);
   qjEnregistrer(true);
-  QJ.vue = "classement"; QJ.onglet = "jour"; QJ.raison = raison || null;
-  publierQuotidien().then(() => { if(QJ && QJ.vue === "classement" && QJ.onglet === "jour") qjRemplirOnglet(); });
+  QJ.vue = "classement"; QJ.onglet = "jour"; QJ.raison = raison || null; QJ.verification = true;
   qjAfficher();
-  majInsigne();
+  publierQuotidien().then(() => {
+    if(!QJ) return;
+    QJ.verification = false;
+    if(QJ.vue === "classement") qjAfficher();
+    majInsigne();
+  });
 }
 /* Systeme anti-triche : quitter pendant une question la compte fausse,
    comme si le chrono tombait a zero. Le quiz attend ensuite, sur un ecran
@@ -7118,34 +7315,37 @@ function qjSuspendre(raison){
   QJ.temps[QJ.i] = QJ_SECONDES;
   QJ.i++;
   qjEnregistrer(false);
-  if(QJ.i >= QJ_NB) return qjFinir("Système anti-triche\u202f: vous avez quitté l’application pendant la dernière question, elle est comptée fausse.");
-  QJ.vue = "pause";
+  QJ.vue = "pause"; QJ.reseau = false;
   QJ.raison = raison || "Vous avez quitté l’application ou la fenêtre pendant une question.";
   qjAfficher();
 }
 /* Reprendre le quiz du jour commence plus tot (ecran ferme, application
-   relancee). Une question qui etait a l'ecran au depart compte fausse. */
+   relancee) : la partie est relue au serveur. Une question qui etait a
+   l'ecran au depart compte fausse. */
 function qjReprendre(){
   const e = qjAujourdhui();
   if(!e || e.fini) return qjOuvrir();
-  QJ = { date: aujourdhui(), vue: "intro", onglet: "jour", items: null, prepare: true };
+  QJ = { date: aujourdhui(), vue: "intro", onglet: "jour", items: [], prepare: true };
   qjAfficher();
-  qjQuestions(QJ.date).then(items => {
+  if(!qjPeutJouer()){ QJ.prepare = false; return qjAfficher(); }
+  qjLirePartie(QJ.date).then(p => {
     if(!QJ) return;
     QJ.prepare = false;
-    if(items.length < QJ_NB){ QJ.raison = "Le quiz n’a pas pu être préparé."; QJ.vue = "classement"; return qjAfficher(); }
-    QJ.items = items;
-    QJ.choix = (e.choix || []).slice(0, QJ_NB).map(c => c || []);
-    QJ.i = QJ.choix.length;
-    QJ.temps = QJ.choix.map(() => 0);
-    if(QJ.temps.length) QJ.temps[0] = e.temps || 0;
+    if(!p){ delete ETAT.quotidien[QJ.date]; sauverEtat(); return qjAfficher(); }   // le depart n'etait pas parti
+    QJ.choix = p.choix.map(c => c >= 0 ? [c] : []); QJ.envoyes = QJ.choix.length;
+    QJ.i = QJ.choix.length; QJ.temps = QJ.choix.map(() => 0); QJ.items = [];
     qjProteger(true);
+    if(QJ.i >= QJ_NB) return qjFinir();
     if(e.enCours === QJ.i){
       QJ.vue = "question";
       return qjSuspendre("La question en cours quand vous avez quitté l’application ne peut pas être rejouée.");
     }
-    if(QJ.i >= QJ_NB) return qjFinir();
-    QJ.vue = "pause"; QJ.raison = null;
+    QJ.vue = "pause"; QJ.raison = null; QJ.reseau = false;
+    qjAfficher();
+  }, () => {
+    if(!QJ) return;
+    QJ.prepare = false; QJ.vue = "intro";
+    QJ.raison = "Pas de connexion au serveur : reprenez le quiz une fois connecté.";
     qjAfficher();
   });
 }
@@ -7318,7 +7518,7 @@ function qjHistorique(zone){
 function actionQuizJour(a, el){
   if(a === "qj-ouvrir"){ qjOuvrir("intro"); return true; }
   if(a === "qj-reprendre"){ qjReprendre(); return true; }
-  if(a === "qj-suivante"){ if(QJ && QJ.vue === "pause") qjQuestionSuivante(); return true; }
+  if(a === "qj-suivante"){ if(QJ && QJ.vue === "pause") qjAvancer(); return true; }
   if(a === "qj-classements"){ qjOuvrir("classement"); return true; }
   if(a === "qj-commencer"){ qjCommencer(); return true; }
   if(a === "qj-valider"){

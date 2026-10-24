@@ -1,3 +1,0 @@
-Banque du quiz du jour : un fichier par mois (AAAA-MM.js), genere par
-source/quotidien/planifier.js a partir de source/quotidien/banque/*.txt.
-Ne pas modifier a la main.
