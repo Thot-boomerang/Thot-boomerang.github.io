@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-4i9axqGONj+7gGr1TCHDeMpACdx/wTEoBriOucd35y8=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-tIdcRlHTMdM8fgBwBO3nrjXrY+NMgB29pa9Jmd5C8hM=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1270,6 +1270,7 @@ body[data-choix="1"]{overflow:hidden}
 .st-nom{flex:1;min-width:0}
 .st-nom strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .st-nom small{display:block;font-size:12.5px;color:var(--texte-2)}
+.st-ecart{color:var(--rouge-faux);font-weight:600}
 .st-pts{flex:0 0 5.6em;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:14px;color:var(--texte)}
 .st-badge{flex:0 0 36px;width:36px;display:inline-flex;justify-content:center;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.25))}
 .qj-badge{display:contents}
@@ -5263,16 +5264,17 @@ function cleClasse(c){ return String(c || "").toUpperCase().replace(/[^0-9A-Z]/g
 /* L'annee scolaire que l'application ajoute a la classe : << 3A (2026-2027) >>. */
 function anneeDeClasse(c){ return (/\((\d{4}-\d{4})\)\s*$/.exec(c || "") || [])[1] || ""; }
 
-function urlListeProgressions(page){
+function urlListeProgressions(page, collection){
   return "https://firestore.googleapis.com/v1/projects/" + encodeURIComponent(CONFIG_COMPTE.projectId)
-    + "/databases/(default)/documents/progressions?pageSize=100" + (page ? "&pageToken=" + encodeURIComponent(page) : "");
+    + "/databases/(default)/documents/" + (collection || "progressions") + "?pageSize=100" + (page ? "&pageToken=" + encodeURIComponent(page) : "");
 }
 
-/* Toutes les progressions, page par page. */
-function lireToutesProgressions(){
+/* Toutes les progressions (ou toutes les lignes d'une autre collection),
+   page par page. */
+function lireToutesProgressions(collection){
   const docs = [];
   const page = jeton => COMPTE.user.getIdToken()
-    .then(j => fetch(urlListeProgressions(jeton), { headers: { "Authorization": "Bearer " + j } }))
+    .then(j => fetch(urlListeProgressions(jeton, collection), { headers: { "Authorization": "Bearer " + j } }))
     .then(r => {
       if(r.status === 403) throw new Error("refus");
       if(!r.ok) return r.json().catch(() => ({})).then(j => { throw new Error((j.error && j.error.message) || "réponse " + r.status); });
@@ -5328,9 +5330,19 @@ function ficheEleve(doc){
 function chargerStats(){
   if(!estProfesseur() || STATS.enCours) return;
   STATS.enCours = true; STATS.erreur = null; rendreStats();
-  Promise.all([lireToutesProgressions(), chargerSanctions()]).then(([docs, sanctions]) => {
+  /* Les lignes du classement general, pour verifier qu'elles suivent les
+     fiches : chaque eleve publie lui-meme ses points, et une application
+     pas a jour publie ceux de son ancien bareme. */
+  const publie = lireToutesProgressions("classement").then(docs => {
+    const m = {};
+    docs.forEach(d => { const f = d.fields || {};
+      m[String(d.name || "").split("/").pop()] = Number((f.points && f.points.integerValue) || 0); });
+    return m;
+  }, () => null);
+  Promise.all([lireToutesProgressions(), chargerSanctions(), publie]).then(([docs, sanctions, pub]) => {
     const profs = (CONFIG_COMPTE.professeurs || []).map(a => String(a).toLowerCase());
     STATS.eleves = docs.map(ficheEleve).filter(f => f && profs.indexOf(f.email.toLowerCase()) < 0);
+    STATS.publie = pub;
     STATS.sanctions = sanctions || {};
     STATS.maj = new Date();
     chargerQuestionsStats();
@@ -5580,9 +5592,22 @@ function contenuStats(){
 
   parts.push(filet("Classement"));
   const tri = E.slice().sort((a, b) => b.points - a.points || a.nom.localeCompare(b.nom, "fr"));
+  /* Ce que le classement general affiche, compare a la fiche. */
+  const ecart = e => {
+    if(!STATS.publie) return "";
+    const p = STATS.publie[e.uid];
+    if(p === undefined) return " &#8226; <span class=\"st-ecart\">absent du classement</span>";
+    return p === Math.round(e.points) ? "" : ` &#8226; <span class="st-ecart">classement&#8239;: ${p.toLocaleString("fr-FR")} pts</span>`;
+  };
+  if(STATS.publie){
+    const n = E.filter(e => ecart(e)).length;
+    parts.push(`<p class="minuscule" style="margin:0 0 8px">${n
+      ? `<strong>${pluriel(n, "élève")} pas à jour au classement général</strong>, marqué${n > 1 ? "s" : ""} ci-dessous. Cela se corrige seul dès que l’élève ouvre une version à jour d’EPOK.`
+      : "Classement général à jour pour tous les élèves."}</p>`);
+  }
   parts.push(`<div class="carte"><ol class="st-classement">${tri.map((e, i) => `<li>
     <span class="st-num">${i + 1}</span>
-    <span class="st-nom"><strong>${esc(e.nom)}</strong><small>${esc(e.rang.libelle)}${e.classe ? " &#8226; " + esc(e.classe) : ""}</small></span>
+    <span class="st-nom"><strong>${esc(e.nom)}</strong><small>${esc(e.rang.libelle)}${e.classe ? " &#8226; " + esc(e.classe) : ""}${ecart(e)}</small></span>
     <span class="st-pts">${e.points.toLocaleString("fr-FR")} pts</span></li>`).join("")}</ol></div>`);
 
   parts.push(statsQuiz(E));
