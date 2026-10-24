@@ -91,6 +91,7 @@
   --texte-2:#645238;        /* texte secondaire, encre delavee */
   --or:#7d5e18;             /* dorure lisible sur papier (texte) */
   --or-vif:#a8801f;         /* dorure pour les aplats et ornements */
+  --dit-fond:rgba(168,128,31,.18); /* ligne de tableau lue a voix haute */
   --laiton:#b39a5e;         /* filets discrets */
   --bordeaux:#7d1d26;       /* maroquin : accent principal */
   --bordeaux-pale:#a85560;
@@ -143,6 +144,7 @@ html[data-police="ecran"]{ --police-texte:var(--police-ecran) }
     --fond:#0b0b0b; --fond-2:#171717; --fond-3:#242424;
     --texte:#f5f5f5; --texte-2:#c4c4c4;
     --or:#f0cf7a; --or-vif:#f0cf7a; --laiton:#4a4a4a;
+    --dit-fond:rgba(240,207,122,.16);
     --bordeaux:#f2f2f2; --bordeaux-pale:#5a5a5a;
     --vert:#9fd9ad; --rouge-faux:#ff8a7a; --vert-juste:#8fe0a8;
     --verge-a:transparent;
@@ -159,6 +161,7 @@ html[data-police="ecran"]{ --police-texte:var(--police-ecran) }
     --fond:#0b0b0b; --fond-2:#171717; --fond-3:#242424;
     --texte:#f5f5f5; --texte-2:#c4c4c4;
     --or:#f0cf7a; --or-vif:#f0cf7a; --laiton:#4a4a4a;
+    --dit-fond:rgba(240,207,122,.16);
     --bordeaux:#f2f2f2; --bordeaux-pale:#5a5a5a;
     --vert:#9fd9ad; --rouge-faux:#ff8a7a; --vert-juste:#8fe0a8;
     --verge-a:transparent;
@@ -738,6 +741,12 @@ body[data-lecture="1"] #jauge-lecture{display:block}
   content:"";position:absolute;left:-14px;top:2px;bottom:2px;width:3px;
   background:var(--or-vif);border-radius:2px;
 }
+/* Dans un tableau, le filet deviendrait une case de plus et decalerait la
+   ligne : on colore les cases sur place, sans toucher a la mise en page. */
+tr.dit{background:none;box-shadow:none}
+tr.dit::before{content:none}
+tr.dit > th, tr.dit > td{background:var(--dit-fond);color:var(--or)}
+tr.dit > :first-child{box-shadow:inset 3px 0 0 var(--or-vif)}
 
 /* La barre du lecteur, posee au-dessus de la barre d'onglets. */
 #barre-voix{
