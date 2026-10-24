@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-S6xzl6MXypmYRsJRV5CyC5lPmynjugtqfW6AWgrCF+E=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-GLoAa4il6plTzBx8ZdIKj89Llz9vCgzFLuEAdhNjLPY=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -7879,6 +7879,7 @@ function ouvSuite(){
     if(OUV.casse) return;
     OUV.casse = true;
     scene.querySelector(".ouv-pli").classList.add("casse");
+    ouvPreparerSon(); ouvSonDechire();
     const c = scene.querySelector(".ouv-consigne"); if(c) c.remove();
     ouvMinuteur(() => ouvCarte(0), 1100);
     return;
@@ -7948,7 +7949,8 @@ function ouvRetourner(){
   retourner(fin + 600, 1700);
 }
 
-/* Les sons de l'ouverture, synthetises (aucun fichier) : le leger cliquetis
+/* Les sons de l'ouverture, synthetises (aucun fichier) : le sachet qui se
+   dechire, le leger cliquetis
    de la carte qui tremble, le souffle quand elle se retourne en l'air, et
    l'impact quand on la plaque : un coup sec, un claquement et le grondement
    de l'onde de choc, qui resonnent de plus en plus avec la rarete. Le son se
@@ -7991,6 +7993,24 @@ function sonBruit(a, t, sec, type, freq, q){
 }
 function sonPret(){ return sonsActifs() && OUV_SON && OUV_SON.sortie ? OUV_SON : null; }
 
+/* Le sachet qui se dechire : un « zip » qui monte vers l'aigu, crible de
+   petits craquements irreguliers de feuille metallisee, le temps que le haut
+   s'arrache (0,55 s). */
+function ouvSonDechire(){
+  const a = sonPret();
+  if(!a) return;
+  try{
+    const t = a.currentTime, sec = .5;
+    const [, f, g] = sonBruit(a, t, sec, "bandpass", 1600, 1.3);
+    f.frequency.setValueAtTime(1600, t); f.frequency.exponentialRampToValueAtTime(5200, t + sec);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .04);
+    g.gain.setValueAtTime(.07, t + sec * .7); g.gain.exponentialRampToValueAtTime(.0001, t + sec);
+    for(let k = 0; k < 24; k++){
+      const d = t + k * sec / 24 + Math.random() * .012, [, , gg] = sonBruit(a, d, .02, "highpass", 3000, .7);
+      gg.gain.setValueAtTime(.025 + Math.random() * .05, d); gg.gain.exponentialRampToValueAtTime(.0001, d + .02);
+    }
+  }catch(e){}
+}
 /* Le tremblement : un leger cliquetis de carton, discret, qui s'emballe un peu. */
 function ouvSonTremble(ri, ms){
   const a = sonPret();

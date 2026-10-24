@@ -6,7 +6,7 @@
    bibliotheques) est servi depuis le cache, puis mis en cache a la
    premiere lecture. VERSION change a chaque publication (publier_web.sh) :
    le nouveau service worker remplace alors l'ancien et vide son cache. */
-const VERSION = "202610240301-56e2ff5";
+const VERSION = "202610241024-9d5ac48";
 const CACHE = "epok-" + VERSION;
 const ESSENTIEL = ["./", "index.html", "config-compte.js", "manifest.webmanifest", "icone-192.png", "icone-512.png"];
 
