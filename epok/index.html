@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-lyaKnR5W8Fg8MJTWWPm7i0G2p0frZd3KiI9cLj9Feu0=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-oYKXJcsffpV/dcbHC48zSW+HGBPrV1YzS8cC2wIij0U=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -4708,21 +4708,44 @@ function messageErreurCompte(e){
   if(c === "auth/email-already-in-use") return "Un compte existe déjà avec cette adresse. Connectez-vous, ou utilisez « Mot de passe oublié ».";
   if(c === "auth/weak-password") return "Mot de passe trop faible : " + MDP_MIN + " caractères au moins.";
   if(c === "auth/invalid-credential" || c === "auth/invalid-login-credentials" || c === "auth/wrong-password" || c === "auth/user-not-found")
-    return "Adresse ou mot de passe incorrect.";
+    return "Adresse ou mot de passe incorrect. Pas encore de compte EPOK ? Créez-en un (onglet « Créer un compte ») ou utilisez « Continuer avec Google » : votre mot de passe Google ne marche pas ici.";
+  if(c === "auth/missing-password") return "Indiquez votre mot de passe.";
+  if(c === "auth/admin-restricted-operation") return "La création de comptes est fermée sur le serveur pour l’instant. Prévenez votre professeur.";
+  if(c === "auth/unauthorized-domain") return "Ce site n’est pas autorisé à créer des comptes. Prévenez votre professeur.";
+  if(c === "auth/internal-error") return "Le serveur des comptes n’a pas répondu. Réessayez dans un instant.";
   if(c === "auth/user-disabled") return "Ce compte a été désactivé.";
   if(c === "auth/too-many-requests") return "Trop d’essais. Patientez quelques minutes, ou réinitialisez votre mot de passe.";
   if(c === "auth/network-request-failed") return "Pas de connexion à Internet. Réessayez une fois en ligne.";
   if(c === "auth/operation-not-allowed") return "La connexion par e-mail n’est pas encore activée sur le serveur.";
-  return "Erreur : " + ((e && e.message) || "inconnue") + ".";
+  /* Inattendue : on montre son code, pour pouvoir la reconnaitre. */
+  return "Erreur" + (c ? " (" + c + ")" : "") + " : " + ((e && e.message) || "inconnue") + ".";
 }
 
 function lireChamp(id){ const el = document.getElementById(id); return el ? el.value : ""; }
 
-/* Une demande au serveur : on bloque les boutons le temps qu'elle dure. */
-function demandeCompte(promesse, reussite){
+/* Une demande au serveur : on bloque les boutons le temps qu'elle dure.
+   Les mots de passe tapes sont remis dans leurs cases apres coup (le
+   formulaire est redessine) et l'erreur est amenee sous les yeux. */
+function demandeCompte(promesse, reussite, garder){
   COMPTE.attente = true; COMPTE.erreur = null; COMPTE.info = null; majVuesCompte();
+  if(garder) garder();
   return promesse.then(r => { if(reussite) reussite(r); }, e => { COMPTE.erreur = messageErreurCompte(e); })
-    .finally(() => { COMPTE.attente = false; majVuesCompte(); });
+    .finally(() => { COMPTE.attente = false; majVuesCompte(); if(COMPTE.erreur){ if(garder) garder(); montrerErreurCompte(); } });
+}
+/* Remet les mots de passe tapes dans le formulaire redessine. */
+function gardeMdp(mdp, mdp2){
+  return () => {
+    const a = document.getElementById("compte-mdp"), b = document.getElementById("compte-mdp2");
+    if(a && mdp) a.value = mdp;
+    if(b && mdp2) b.value = mdp2;
+  };
+}
+/* Une erreur s'affiche juste au-dessus du bouton ; on l'amene a l'ecran. */
+function montrerErreurCompte(garder){
+  majVuesCompte();
+  if(garder) garder();
+  const a = document.querySelector(".form-compte [role='alert']");
+  if(a && a.scrollIntoView) a.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 const MESSAGE_CLASSE = "Écrivez votre classe sous la forme 3A, 3F… (le niveau puis la lettre), ou laissez la case vide.";
@@ -4735,13 +4758,14 @@ function creerCompteEmail(){
   const email = (COMPTE.email = lireChamp("compte-email").trim());
   const mdp = lireChamp("compte-mdp"), mdp2 = lireChamp("compte-mdp2");
   COMPTE.info = null;
-  if(nom.length < 2){ COMPTE.erreur = "Indiquez votre prénom et votre nom."; return majVuesCompte(); }
+  const garder = gardeMdp(mdp, mdp2), refuser = m => { COMPTE.erreur = m; montrerErreurCompte(garder); };
+  if(nom.length < 2) return refuser("Indiquez votre prénom et votre nom.");
   const refus = nomInapproprie(nom);
-  if(refus){ COMPTE.erreur = refus; return majVuesCompte(); }
-  if(classe === null){ COMPTE.erreur = MESSAGE_CLASSE; return majVuesCompte(); }
-  if(!email){ COMPTE.erreur = "Indiquez votre adresse e-mail."; return majVuesCompte(); }
-  if(mdp.length < MDP_MIN){ COMPTE.erreur = "Mot de passe trop court : " + MDP_MIN + " caractères au moins."; return majVuesCompte(); }
-  if(mdp !== mdp2){ COMPTE.erreur = "Les 2 mots de passe ne sont pas identiques."; return majVuesCompte(); }
+  if(refus) return refuser(refus);
+  if(classe === null) return refuser(MESSAGE_CLASSE);
+  if(!email) return refuser("Indiquez votre adresse e-mail.");
+  if(mdp.length < MDP_MIN) return refuser("Mot de passe trop court : " + MDP_MIN + " caractères au moins.");
+  if(mdp !== mdp2) return refuser("Les 2 mots de passe ne sont pas identiques.");
   return demandeCompte(COMPTE.auth.createUserWithEmailAndPassword(email, mdp), r => {
     /* Un e-mail de confirmation prouve que l'adresse est bien la sienne :
        c'est elle qui servira si le mot de passe est oublie. */
@@ -4750,7 +4774,7 @@ function creerCompteEmail(){
     /* Le nom, pour que le professeur reconnaisse l'eleve. */
     if(r && r.user && r.user.updateProfile) r.user.updateProfile({ displayName: nom })
       .then(() => planifierSynchro(300), () => {});
-  });
+  }, garder);
 }
 
 function connexionEmail(){
@@ -4758,8 +4782,9 @@ function connexionEmail(){
   const email = (COMPTE.email = lireChamp("compte-email").trim());
   const mdp = lireChamp("compte-mdp");
   COMPTE.info = null;
-  if(!email || !mdp){ COMPTE.erreur = "Indiquez votre adresse e-mail et votre mot de passe."; return majVuesCompte(); }
-  return demandeCompte(COMPTE.auth.signInWithEmailAndPassword(email, mdp));
+  const garder = gardeMdp(mdp);
+  if(!email || !mdp){ COMPTE.erreur = "Indiquez votre adresse e-mail et votre mot de passe."; return montrerErreurCompte(garder); }
+  return demandeCompte(COMPTE.auth.signInWithEmailAndPassword(email, mdp), null, garder);
 }
 
 /* Firebase envoie lui-meme un lien de reinitialisation sur l'adresse du
@@ -4782,14 +4807,14 @@ function formulaireCompte(){
   const onglet = (id, nom) => `<button type="button" data-action="compte-forme" data-forme="${id}" aria-pressed="${f === id}">${nom}</button>`;
   const email = `<label class="champ-compte"><span>Adresse e-mail</span>
       <input id="compte-email" type="email" autocomplete="email" inputmode="email" spellcheck="false" value="${esc(COMPTE.email)}"></label>`;
-  const messages = (COMPTE.erreur ? `<p class="avis" role="alert" style="margin:12px 0 0">${esc(COMPTE.erreur)}</p>` : "")
-    + (COMPTE.info ? `<p class="compte-info" role="status" style="margin:12px 0 0">${esc(COMPTE.info)}</p>` : "");
+  const messages = (COMPTE.erreur ? `<p class="avis" role="alert" style="margin:12px 0">${esc(COMPTE.erreur)}</p>` : "")
+    + (COMPTE.info ? `<p class="compte-info" role="status" style="margin:12px 0">${esc(COMPTE.info)}</p>` : "");
   if(f === "oubli") return `<div class="form-compte">
       <p class="secondaire" style="margin:0 0 10px">Indiquez l’adresse de votre compte&#8239;: vous recevrez un lien pour choisir un nouveau mot de passe.</p>
       ${email}
+      ${messages}
       <button class="bouton-plein" data-action="compte-oubli"${off}>${COMPTE.attente ? "Envoi…" : "Envoyer le lien"}</button>
-      <p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="connexion">Retour à la connexion</button></p>
-      ${messages}</div>`;
+      <p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="connexion">Retour à la connexion</button></p></div>`;
   return `<div class="form-compte">
     <div class="seg compte-onglets">${onglet("creer", "Créer un compte")}${onglet("connexion", "Se connecter")}</div>
     ${f === "creer" ? `<label class="champ-compte"><span>Votre vrai prénom et votre nom</span>
@@ -4802,13 +4827,13 @@ function formulaireCompte(){
       <input id="compte-mdp" type="password" autocomplete="${f === "creer" ? "new-password" : "current-password"}"></label>
     ${f === "creer" ? `<label class="champ-compte"><span>Confirmer le mot de passe</span>
       <input id="compte-mdp2" type="password" autocomplete="new-password"></label>` : ""}
+    ${messages}
     <button class="bouton-plein" data-action="${f === "creer" ? "compte-creer" : "compte-entrer"}"${off}>${
       COMPTE.attente ? "Un instant…" : f === "creer" ? "Créer mon compte" : "Se connecter"}</button>
     ${f === "creer" ? `<p class="minuscule" style="margin:8px 0 0">Votre professeur verra votre nom, votre classe, votre progression et votre rang.</p>` : ""}
     ${f === "connexion" ? `<p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="oubli">Mot de passe oublié&#8239;?</button></p>` : ""}
     <div class="compte-ou"><span>ou</span></div>
-    <button class="bouton" data-action="compte-connexion"${off}>Continuer avec Google</button>
-    ${messages}</div>`;
+    <button class="bouton" data-action="compte-connexion"${off}>Continuer avec Google</button></div>`;
 }
 
 /* ---------- Ecran de compte obligatoire ---------- */
@@ -6041,7 +6066,7 @@ const MOTS_INTERDITS = new Set(("con cons conne connes cul culs pd pede pedes fd
   "gouine salaud salauds ordure enfoire branleur suce sucer foutre baise baiser caca pipi prout zizi kikoo lol mdr xd admin " +
   "administrateur moderateur prof professeur epok fuck fucker shit bitch dick pussy ass asshole cunt whore slut hitler test anonyme " +
   "inconnu personne moi toto tata titi bg boss king queen").split(" "));
-const RACINES_INTERDITES = ["connard", "connass", "encul", "salope", "putain", "enfoir", "branl", "bougnoul", "youpin", "pedophil",
+const RACINES_INTERDITES = ["connard", "connass", "encul", "salope", "putain", "enfoir", "branlett", "branleu", "bougnoul", "youpin", "pedophil",
   "porno", "merde", "batard", "couill", "salaud", "hitler", "fuck", "bitch", "nigg"];
 function normaliserNom(t){
   return String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
