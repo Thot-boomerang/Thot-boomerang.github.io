@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-J9ihO5IuK9HF87+obcU6HC4wNE9hxlwnylwF1meBfk8=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-HcT8S2rOqcfhhd6bBr9xXcNFLPex6OqLyt4v3rPi9Wo=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1635,7 +1635,7 @@ body.ouv-active{overflow:hidden}
 .ouv-legende .bulle{background:rgba(255,255,255,.14);color:#fff}.ouv-legende .bulle-or{background:var(--or-vif);color:#1d1606}
 .ouv-toucher{display:block;margin-top:8px;font-size:12.5px;opacity:.65}
 .ouv-titre{margin:0 0 16px;font:700 20px var(--police-titre);letter-spacing:.12em;text-transform:uppercase}
-.ouv .pli-jour{width:min(92vw,420px)}
+.ouv .pli-jour{width:min(92vw,420px);grid-template-columns:repeat(3,minmax(0,1fr))}
 .c-mini.deja::after{content:"Déjà tirée";position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(-14deg);
   padding:2px 5px;border:2px double #c21f2b;border-radius:4px;background:rgba(255,250,240,.85);color:#c21f2b;
   font:800 9.5px var(--police-titre);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
@@ -1674,7 +1674,24 @@ body.beta .solde-ecus{display:flex;position:absolute;left:4px;top:calc(50% + 4px
 .missions li.faite .coche{background:#2e9150;border-color:#2e9150}
 .missions li.faite .t{color:var(--texte-2);text-decoration:line-through}
 .coffre{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:14px}
-.boutique{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.boutique{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.offre-g{border-color:#2e9150;background:linear-gradient(170deg,#f4fbf1,var(--fond-2))}
+.offre-g b{color:#2e7a45}
+.decompte{font-variant-numeric:tabular-nums;font-weight:700}
+.decompte-boite{margin:auto 0 0;width:100%;text-align:center;line-height:1.1}
+.decompte-boite small{display:block;font-size:11px;color:var(--texte-2)}
+.decompte-boite .decompte{font:800 20px var(--police-titre);color:#2e7a45}
+.chances-boite{overflow-x:auto}
+table.chances{border-collapse:collapse;width:100%;font-size:11px;text-align:center}
+table.chances th,table.chances td{padding:5px 2px;border-bottom:1px solid var(--filet,#e2d6bd)}
+table.chances thead th{font:700 9.5px var(--police-titre);color:var(--rar,var(--texte-2));text-transform:uppercase;letter-spacing:.02em;vertical-align:bottom}
+table.chances tbody th{text-align:left;font:700 11px/1.1 var(--police-titre);color:var(--bordeaux);padding-right:4px}
+table.chances tbody th small{display:block;font:400 9.5px var(--police-texte,inherit);color:var(--texte-2)}
+table.chances td{white-space:nowrap}
+table.chances td{font-variant-numeric:tabular-nums}
+.ouv .pli-jour.ouv-recs{margin-top:8px;align-items:center}
+.ouv-rec{padding:4px 2px;min-height:0;font-size:10.5px;letter-spacing:.02em;width:100%;color:#f6efe2;border-color:rgba(246,239,226,.5);background:rgba(0,0,0,.25)}
+.recyclee{font:700 11px var(--police-titre);color:#9fe0b0;text-align:center}
 .offre{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:10px 4px;border-radius:12px;border:1px solid var(--laiton);background:var(--fond-2)}
 .offre b{font:800 13px var(--police-titre);color:var(--bordeaux)}
 .offre small{font-size:11px;line-height:1.3;color:var(--texte-2);min-height:2.6em}
@@ -6170,7 +6187,7 @@ const AIDES = {
     <li><strong>Classique</strong>&#8239;: 3 cartes, toutes raretés.</li>
     <li><strong>Premium</strong>&#8239;: la 3<sup>e</sup> carte rare ou mieux.</li>
     <li><strong>Ultra premium</strong>&#8239;: 3 cartes rares ou mieux.</li></ul>` },
-  passe: { titre: "Passe de saison", corps: () => `<ul class="aide-liste">
+  passe: { titre: "Pass de saison", corps: () => `<ul class="aide-liste">
     <li>Chaque tranche de ${PASSE_PALIER} points gagnés pendant la saison ouvre un palier.</li>
     <li>Touchez un palier atteint pour récupérer ses écus ou son pack.</li>
     <li>${PASSE.length} paliers&#8239;; le dernier donne un Ultra premium.</li></ul>` },
@@ -8885,7 +8902,7 @@ function titrePack(cle){
   if(!(typeof BETA !== "undefined" && BETA)) return estPackSaison(cle) ? "Pack de la saison" : "Pack offert";
   if(PACKS_OFFERTS.indexOf(cle) >= 0) return "Pack de bienvenue · " + t;
   if(/^rang-/.test(cle)) return "Pack de rang · " + t;
-  if(/^passe-/.test(cle)) return "Passe de saison · " + t;
+  if(/^passe-/.test(cle)) return "Pass de saison · " + t;
   if(estPackSaison(cle)) return "Pack de la saison · " + t;
   return "Pack " + t;
 }
@@ -9197,6 +9214,10 @@ function ouvBilan(){
   scene.removeAttribute("data-action");
   scene.innerHTML = `<p class="ouv-titre">${OUV.titre}</p>
     <div class="pli-jour">${OUV.ordre.map((n, k) => miniCarte(n, 1, (OUV.avant[n] || OUV.ordre.slice(0, k).indexOf(n) >= 0) ? "deja" : "neuve")).join("")}</div>
+    ${/* Beta Ecus : un double tire peut partir aussitot contre des ecus. */
+      typeof BETA !== "undefined" && BETA && typeof RECYCLAGE !== "undefined" && OUV.ordre.some((n, k) => OUV.avant[n] || OUV.ordre.slice(0, k).indexOf(n) >= 0)
+      ? `<div class="pli-jour ouv-recs">${OUV.ordre.map((n, k) => (OUV.avant[n] || OUV.ordre.slice(0, k).indexOf(n) >= 0)
+          ? `<button type="button" class="bouton petit ouv-rec" data-action="ouv-recycler" data-n="${n}">Recycler +${RECYCLAGE[carteN(n).r]}</button>` : "<span></span>").join("")}</div>` : ""}
     <button class="bouton-plein" data-action="ouv-fermer" style="margin-top:18px">Ranger dans l’album</button>`;
   const passer = v.querySelector(".ouv-passer"); if(passer) passer.remove();
 }
@@ -9415,6 +9436,8 @@ function packsGagnes(){
   Object.keys(e.rangs).sort((a, b) => a - b).forEach(k => { l.push("rang-" + k + "-c", "rang-" + k + "-p"); });
   Object.keys(e.passe).forEach(k => { const t = +k.split("-")[1], r = PASSE[t - 1]; if(r && r.pack) l.push("passe-" + k + "-" + r.pack); });
   if(typeof packsSaison === "function") packsSaison().forEach(k => l.push(k));
+  /* Les boosters achetes se gardent et s'ouvrent quand on veut. */
+  Object.keys(e.achats).forEach(k => l.push(k));
   return l;
 }
 function packsAOuvrir(){ return packsGagnes().filter(k => !collection().plis[k]); }
@@ -9426,8 +9449,7 @@ function acheterPack(t){
   const cle = "achat-" + Date.now().toString(36) + "-" + t;
   ecus().achats[cle] = PRIX_PACKS[t];
   sauverEtat();
-  ouvrirPli(cle);
-  return true;
+  return cle;
 }
 
 /* ---------- Le recyclage des doubles ---------- */
@@ -9501,49 +9523,43 @@ function annoncerGain(n){
     setTimeout(() => g.remove(), 2400);
   }, 250);
 }
-/* Le prochain booster a portee : « encore 80 écus pour un Premium ». */
-function prochainBooster(){
-  const s = soldeEcus();
-  const t = ["c", "p", "u"].find(k => s < PRIX_PACKS[k]);
-  if(!t) return { t: "u", reste: 0, part: 1 };
-  return { t, reste: PRIX_PACKS[t] - s, part: s / PRIX_PACKS[t] };
+/* Le pack gratuit du jour : jusqu'a minuit, puis le suivant. Il ne se
+   garde pas : pas ouvert le jour meme, il est perdu. */
+function avantMinuit(){
+  const d = new Date(), m = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+  const s = Math.max(0, Math.floor((m - d) / 1000));
+  return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(x => String(x).padStart(2, "0")).join(":");
 }
-function jaugeProchain(){
-  const p = prochainBooster();
-  return `<div class="ecu-jauge"><i style="width:${Math.round(p.part * 100)}%"></i></div>
-    <p class="minuscule" style="margin:4px 0 0">${p.reste ? `Encore <strong>${p.reste} écus</strong> pour un ${NOMS_PACKS[p.t]}` : "De quoi ouvrir un Ultra premium&#8239;!"}</p>`;
+let DECOMPTE = null;
+function lancerDecompte(){
+  if(DECOMPTE || typeof setInterval === "undefined") return;
+  DECOMPTE = setInterval(() => {
+    const l = document.querySelectorAll(".decompte");
+    if(!l.length){ clearInterval(DECOMPTE); DECOMPTE = null; return; }
+    const t = avantMinuit();
+    l.forEach(x => { x.textContent = t; });
+    if(t === "00:00:00" && typeof rendre === "function") setTimeout(rendre, 1500);
+  }, 1000);
 }
 
 /* ---------- L'onglet Cartes (beta) ----------
-   De haut en bas : le solde et le prochain booster, les packs gratuits a
-   ouvrir, les missions du jour et le coffre, la boutique, le passe de
-   saison ; l'album suit (z0l_cartes.js). */
+   De haut en bas : les missions du jour, la boutique (le pack gratuit du
+   jour en premier), les packs a ouvrir, le pass de saison ; l'album suit
+   (z0l_cartes.js). Le solde est dans l'en-tete. */
 function boosterType(t, petit){
   return `<span class="booster-${t}${petit ? " booster-petit" : ""}">${booster()}</span>`;
 }
-function carteSoldeEcus(){
-  const d = ecusDuJour();
-  return `<div class="carte ecu-carte">
-    <div class="ecu-tete">${pieceEcu(54)}<div><p class="minuscule" style="margin:0">Vos écus</p>
-      <p class="ecu-solde">${soldeEcus().toLocaleString("fr-FR")}</p></div>${aideBouton("ecus")}</div>
-    ${jaugeProchain()}
-    <p class="minuscule" style="margin:6px 0 0">Aujourd’hui&#8239;: ${d} / ${ECU_PLAFOND} écus gagnés${d >= ECU_PLAFOND ? " (plafond atteint&#8239;: revenez demain)" : ""}.</p>
-  </div>`;
-}
 function cartePacksGratuits(){
-  const l = [];
-  if(!pliOuvert()) l.push({ cle: aujourdhui(), action: "pli-ouvrir", titre: "Pack du jour" });
-  packsAOuvrir().forEach(k => l.push({ cle: k, action: "pli-gagne", titre: titrePack(k) }));
-  if(!l.length) return `<div class="carte pli-carte ouvert"><p class="capitales" style="margin:0 0 6px">Pack du jour${aideBouton("cartes")}</p>
-    <div class="pli-jour">${pliDuJour().map(n => miniCarte(n, 1)).join("")}</div>
-    <p class="minuscule" style="margin:10px 0 0">Nouveau pack offert dans ${typeof qjAvantMinuit === "function" ? qjAvantMinuit() : "quelques heures"}.</p></div>`;
-  return `<div class="carte pli-carte"><p class="capitales" style="margin:0 0 8px">${l.length > 1 ? l.length + " packs à ouvrir" : "Un pack à ouvrir"}${aideBouton("cartes")}</p>
-    <div class="packs-gratuits">${l.map(x => `<button type="button" class="pack-gratuit" data-action="${x.action}" data-cle="${esc(x.cle)}" aria-label="Ouvrir : ${esc(x.titre)}">
+  const l = packsAOuvrir().map(k => ({ cle: k, titre: titrePack(k) }));
+  if(!l.length) return "";
+  return `<div class="carte pli-carte"><p class="capitales" style="margin:0 0 8px">${l.length > 1 ? "Mes packs (" + l.length + ")" : "Mon pack"}${aideBouton("cartes")}</p>
+    <div class="packs-gratuits">${l.map(x => `<button type="button" class="pack-gratuit" data-action="pli-gagne" data-cle="${esc(x.cle)}" aria-label="Ouvrir : ${esc(x.titre)}">
       ${boosterType(typePack(x.cle), true)}<span>${esc(x.titre)}</span></button>`).join("")}</div></div>`;
 }
 function carteMissions(){
-  const m = missionsDuJour(), c = coffreSemaine();
-  return `<div class="carte"><p class="capitales" style="margin:0 0 8px">Missions du jour</p>
+  const m = missionsDuJour(), c = coffreSemaine(), d = ecusDuJour();
+  return `<div class="carte"><p class="capitales" style="margin:0 0 2px">Missions du jour${aideBouton("ecus")}</p>
+    <p class="minuscule" style="margin:0 0 6px">Aujourd’hui&#8239;: ${d} / ${ECU_PLAFOND} écus gagnés${d >= ECU_PLAFOND ? " (plafond atteint)" : ""}</p>
     <ul class="missions">${m.map(x => `<li class="${x.faite ? "faite" : ""}"><span class="coche" aria-hidden="true">${x.faite ? "&#10003;" : ""}</span>
       <span class="t">${esc(x.titre)}</span>${montantEcus(ECU_MISSION, 14)}</li>`).join("")}</ul>
     <div class="coffre"><span class="t"><strong>Coffre de la semaine</strong> &#8226; ${c.actifs}/5 jours actifs</span>
@@ -9551,20 +9567,32 @@ function carteMissions(){
         : c.ouvert ? `<span class="minuscule">ouvert &#10003;</span>` : montantEcus(ECU_COFFRE, 14)}</div>
   </div>`;
 }
-const CHANCES_TEXTE = {
-  c: "3 cartes, toutes raretés",
-  p: "2 cartes + 1 rare ou mieux",
-  u: "3 cartes rares ou mieux"
-};
+/* Chances par carte, en %, de commune a mythique. Le Premium : la moyenne
+   de ses 3 cartes (2 au hasard, 1 rare ou mieux). */
+function chancesPack(t){
+  const cl = PLI_CHANCES.map(x => x / 10), g = PLI_CHANCES_3E.map(x => x / 10);
+  if(t === "u") return g;
+  if(t === "p") return cl.map((x, i) => (2 * x + g[i]) / 3);
+  return cl;
+}
+function pourcent(x){ return x ? (x >= 10 ? Math.round(x) : Math.round(x * 10) / 10).toLocaleString("fr-FR") + "&#8239;%" : "–"; }
 function carteBoutique(){
-  const s = soldeEcus();
+  const s = soldeEcus(), ouvert = pliOuvert();
+  const gratuit = `<div class="offre offre-g">${boosterType("c", true)}<b>Pack du jour</b><small>Classique offert</small>
+    ${ouvert ? `<p class="decompte-boite"><small>Prochain dans</small><span class="decompte">${avantMinuit()}</span></p>`
+      : `<button class="bouton-plein petit" data-action="pli-ouvrir">Gratuit</button>`}</div>`;
+  if(ouvert) lancerDecompte();
+  const lignes = [["c", "Classique<small>et gratuit</small>"], ["p", "Premium"], ["u", "Ultra"]].map(([t, nom]) =>
+    `<tr><th scope="row">${nom}</th>${chancesPack(t).map(x => `<td>${pourcent(x)}</td>`).join("")}</tr>`).join("");
+  const ABR = ["Com.", "P. com.", "Rare", "Épiq.", "Lég.", "Myth."];
+  const tete = RARETES.map((r, i) => `<th scope="col" style="--rar:${r.c}" title="${r.nom}">${ABR[i]}</th>`).join("");
   return `<div class="carte"><p class="capitales" style="margin:0 0 8px">Boutique${aideBouton("boutique")}</p>
-    <div class="boutique">${["c", "p", "u"].map(t => `<div class="offre offre-${t}">
-      ${boosterType(t, true)}<b>${NOMS_PACKS[t]}</b><small>${CHANCES_TEXTE[t]}</small>
+    <div class="boutique">${gratuit}${["c", "p", "u"].map(t => `<div class="offre offre-${t}">
+      ${boosterType(t, true)}<b>${NOMS_PACKS[t]}</b><small>${t === "c" ? "3 cartes" : t === "p" ? "1 rare ou mieux" : "3 rares ou mieux"}</small>
       <button class="bouton${s >= PRIX_PACKS[t] ? "-plein" : ""} petit" data-action="ecu-acheter" data-t="${t}"${s >= PRIX_PACKS[t] ? "" : " disabled"}>${montantEcus(PRIX_PACKS[t], 14)}</button>
     </div>`).join("")}</div>
-    <p class="minuscule" style="margin:8px 0 0">Chances par carte&#8239;: commune 55&#8239;%, peu commune 27&#8239;%, rare 12&#8239;%, épique 4,5&#8239;%, légendaire 1,2&#8239;%, mythique 0,3&#8239;%.
-      Carte garantie rare ou mieux&#8239;: rare 70&#8239;%, épique 21&#8239;%, légendaire 7&#8239;%, mythique 2&#8239;%.</p>
+    <p class="minuscule" style="margin:10px 0 4px">Chances par carte</p>
+    <div class="chances-boite"><table class="chances"><thead><tr><th></th>${tete}</tr></thead><tbody>${lignes}</tbody></table></div>
   </div>`;
 }
 function cartePasse(){
@@ -9574,7 +9602,7 @@ function cartePasse(){
       aria-label="Palier ${t} : ${r.pack ? "pack " + NOMS_PACKS[r.pack] : r.e + " écus"}${pris ? ", récupéré" : atteint ? ", à récupérer" : ""}">
       <small>${t}</small>${r.pack ? boosterType(r.pack, true) : montantEcus(r.e, 13)}</button>`; }).join("");
   const dispo = PASSE.filter((r, k) => k + 1 <= p.palier && !p.pris(k + 1)).length;
-  return `<div class="carte"><p class="capitales" style="margin:0 0 4px">Passe de la saison ${p.n}${aideBouton("passe")}</p>
+  return `<div class="carte"><p class="capitales" style="margin:0 0 4px">Pass de saison ${p.n}${aideBouton("passe")}</p>
     <p class="minuscule" style="margin:0 0 8px">Palier ${p.palier}/${PASSE.length}${p.reste ? ` &#8226; encore ${p.reste} pts pour le suivant` : ""}${dispo ? ` &#8226; <strong>${dispo} à récupérer</strong>` : ""}</p>
     <div class="passe">${cases}</div></div>`;
 }
@@ -9591,7 +9619,18 @@ function carteChoixSaison(){
     <button class="bouton" data-action="ecu-saison" data-n="${n}" data-choix="b" style="flex:1">${b}</button></div></div>`;
 }
 function partiesCartesBeta(){
-  return [carteSoldeEcus(), carteChoixSaison(), cartePacksGratuits(), carteMissions(), carteBoutique(), cartePasse()];
+  return [carteChoixSaison(), carteMissions(), carteBoutique(), cartePacksGratuits(), cartePasse()];
+}
+/* Pendant l'ouverture : un double tire peut partir aussitot contre des ecus. */
+function recyclerUne(n){
+  const c = carteN(+n), m = cartesPossedees();
+  if(!c || !(m[n] > 1)) return 0;
+  const e = ecus(), v = RECYCLAGE[c.r] || 0;
+  e.recycles[n] = (e.recycles[n] || 0) + 1;
+  ajouterBonus("recyclage", v);
+  sauverEtat();
+  annoncerGain(v);
+  return v;
 }
 function boutonRecyclage(){
   const d = doublesARecycler();
@@ -9599,7 +9638,12 @@ function boutonRecyclage(){
   return `<button class="bouton petit" data-action="ecu-recycler" style="margin:0 0 10px">Recycler ${d.n} double${d.n > 1 ? "s" : ""} (+${d.v} écus)</button>`;
 }
 function actionEcus(a, el){
-  if(a === "ecu-acheter"){ acheterPack(el.dataset.t); return true; }
+  if(a === "ecu-acheter"){ if(acheterPack(el.dataset.t)) rendre(); return true; }
+  if(a === "ouv-recycler"){
+    const v = recyclerUne(el.dataset.n);
+    el.outerHTML = v ? `<span class="recyclee">Recyclée +${v} écus</span>` : `<span class="recyclee">Déjà recyclée</span>`;
+    return true;
+  }
   if(a === "pli-gagne"){ const k = el.dataset.cle; if(packsAOuvrir().indexOf(k) >= 0) ouvrirPli(k); return true; }
   if(a === "ecu-coffre"){ ouvrirCoffre(); rendre(); return true; }
   if(a === "ecu-passe"){ recupererPasse(+el.dataset.t); rendre(); return true; }
@@ -10691,8 +10735,9 @@ function rendreAccueil(){
   }
 
   parts.push(rappelCompte());
-  /* Le Quiz of the Day en tete : un encart a part, qu'on ne peut pas manquer. */
-  parts.push(carteQuizJour());
+  /* Le Quiz of the Day en tete : un encart a part, qu'on ne peut pas manquer.
+     Beta : il est en tete de l'onglet Quiz, plus ici. */
+  if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteQuizJour());
   /* Beta : plus d'onglet Cours ; le catalogue s'ouvre d'ici. */
   if(typeof BETA !== "undefined" && BETA) parts.push(`<button class="bouton tous-cours" data-action="onglet" data-onglet="cours">Tous les cours (${COURS.length})</button>`);
 
@@ -12068,8 +12113,7 @@ function rendreCorrection(){
     const ge = soldeEcus() - q.ecusAvant;
     parts.push(`<div class="carte ecu-bilan">${pieceEcu(40)}<div class="corps">
       <h3>${ge > 0 ? "+" + ge + " écus" : "Pas d’écus de plus"}</h3>
-      ${ge > 0 ? "" : `<p class="minuscule" style="margin:0 0 4px">${ecusDuJour() >= ECU_PLAFOND ? "Plafond du jour atteint (" + ECU_PLAFOND + " écus)." : "Révision&#8239;: 30 écus par jour au plus."}</p>`}
-      ${jaugeProchain()}</div></div>`);
+      <p class="minuscule" style="margin:0">${ge > 0 ? "Solde&#8239;: " + soldeEcus().toLocaleString("fr-FR") + " écus" : ecusDuJour() >= ECU_PLAFOND ? "Plafond du jour atteint (" + ECU_PLAFOND + " écus)." : "Révision&#8239;: 30 écus par jour au plus."}</p></div></div>`);
   }
   if(q.gain && q.type !== "compose"){
     const g = q.gain.apres - q.gain.avant;
