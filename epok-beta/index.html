@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-kyQCiwysJwSFLlM0JavbW51GYgKAdK8s3TX8/gHk1do=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-AIXRYkWXzg8Oan0sOJjNyj7UytCbY+zCsmgQ7WQlr64=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -4377,7 +4377,7 @@ function rendreAccueilBrevet(){
   parts.push(rappelCompte());
   /* Le Quiz of the Day en tete : un encart a part, qu'on ne peut pas manquer. */
   parts.push(carteQuizJour());
-  if(typeof BETA !== "undefined" && BETA) parts.push(`<button class="bouton tous-cours" data-action="onglet" data-onglet="cours">Tous les chapitres</button>`);
+  if(typeof BETA !== "undefined" && BETA && typeof blocCatalogue === "function") parts.push(blocCatalogue());
   /* Compte a rebours en tete quand la date est connue : c'est ce qui
      donne le rythme. Sinon, la date se demande plus bas, sans insister. */
   if(d && d >= aujourdhui()){
@@ -4457,9 +4457,10 @@ function rendreAccueilBrevet(){
   </div>`);
   if(!(d && d >= aujourdhui()))
     parts.push(`<p class="minuscule" style="text-align:center;margin:4px 0 14px">Date de l’épreuve&#8239;: votre professeur l’indiquera ici.</p>`);
-  parts.push(carteRang());
+  if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteRang());   /* beta : en tete de l'onglet Classements */
   if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteClassement());   /* le meme classement general qu'en mode Culture ; beta : onglet Classements */
   document.getElementById("vue-accueil").innerHTML = parts.join("");
+  if(typeof BETA !== "undefined" && BETA && typeof remplirCatalogue === "function") remplirCatalogue();
 }
 
 /* Onglet Quiz, en mode Brevet. */
@@ -9320,13 +9321,13 @@ if(typeof document !== "undefined") document.addEventListener("error", ev => {
    - aucun gain du passe : les points des cartes et des podiums de saison
      ne donnent pas d'ecus.
    Ce qui ne passe pas par le plafond est borne autrement : 300 ecus de
-   depart, le coffre de la semaine, le passe de saison, les prix de saison.
+   depart, le pass de saison, les prix de saison.
 
    Le solde n'est pas stocke : gains (par jour et bonus) moins achats,
    recalcule a chaque fois, a partir de ETAT.ecus.
    ========================================================================== */
 
-const ECU_PLAFOND = 150, ECU_REVISION = 30, ECU_DEPART = 300, ECU_MISSION = 20, ECU_COFFRE = 100;
+const ECU_PLAFOND = 150, ECU_REVISION = 30, ECU_DEPART = 300, ECU_MISSION = 20;
 const PRIX_PACKS = { c: 100, p: 250, u: 600 };
 const NOMS_PACKS = { c: "Classique", p: "Premium", u: "Ultra premium" };
 const RECYCLAGE = { "commune": 1, "peu-commune": 2, "rare": 5, "epique": 15, "legendaire": 40, "mythique": 100 };
@@ -9417,21 +9418,23 @@ function missionsDuJour(){
   return l;
 }
 
-/* ---------- Coffre de la semaine : 5 jours actifs du lundi au dimanche ---------- */
-function coffreSemaine(){
-  const l = qjLundi(aujourdhui()), actifs = joursActifs();
-  let n = 0;
-  for(let k = 0; k < 7; k++) if(actifs[qjDecaler(l, k)]) n++;
-  const ouvert = !!ecus().bonus["coffre-" + l];
-  return { lundi: l, actifs: Math.min(n, 5), pret: n >= 5 && !ouvert, ouvert };
+/* ---------- Les jours qui comptent pour la serie ----------
+   Seulement ce qui se verifie : une seance lue, un QCM ou un quiz, le
+   Quiz of the Day fini, une fiche du Brevet lue. Pas les cartes memoire :
+   on s'y note soi-meme. */
+function joursVerifies(){
+  const jours = joursSeances();
+  (ETAT.historique || []).forEach(h => { if(h && h.d) jours[h.d] = true; });
+  Object.keys(ETAT.quotidien || {}).forEach(d => { if(ETAT.quotidien[d] && ETAT.quotidien[d].fini) jours[d] = true; });
+  Object.values(((ETAT.brevet || {}).chapitres) || {}).forEach(c => { if(c && typeof c.lu === "string") jours[c.lu] = true; });
+  return jours;
 }
-function ouvrirCoffre(){
-  const c = coffreSemaine();
-  if(!c.pret) return 0;
-  ajouterBonus("coffre-" + c.lundi, ECU_COFFRE);
-  sauverEtat();
-  annoncerGain(ECU_COFFRE);
-  return ECU_COFFRE;
+function serieVerifiee(){
+  const jours = joursVerifies(), d = new Date();
+  if(!jours[iso(d)]) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while(jours[iso(d)]){ n++; d.setDate(d.getDate() - 1); }
+  return n;
 }
 
 /* ---------- Revision : un QCM refait sans nouveau point ---------- */
@@ -9516,7 +9519,7 @@ function majEcus(){
   else if(p > e.ref){ gain += crediter(p - e.ref); e.ref = p; }
   const m = e.missions[d] = e.missions[d] || {};
   missionsDuJour().forEach(x => { if(x.faite && !m[x.id]){ m[x.id] = true; gain += crediter(ECU_MISSION); } });
-  if(!e.series[d] && joursActifs()[d]){ e.series[d] = true; gain += crediter(5 * Math.min(serie(), 10)); }
+  if(!e.series[d] && joursVerifies()[d]){ e.series[d] = true; gain += crediter(5 * Math.min(serieVerifiee(), 10)); }
   /* Route des rangs : chaque nouveau rang (Or -> Platine...) donne un
      Classique et un Premium. */
   const k = Math.floor(rangActuel().i / NIVEAUX_PAR_RANG);
@@ -9590,14 +9593,11 @@ function cartePacksGratuits(){
       ${boosterType(typePack(x.cle), true)}<span>${esc(x.titre)}</span></button>`).join("")}</div></div>`;
 }
 function carteMissions(){
-  const m = missionsDuJour(), c = coffreSemaine(), d = ecusDuJour();
+  const m = missionsDuJour(), d = ecusDuJour();
   return `<div class="carte"><p class="capitales" style="margin:0 0 2px">Missions du jour${aideBouton("ecus")}</p>
     <p class="minuscule" style="margin:0 0 6px">Aujourd’hui&#8239;: ${d} / ${ECU_PLAFOND} écus gagnés${d >= ECU_PLAFOND ? " (plafond atteint)" : ""}</p>
     <ul class="missions">${m.map(x => `<li class="${x.faite ? "faite" : ""}"><span class="coche" aria-hidden="true">${x.faite ? "&#10003;" : ""}</span>
       <span class="t">${esc(x.titre)}</span>${montantEcus(ECU_MISSION, 14)}</li>`).join("")}</ul>
-    <div class="coffre"><span class="t"><strong>Coffre de la semaine</strong> &#8226; ${c.actifs}/5 jours actifs</span>
-      ${c.pret ? `<button class="bouton-plein petit" data-action="ecu-coffre">Ouvrir (+${ECU_COFFRE})</button>`
-        : c.ouvert ? `<span class="minuscule">ouvert &#10003;</span>` : montantEcus(ECU_COFFRE, 14)}</div>
   </div>`;
 }
 /* Chances par carte, en %, de commune a mythique. Le Premium : la moyenne
@@ -9678,7 +9678,6 @@ function actionEcus(a, el){
     return true;
   }
   if(a === "pli-gagne"){ const k = el.dataset.cle; if(packsAOuvrir().indexOf(k) >= 0) ouvrirPli(k); return true; }
-  if(a === "ecu-coffre"){ ouvrirCoffre(); rendre(); return true; }
   if(a === "ecu-passe"){ recupererPasse(+el.dataset.t); rendre(); return true; }
   if(a === "ecu-recycler"){
     const d = doublesARecycler();
@@ -11169,9 +11168,7 @@ function rendreAccueil(){
   /* Le Quiz of the Day en tete : un encart a part, qu'on ne peut pas manquer.
      Beta : il est en tete de l'onglet Quiz, plus ici. */
   if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteQuizJour());
-  /* Beta : plus d'onglet Cours ; le catalogue s'ouvre d'ici. */
-  if(typeof BETA !== "undefined" && BETA) parts.push(`<button class="bouton tous-cours" data-action="onglet" data-onglet="cours">Tous les cours (${COURS.length})</button>`);
-
+  const iReprendre = parts.length;
   /* -- Reprendre : la carte la plus importante de l'application -- */
   parts.push(`<div class="filet"><span>${c && coursAValider(c.id) ? "À valider"
     : c && !coursCommence(c.id) ? "Commencer" : "Reprendre"}</span></div>`);
@@ -11222,8 +11219,11 @@ function rendreAccueil(){
     </div>`);
   }
 
-  parts.push(carteRang());
+  const iApresReprendre = parts.length;
+  /* Beta : le rang passe en tete de l'onglet Classements. */
+  if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteRang());
 
+  const iSemaine = parts.length;
   /* -- Serie et ruban de la semaine --
      Deux informations que l'on regarde tous les jours : la chaine en
      cours, et la forme des sept derniers jours. */
@@ -11277,6 +11277,13 @@ function rendreAccueil(){
       ${moy === null ? "Le score moyen apparaîtra après votre premier QCM." : ""}
     </p>
   </div>`);
+  /* Beta : la semaine et la progression en tete, au-dessus de la lecon en
+     cours ; sous la lecon, tous les cours, deplies sur place. */
+  if(typeof BETA !== "undefined" && BETA){
+    const bloc = parts.splice(iSemaine, parts.length - iSemaine);
+    parts.splice(iApresReprendre, 0, blocCatalogue());
+    parts.splice(iReprendre, 0, ...bloc);
+  }
 
   /* -- Suggestion apres un cours termine -- */
   const termines = COURS.filter(x => coursMaitrise(x.id));
@@ -11317,6 +11324,24 @@ function rendreAccueil(){
   if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteClassement());
 
   document.getElementById("vue-accueil").innerHTML = parts.join("");
+  if(typeof BETA !== "undefined" && BETA) remplirCatalogue();
+}
+
+/* Beta : « Tous les cours » se deplie dans l'onglet Apprendre (ou Brevet)
+   au lieu de prendre toute la place. */
+let CATALOGUE_OUVERT = false;
+function blocCatalogue(){
+  const n = modeBrevet() ? "Tous les chapitres" : "Tous les cours (" + COURS.length + ")";
+  return `<button class="bouton tous-cours" data-action="catalogue-basculer" aria-expanded="${CATALOGUE_OUVERT}">${CATALOGUE_OUVERT ? "Masquer " + n.charAt(0).toLowerCase() + n.slice(1) + " &#9650;" : n + " &#9660;"}</button>
+    <div id="catalogue-integre"></div>`;
+}
+function remplirCatalogue(){
+  const z = document.getElementById("catalogue-integre");
+  if(!z) return;
+  if(!CATALOGUE_OUVERT){ z.innerHTML = ""; return; }
+  /* Un seul catalogue dans la page : celui de l'ancien ecran est vide. */
+  const vc = document.getElementById("vue-cours"); if(vc) vc.innerHTML = "";
+  if(modeBrevet()) rendreChapitres(z); else rendreCatalogue(z);
 }
 
 /* Le cours termine dont l'epreuve finale reste a reussir : l'accueil ne
@@ -12966,7 +12991,8 @@ function majOnglets(){
 function rendreClassements(){
   const vue = document.getElementById("vue-classements");
   if(!vue) return;
-  const parts = [];
+  /* Le rang et ses badges, en tete (beta : il quitte Apprendre). */
+  const parts = [carteRang()];
   if(!compteConfigure() || !compteConnecte())
     parts.push(`<div class="carte"><p class="secondaire" style="margin:0 0 10px">Connectez-vous pour voir les classements.</p>
       <button class="bouton-plein" data-action="onglet" data-onglet="reglages">Se connecter</button></div>`);
@@ -13147,6 +13173,9 @@ document.addEventListener("click", function(ev){
   if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el))) return;
 
   /* -- Navigation generale -- */
+  if(a === "catalogue-basculer"){ CATALOGUE_OUVERT = !CATALOGUE_OUVERT; rendre(); if(CATALOGUE_OUVERT){ const z = document.getElementById("catalogue-integre"); if(z) z.scrollIntoView({ block: "start" }); } return; }
+  /* Beta : le catalogue vit dans l'onglet Apprendre ; y revenir l'ouvre. */
+  if(a === "onglet" && typeof BETA !== "undefined" && BETA && el.dataset.onglet === "cours"){ CATALOGUE_OUVERT = true; aller("accueil", false); const z = document.getElementById("catalogue-integre"); if(z) z.scrollIntoView({ block: "start" }); return; }
   if(a === "onglet"){ if(el.dataset.onglet === "cours") ECRAN = {nom:"catalogue"}; aller(el.dataset.onglet); }
 
   /* -- Navigation dans les cours -- */
