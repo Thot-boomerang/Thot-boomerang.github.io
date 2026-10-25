@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-dsOk+lqcqpR69hz5GG5P0+3ecpFuqOVicMq03H4ecvc=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-nzwR7XEKCKfupRpsRqGnL061tf1eV777qaL4n94yDUs=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -9185,6 +9185,10 @@ function etatVierge(){
    ou en navigation privee. Sans ce drapeau, la progression repartirait
    de zero a chaque ouverture, sans que rien ne le signale. */
 let STOCKAGE_OK = true;
+/* Progression presente mais illisible au lancement : on n'ecrit plus
+   rien par-dessus (une copie de secours est gardee a cote), pour ne
+   jamais remplacer une vraie progression par un etat vierge. */
+let ETAT_ILLISIBLE = null;
 
 let ETAT = chargerEtat();
 
@@ -9203,6 +9207,13 @@ function chargerEtat(){
   }catch(e){
     // localStorage indisponible (navigation privee, fichier local bride...)
     STOCKAGE_OK = false;
+    try{
+      const brut = localStorage.getItem(CLE_STOCKAGE);
+      if(brut){
+        ETAT_ILLISIBLE = String((e && e.stack) || e);
+        localStorage.setItem(CLE_STOCKAGE + ".secours", brut);
+      }
+    }catch(x){}
     console.warn("Epok : progression illisible, on repart d'un etat vierge.", e);
     return base;
   }
@@ -9316,6 +9327,7 @@ function sauverEtat(depuisSynchro){
   noterPalier();
   if(typeof noterSaison === "function") noterSaison();
   majInsigne();
+  if(ETAT_ILLISIBLE) return false;
   try{
     localStorage.setItem(CLE_STOCKAGE, JSON.stringify(ETAT));
     if(!depuisSynchro) planifierSynchro();
