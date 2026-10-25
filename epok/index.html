@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-AWU6K4NaTnSymj/HG4p8AGQi7ksO/u6tevcZ1iqbggc=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-dsOk+lqcqpR69hz5GG5P0+3ecpFuqOVicMq03H4ecvc=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -6312,7 +6312,11 @@ function publierClassement(){
    Classement general : classement/{uid}, par points ; classement de la
    saison : saisons/{n}/scores/{uid}, par points gagnes pendant la saison. */
 function sourceClassement(vue){
-  if(vue === "saison"){
+  /* Saison 1 : elle compte tous les points depuis le lancement, donc elle
+     se lit dans le classement general, ou tout le monde figure deja (la
+     ligne saisons/1, publiee par chaque application a jour, ne sert qu'au
+     podium de fin de saison, figee par les regles a la fin de la saison). */
+  if(vue === "saison" && saisonEnCours() > 1){
     const n = saisonEnCours();
     if(CLASSEMENT_SAISON.n !== n) Object.assign(CLASSEMENT_SAISON, { liste: null, total: null, devant: null, maj: 0, erreur: null, n });
     return { etat: CLASSEMENT_SAISON, parent: "/saisons/" + n, collection: "scores", champ: "ps", mien: pointsSaison() };
