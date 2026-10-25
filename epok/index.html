@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-67AkPIOcKR4jZisoL5Emz4QMz30fN+ci9PrmA58rD3Y=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-9QQrPLcA+f92mLkIbeuZwWIEjCwhQLyX0tidr6I4geM=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -340,6 +340,7 @@ button{font:inherit;color:inherit}
    << jamais commences / tous >> se lit DANS la carte du bouton qu'il
    regle, au lieu de flotter a l'autre bout d'une rangee. */
 .seg.seg-petit{margin:0 0 14px}
+.seg.classement-vues{margin:0 0 10px}
 .seg.seg-petit button{min-height:36px;font-size:11px;letter-spacing:.08em;padding:6px 8px}
 .carte.hasard .secondaire{margin:0 0 12px}
 
@@ -4668,6 +4669,7 @@ function fusionnerProgressions(local, distant){
     r.qjSemaines = nettoyerSemainesQJ(fusionnerSemainesQJ(local.qjSemaines, distant.qjSemaines));
 
   r.collection = fusionnerCollection(local.collection, distant.collection);
+  if(typeof fusionnerSaisons === "function") r.saisons = fusionnerSaisons(local, distant);
 
   const lb = local.brevet || {}, db = distant.brevet || {};
   r.brevet = { chapitres: {}, cartes: {}, dateExamen: lb.dateExamen || db.dateExamen || null };
@@ -5072,6 +5074,8 @@ function effacerDistant(){
     requeteJeton("DELETE", urlDocuments("/albums/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
   if(typeof urlDocuments === "function" && COMPTE.user)
     requeteJeton("DELETE", urlDocuments("/profils/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
+  if(typeof saisonEnCours === "function" && COMPTE.user)
+    requeteJeton("DELETE", urlDocuments("/saisons/" + saisonEnCours() + "/scores/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
   if(typeof effacerQuotidien === "function" && COMPTE.user) effacerQuotidien();
   return requete("DELETE").then(r => (r.ok || r.status === 404) ? true : erreurHttp(r));
 }
@@ -5135,6 +5139,7 @@ function synchroniser(){
     if(typeof publierClassement === "function") publierClassement();
     if(typeof publierAlbum === "function") publierAlbum();
     if(typeof publierProfil === "function") publierProfil();
+    if(typeof verifierPrixSaison === "function") verifierPrixSaison();
     if(typeof completerProfils === "function") completerProfils();
     if(typeof publierQuotidien === "function") publierQuotidien().then(() => { if(typeof qjMajRangsDiscret === "function") qjMajRangsDiscret(); });
     return true;
@@ -6081,9 +6086,10 @@ const AIDES = {
     <li>10 questions, 30 s chacune, 1 seule tentative.</li>
     <li><span class="bulle bulle-or">+${QJ_PTS}</span> par bonne réponse &#8226; quitter l’appli = question perdue.</li>
     <li>Podium du jour <span class="bulle bulle-or">${qjPodium(QJ_PODIUM_JOUR)}</span> &#8226; semaine <span class="bulle bulle-or">${qjPodium(QJ_PODIUM_SEMAINE)}</span></li></ul>` },
-  classement: { titre: "Classement général", corps: () => `<ul class="aide-liste">
-    <li>Tous les joueurs, par points.</li>
-    <li>Prénom, initiale du nom et badge du rang.</li></ul>` },
+  classement: { titre: "Classement", corps: () => `<ul class="aide-liste">
+    <li><strong>Saison</strong>&#8239;: les points des 3 derniers mois. Tout le monde repart de 0.</li>
+    <li>Podium&#8239;: ${typeof PRIX_SAISON !== "undefined" ? PRIX_SAISON.join(" / ") : "300 / 150 / 75"} pts et un pack de 3 rares ou mieux.</li>
+    <li><strong>Général</strong>&#8239;: tous les points depuis le début.</li></ul>` },
   semaine: { titre: "Votre semaine", corps: () => `<ul class="aide-liste">
     <li>Une séance ou un quiz dans la journée&#8239;: jour coché.</li>
     <li>La flamme compte les jours de suite.</li></ul>` },
@@ -6244,6 +6250,8 @@ if(typeof document !== "undefined") document.addEventListener("keydown", ev => {
 const CLASSEMENT_TOP = 10;
 const CLASSEMENT_FRAIS = 5 * 60 * 1000;   // relu au plus toutes les 5 minutes
 const CLASSEMENT_GENERAL = { liste: null, total: null, devant: null, maj: 0, enCours: false, erreur: null };
+const CLASSEMENT_SAISON = { liste: null, total: null, devant: null, maj: 0, enCours: false, erreur: null, n: 0 };
+let VUE_CLASSEMENT = "saison";   // « saison » (par defaut) ou « general »
 
 function urlDocuments(suite){
   return "https://firestore.googleapis.com/v1/projects/" + encodeURIComponent(CONFIG_COMPTE.projectId)
@@ -6277,8 +6285,10 @@ function publierClassement(){
   if(!compteConnecte()) return Promise.resolve(false);
   const url = urlDocuments("/classement/" + encodeURIComponent(COMPTE.user.uid));
   const pseudo = pseudoClassement(COMPTE.user.displayName);
-  if(!participeClassement() || !pseudo)
+  if(!participeClassement() || !pseudo){
+    requeteJeton("DELETE", urlDocuments("/saisons/" + saisonEnCours() + "/scores/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
     return requeteJeton("DELETE", url).then(() => true, () => false);
+  }
   /* « maj » est l'heure du serveur, pas celle du telephone (qu'un tricheur
      regle a sa guise) : les regles s'en servent pour borner la hausse des
      points au temps ecoule depuis la ligne precedente. */
@@ -6293,70 +6303,97 @@ function publierClassement(){
     },
     updateMask: { fieldPaths: ["nom", "points", "palier"] },
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
-  }] }).then(r => r.ok, () => false);
+  }] }).then(r => { publierSaison(pseudo); return r.ok; }, () => false);
 }
 
 /* Les dix premiers, le nombre d'inscrits et le nombre d'eleves devant soi :
-   trois requetes, dont deux comptages que Firestore fait sans tout lire. */
-function chargerClassement(force){
-  if(!compteConnecte() || CLASSEMENT_GENERAL.enCours) return;
-  if(!force && CLASSEMENT_GENERAL.liste && Date.now() - CLASSEMENT_GENERAL.maj < CLASSEMENT_FRAIS) return;
-  CLASSEMENT_GENERAL.enCours = true;
-  const de = { from: [{ collectionId: "classement" }] };
+   trois requetes, dont deux comptages que Firestore fait sans tout lire.
+   Classement general : classement/{uid}, par points ; classement de la
+   saison : saisons/{n}/scores/{uid}, par points gagnes pendant la saison. */
+function sourceClassement(vue){
+  if(vue === "saison"){
+    const n = saisonEnCours();
+    if(CLASSEMENT_SAISON.n !== n) Object.assign(CLASSEMENT_SAISON, { liste: null, total: null, devant: null, maj: 0, erreur: null, n });
+    return { etat: CLASSEMENT_SAISON, parent: "/saisons/" + n, collection: "scores", champ: "ps", mien: pointsSaison() };
+  }
+  return { etat: CLASSEMENT_GENERAL, parent: "", collection: "classement", champ: "points", mien: Math.round(pointsTotal()) };
+}
+function chargerClassement(force, vue){
+  if(!compteConnecte()) return;
+  const src = sourceClassement(vue || VUE_CLASSEMENT), E = src.etat;
+  if(E.enCours) return;
+  if(!force && E.liste && Date.now() - E.maj < CLASSEMENT_FRAIS) return;
+  E.enCours = true;
+  const de = { from: [{ collectionId: src.collection }] };
   const top = { structuredQuery: Object.assign({}, de, {
-    orderBy: [{ field: { fieldPath: "points" }, direction: "DESCENDING" }], limit: CLASSEMENT_TOP }) };
+    orderBy: [{ field: { fieldPath: src.champ }, direction: "DESCENDING" }], limit: CLASSEMENT_TOP }) };
   const compter = ou => ({ structuredAggregationQuery: { structuredQuery: Object.assign({}, de, ou ? { where: ou } : {}),
     aggregations: [{ alias: "n", count: {} }] } });
-  const plusQueMoi = { fieldFilter: { field: { fieldPath: "points" }, op: "GREATER_THAN",
-    value: { integerValue: String(Math.round(pointsTotal())) } } };
+  const plusQueMoi = { fieldFilter: { field: { fieldPath: src.champ }, op: "GREATER_THAN",
+    value: { integerValue: String(src.mien) } } };
   const lireJson = r => r.ok ? r.json() : r.json().catch(() => ({})).then(j => {
     throw Object.assign(new Error((j && j.error && j.error.message) || "réponse " + r.status), { statut: r.status }); });
   const nombre = rep => Number(((((rep || [])[0] || {}).result || {}).aggregateFields || {}).n
     ? rep[0].result.aggregateFields.n.integerValue : 0);
+  const url = urlDocuments(src.parent);
   Promise.all([
-    requeteJeton("POST", urlDocuments(":runQuery"), top).then(lireJson),
-    requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(null)).then(lireJson),
-    requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(plusQueMoi)).then(lireJson)
+    requeteJeton("POST", url + ":runQuery", top).then(lireJson),
+    requeteJeton("POST", url + ":runAggregationQuery", compter(null)).then(lireJson),
+    requeteJeton("POST", url + ":runAggregationQuery", compter(plusQueMoi)).then(lireJson)
   ]).then(([lignes, tous, devant]) => {
-    CLASSEMENT_GENERAL.liste = (lignes || []).filter(x => x.document).map(x => {
-      const f = x.document.fields || {};
+    E.liste = (lignes || []).filter(x => x.document).map(x => {
+      const f = x.document.fields || {}, entier = k => Number((f[k] && f[k].integerValue) || 0);
       return { uid: decodeURIComponent(x.document.name.split("/").pop()),
                nom: (f.nom && f.nom.stringValue) || "?",
-               points: Number((f.points && f.points.integerValue) || 0),
-               palier: indicePalier(Number((f.points && f.points.integerValue) || 0)) };
+               points: entier(src.champ),
+               /* Le badge suit les points de toujours : ceux de la ligne
+                  generale, ou le palier publie avec la ligne de la saison. */
+               palier: src.champ === "points" ? indicePalier(entier("points")) : entier("palier") };
     });
-    CLASSEMENT_GENERAL.total = nombre(tous);
-    CLASSEMENT_GENERAL.devant = nombre(devant);
-    CLASSEMENT_GENERAL.erreur = null;
+    E.total = nombre(tous);
+    E.devant = nombre(devant);
+    E.erreur = null;
   }).catch(e => {
-    CLASSEMENT_GENERAL.erreur = e && e.statut === 403
+    E.erreur = e && e.statut === 403
       ? "Firebase refuse la lecture du classement : les règles Firestore doivent être republiées (voir docs/compte-google.md)."
       : "Classement indisponible pour l’instant.";
   }).finally(() => {
-    CLASSEMENT_GENERAL.enCours = false;
-    CLASSEMENT_GENERAL.maj = Date.now();
+    E.enCours = false;
+    E.maj = Date.now();
     const zone = document.getElementById("carte-classement");
     if(zone) zone.innerHTML = contenuClassement();
   });
 }
 
+function ongletsClassement(){
+  const b = (v, t) => `<button type="button" data-action="classement-vue" data-vue="${v}" aria-pressed="${VUE_CLASSEMENT === v}">${t}</button>`;
+  return `<div class="seg classement-vues" role="group" aria-label="Classement">${b("saison", "Saison " + saisonEnCours())}${b("general", "Général")}</div>`;
+}
 function contenuClassement(){
-  if(CLASSEMENT_GENERAL.erreur && !CLASSEMENT_GENERAL.liste)
-    return `<p class="minuscule" style="margin:0">${esc(estProf() ? CLASSEMENT_GENERAL.erreur : "Classement indisponible pour l’instant.")}</p>`;
-  if(!CLASSEMENT_GENERAL.liste) return `<p class="minuscule" style="margin:0">Chargement du classement…</p>`;
+  const saison = VUE_CLASSEMENT === "saison", src = sourceClassement(VUE_CLASSEMENT), E = src.etat;
+  const parts = [ongletsClassement()];
+  if(saison){
+    const sn = typeof qjSaison === "function" ? qjSaison(aujourdhui()) : null, reste = sn ? qjJoursAvant(sn.fin) : 0;
+    parts.push(`<p class="minuscule" style="margin:0 0 8px">Les points gagnés depuis le début de la saison${sn ? `&#8239;; fin dans ${reste} jour${reste > 1 ? "s" : ""}` : ""}.
+      Podium&#8239;: <strong>${PRIX_SAISON.join(" / ")} pts</strong> et un pack de 3 cartes rares ou mieux.</p>`);
+  }
+  if(E.erreur && !E.liste){
+    parts.push(`<p class="minuscule" style="margin:0">${esc(estProf() ? E.erreur : "Classement indisponible pour l’instant.")}</p>`);
+    return parts.join("");
+  }
+  if(!E.liste){ parts.push(`<p class="minuscule" style="margin:0">Chargement du classement…</p>`); return parts.join(""); }
   const moi = COMPTE.user ? COMPTE.user.uid : "";
-  const parts = [];
-  if(!CLASSEMENT_GENERAL.liste.length) parts.push(`<p class="secondaire" style="margin:0">Personne n’est encore classé.</p>`);
-  else parts.push(`<ol class="st-classement">${CLASSEMENT_GENERAL.liste.map((e, i) => `<li${e.uid === moi ? ` class="moi"` : ""}>
+  if(!E.liste.length) parts.push(`<p class="secondaire" style="margin:0">Personne n’est encore classé${saison ? " cette saison" : ""}.</p>`);
+  else parts.push(`<ol class="st-classement">${E.liste.map((e, i) => `<li${e.uid === moi ? ` class="moi"` : ""}>
       <span class="st-num">${i + 1}</span>
       <span class="st-nom"><strong>${lienProfil(e.uid, e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${esc(libellePalier(Math.min(e.palier, NB_PALIERS - 1)))}</small></span>
       ${badgeClassement(e.palier)}<span class="st-pts">${e.points.toLocaleString("fr-FR")} pts</span></li>`).join("")}</ol>`);
   const pseudo = pseudoClassement(COMPTE.user && COMPTE.user.displayName);
   if(!participeClassement()) parts.push(`<p class="minuscule" style="margin:8px 0 0">Vous n’apparaissez pas dans le classement (Réglages, carte Compte).</p>`);
   else if(!pseudo) parts.push(`<p class="minuscule" style="margin:8px 0 0">Indiquez votre prénom et votre nom dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
-  else if(!CLASSEMENT_GENERAL.liste.some(e => e.uid === moi)) parts.push(`<p class="minuscule" style="margin:8px 0 0"><strong>Vous&#8239;: ${
-      (CLASSEMENT_GENERAL.devant || 0) + 1}<sup>e</sup></strong> sur ${Math.max(CLASSEMENT_GENERAL.total || 0, (CLASSEMENT_GENERAL.devant || 0) + 1)}
-      &#8226; ${Math.round(pointsTotal()).toLocaleString("fr-FR")} pts</p>`);
+  else if(!E.liste.some(e => e.uid === moi)) parts.push(`<p class="minuscule" style="margin:8px 0 0"><strong>Vous&#8239;: ${
+      (E.devant || 0) + 1}<sup>e</sup></strong> sur ${Math.max(E.total || 0, (E.devant || 0) + 1)}
+      &#8226; ${src.mien.toLocaleString("fr-FR")} pts</p>`);
   return parts.join("");
 }
 
@@ -6387,7 +6424,113 @@ function paliersDe(uids){
 function carteClassement(){
   if(!compteConfigure() || !compteConnecte()) return "";
   chargerClassement(false);
-  return filet("Classement général", "classement") + `<div class="carte" id="carte-classement">${contenuClassement()}</div>`;
+  return filet("Classement", "classement") + `<div class="carte" id="carte-classement">${contenuClassement()}</div>`;
+}
+
+/* ======================================================================
+   SAISONS (novembre 2026)
+
+   Le classement general avantage ceux qui sont la depuis longtemps : un
+   nouveau venu ne les rattrape jamais. D'ou le classement de la saison,
+   affiche en premier. Les saisons sont celles du Quiz of the Day (3 mois,
+   voir qjSaison dans z0k_quotidien.js) ; la saison 1 compte a partir de
+   cette version (avant, rien ne datait les points).
+
+   Points de la saison = points d'aujourd'hui - points au debut de la
+   saison. Le debut est note (ETAT.saisons.base[n]) a la premiere ouverture
+   de l'application pendant la saison, avant tout nouveau point. Deux
+   appareils : le plus haut des deux debuts ; un appareil qui n'a pas vu
+   la saison n'a que des points d'avant, son total sert de debut.
+
+   La ligne part dans saisons/{n}/scores/{uid} (nom, points de la saison,
+   palier). Deux jours apres la fin d'une saison, chacun lit le podium : le
+   1er gagne 300 points, le 2e 150, le 3e 75, et chacun un pack de 3
+   cartes rares ou mieux (« saison-n » dans la collection). Les points de
+   recompense ne comptent dans aucune saison.
+   ====================================================================== */
+const PRIX_SAISON = [300, 150, 75];
+function saisonEnCours(){ return typeof qjSaison === "function" ? qjSaison(aujourdhui()).n : 1; }
+function nettoyerSaisons(x){
+  const r = { base: {}, prix: {} };
+  if(!x || typeof x !== "object") return r;
+  Object.keys(x.base || {}).forEach(n => { const v = x.base[n];
+    if(/^\d{1,3}$/.test(n) && typeof v === "number" && isFinite(v) && v >= 0) r.base[n] = Math.round(v); });
+  Object.keys(x.prix || {}).forEach(n => { const v = x.prix[n];
+    if(/^\d{1,3}$/.test(n) && v && Number.isInteger(v.rang) && v.rang >= 0 && v.rang <= PRIX_SAISON.length) r.prix[n] = { rang: v.rang }; });
+  return r;
+}
+function pointsPrixSaisons(){
+  const p = ((ETAT.saisons || {}).prix) || {};
+  return Object.keys(p).reduce((t, n) => t + (PRIX_SAISON[p[n].rang - 1] || 0), 0);
+}
+function pointsHorsPrix(){ return Math.max(0, Math.round(pointsTotal() - pointsPrixSaisons())); }
+/* Le debut de la saison en cours, note une fois. */
+function noterSaison(){
+  if(typeof COURS === "undefined" || typeof qjSaison !== "function") return;
+  const s = ETAT.saisons = ETAT.saisons && ETAT.saisons.base ? ETAT.saisons : nettoyerSaisons(ETAT.saisons), n = String(saisonEnCours());
+  if(!(n in s.base)) s.base[n] = pointsHorsPrix();
+}
+function pointsSaison(){
+  noterSaison();
+  const b = (((ETAT.saisons || {}).base) || {})[saisonEnCours()] || 0;
+  return Math.max(0, pointsHorsPrix() - b);
+}
+/* Deux etats complets (ceux de fusionnerProgressions). */
+function fusionnerSaisons(l, d){
+  const a = nettoyerSaisons(l && l.saisons), b = nettoyerSaisons(d && d.saisons), n = String(saisonEnCours());
+  const r = { base: Object.assign({}, b.base, a.base), prix: Object.assign({}, b.prix, a.prix) };
+  Object.keys(a.base).forEach(k => { if(k in b.base) r.base[k] = Math.max(a.base[k], b.base[k]); });
+  const total = e => { try{ return typeof avecEtat === "function" ? avecEtat(e, pointsHorsPrix) : 0; }catch(x){ return 0; } };
+  if(n in r.base) r.base[n] = Math.max(n in a.base ? a.base[n] : total(l), n in b.base ? b.base[n] : total(d));
+  Object.keys(a.prix).forEach(k => { if(k in b.prix && !a.prix[k].rang) r.prix[k] = b.prix[k]; });
+  return r;
+}
+function publierSaison(pseudo){
+  if(!compteConnecte() || !pseudo) return Promise.resolve(false);
+  const n = saisonEnCours();
+  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+    update: {
+      name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/saisons/" + n + "/scores/" + COMPTE.user.uid,
+      fields: { nom: { stringValue: pseudo }, ps: { integerValue: String(pointsSaison()) }, palier: { integerValue: String(rangActuel().i) } }
+    },
+    updateMask: { fieldPaths: ["nom", "ps", "palier"] },
+    updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
+  }] }).then(r => r.ok, () => false);
+}
+/* Le podium des saisons finies depuis 2 jours, lu une fois. */
+function verifierPrixSaison(){
+  if(!compteConnecte() || typeof qjSaisonNumero !== "function") return Promise.resolve(null);
+  const p = saisonEnCours() - 1;
+  noterSaison();
+  if(p < 1 || String(p) in ETAT.saisons.prix || aujourdhui() < qjDecaler(qjSaisonNumero(p).fin, 2)) return Promise.resolve(null);
+  const moi = COMPTE.user.uid;
+  return requeteJeton("POST", urlDocuments("/saisons/" + p) + ":runQuery", { structuredQuery: { from: [{ collectionId: "scores" }],
+    orderBy: [{ field: { fieldPath: "ps" }, direction: "DESCENDING" }], limit: PRIX_SAISON.length } })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(l => {
+      if(!COMPTE.user || COMPTE.user.uid !== moi) return null;
+      const uids = (l || []).filter(x => x.document).map(x => decodeURIComponent(x.document.name.split("/").pop()));
+      const rang = uids.indexOf(moi) + 1;
+      ETAT.saisons.prix[p] = { rang };
+      sauverEtat();
+      if(rang && typeof rendre === "function") rendre();
+      return rang;
+    }, () => null);
+}
+/* Les packs gagnes en fin de saison, encore fermes : « saison-n ». */
+function packsSaison(){
+  const p = ((ETAT.saisons || {}).prix) || {};
+  return Object.keys(p).filter(n => p[n].rang >= 1).sort((a, b) => a - b).map(n => "saison-" + n);
+}
+function actionClassement(a, el){
+  if(a === "classement-vue"){
+    VUE_CLASSEMENT = el.dataset.vue === "general" ? "general" : "saison";
+    chargerClassement(false);
+    const zone = document.getElementById("carte-classement");
+    if(zone) zone.innerHTML = contenuClassement();
+    return true;
+  }
+  return false;
 }
 
 /* ======================================================================
@@ -6538,6 +6681,7 @@ function supprimerCompteJoueur(e){
   const uid = encodeURIComponent(e.uid), auj = aujourdhui();
   return ecrireSanction(e.uid, { etat: "supprime", nom: e.nomBrut || e.nom, email: e.email }).then(() => Promise.all([
     urlDocuments("/classement/" + uid), urlDocuments("/albums/" + uid), urlDocuments("/profils/" + uid), urlDocuments("/progressions/" + uid),
+    urlDocuments("/saisons/" + saisonEnCours() + "/scores/" + uid),
     urlDocuments("/jour/" + auj + "/scores/" + uid), urlDocuments("/semaine/" + qjLundi(auj) + "/scores/" + uid)
   ].map(u => requeteJeton("DELETE", u).catch(() => null))));
 }
@@ -8131,6 +8275,9 @@ const CARTES = [
    2 packs sont offerts a l'arrivee (novembre 2026), a tous, anciens
    joueurs compris : inscrits sous les cles « offert-1 » et « offert-2 »,
    tires comme les autres, ils ne s'ouvrent qu'une fois chacun.
+
+   Le podium d'une saison (z0j_classement.js) gagne un pack « saison-n » :
+   3 cartes, toutes rares ou mieux.
    ========================================================================== */
 
 const RARETES = [
@@ -8147,6 +8294,7 @@ const PLI_CHANCES = [550, 270, 120, 45, 12, 3];
 const PLI_CHANCES_3E = [0, 0, 700, 210, 70, 20];
 const PLI_NB = 3;
 const PACKS_OFFERTS = ["offert-1", "offert-2"];
+function estPackSaison(cle){ return /^saison-\d{1,3}$/.test(cle); }
 const CARTES_SITE = "https://thot-boomerang.github.io/epok/cartes/";
 
 /* « <img » n'est jamais ecrit tel quel dans le code : le prechargeur du
@@ -8193,7 +8341,7 @@ function nettoyerCollection(c){
   if(typeof c.graine === "string" && /^[0-9a-z]{4,16}$/.test(c.graine)) r.graine = c.graine;
   Object.keys(c.plis || {}).forEach(d => {
     const p = c.plis[d];
-    if((/^\d{4}-\d{2}-\d{2}$/.test(d) || PACKS_OFFERTS.indexOf(d) >= 0) && Array.isArray(p) && p.length === PLI_NB && p.every(n => Number.isInteger(n) && carteN(n)))
+    if((/^\d{4}-\d{2}-\d{2}$/.test(d) || PACKS_OFFERTS.indexOf(d) >= 0 || estPackSaison(d)) && Array.isArray(p) && p.length === PLI_NB && p.every(n => Number.isInteger(n) && carteN(n)))
       r.plis[d] = p.slice();
   });
   return r;
@@ -8257,7 +8405,7 @@ function tirerRarete(alea, chances){
 function tirerPli(date){
   const alea = hasardSeme(collection().graine + "|" + date), pli = [];
   for(let i = 0; i < PLI_NB; i++){
-    let r = tirerRarete(alea, i === PLI_NB - 1 ? PLI_CHANCES_3E : PLI_CHANCES);
+    let r = tirerRarete(alea, i === PLI_NB - 1 || estPackSaison(date) ? PLI_CHANCES_3E : PLI_CHANCES);
     let pile = [];
     for(; r >= 0; r--){ pile = CARTES.filter(c => c.r === RARETES[r].k && pli.indexOf(c.n) < 0); if(pile.length) break; }
     if(pile.length) pli.push(pile[Math.floor(alea() * pile.length)].n);
@@ -8271,6 +8419,8 @@ function pliDuJour(){
 function pliOuvert(){ return !!collection().plis[aujourdhui()]; }
 /* Le prochain pack offert encore ferme, ou null. */
 function packOffertSuivant(){ return PACKS_OFFERTS.find(k => !collection().plis[k]) || null; }
+/* Le prochain pack de saison gagne encore ferme, ou null. */
+function packSaisonSuivant(){ return (typeof packsSaison === "function" ? packsSaison() : []).find(k => !collection().plis[k]) || null; }
 
 /* ---------- Classement des collections (novembre 2026) ----------
    Chaque joueur connecte publie dans albums/{uid} son nom (« Lea M. »),
@@ -8380,6 +8530,16 @@ function rendreCartes(){
   if(typeof CARTES === "undefined" || !CARTES.length){ vue.innerHTML = `<div class="carte"><p>Les cartes arrivent bientôt.</p></div>`; return; }
   const m = cartesPossedees(), ouvert = pliOuvert(), pli = pliDuJour();
   const parts = [];
+  const gagne = packSaisonSuivant();
+  if(gagne){
+    const n = gagne.split("-")[1], rang = ETAT.saisons.prix[n].rang;
+    parts.push(`<div class="carte pli-carte pli-offert">
+    <p class="capitales" style="margin:0 0 8px">Saison ${n}&#8239;: ${rang}<sup>${rang === 1 ? "er" : "e"}</sup>, pack gagné</p>
+    <button type="button" class="pli-ferme" data-action="pli-saison" aria-label="Ouvrir le pack de la saison : 3 cartes rares ou mieux">${booster()}</button>
+    <p class="pli-texte"><span class="bulle bulle-or">3 cartes</span> toutes rares ou mieux &#8226; <span class="bulle bulle-or">+${PTS_PACK} pts</span></p>
+    <button class="bouton-plein" data-action="pli-saison">Ouvrir le pack de la saison</button>
+  </div>`);
+  }
   const offert = packOffertSuivant();
   if(offert){
     const reste = PACKS_OFFERTS.filter(k => !collection().plis[k]).length;
@@ -8517,7 +8677,7 @@ function booster(grand){
    suffit (la bulle est masquee par la feuille de style). */
 function packEnAttente(){
   return typeof CARTES !== "undefined" && CARTES.length > 0 && !!(ETAT.reglages && ETAT.reglages.mode)
-    && (!pliOuvert() || !!packOffertSuivant());
+    && (!pliOuvert() || !!packOffertSuivant() || !!packSaisonSuivant());
 }
 function majBulleCartes(){
   if(typeof document === "undefined" || !document.body) return;
@@ -8548,14 +8708,14 @@ const OUV_TREMBLE = [2000, 2000, 3000, 3000, 3000, 3000];
 function ouvrirPli(cle){
   if(OUV) return;
   cle = cle || aujourdhui();
-  const offert = PACKS_OFFERTS.indexOf(cle) >= 0;
-  if(collection().plis[cle] && offert) return;
+  const offert = PACKS_OFFERTS.indexOf(cle) >= 0, gagne = estPackSaison(cle);
+  if(collection().plis[cle] && (offert || gagne)) return;
   const avant = cartesPossedees(), pli = collection().plis[cle] || tirerPli(cle);
   const ordre = pli.slice().sort((a, b) => rangRarete(carteN(a).r) - rangRarete(carteN(b).r) || carteN(a).pv - carteN(b).pv);
   /* Inscrit des l'ouverture : quitter en cours de route garde les cartes. */
   collection().plis[cle] = pli;
   sauverEtat();
-  OUV = { ordre, i: -1, avant, minuteurs: [], titre: offert ? "Pack offert" : "Pack du jour" };
+  OUV = { ordre, i: -1, avant, minuteurs: [], titre: gagne ? "Pack de la saison" : offert ? "Pack offert" : "Pack du jour" };
   const v = document.createElement("div");
   v.id = "ouverture-pli";
   v.className = "ouv";
@@ -8872,6 +9032,7 @@ function actionCartes(a, el){
   if(a === "onglet-cartes"){ aller("cartes"); return true; }
   if(a === "pli-ouvrir"){ ouvrirPli(); return true; }
   if(a === "pli-offert"){ const k = packOffertSuivant(); if(k) ouvrirPli(k); return true; }
+  if(a === "pli-saison"){ const k = packSaisonSuivant(); if(k) ouvrirPli(k); return true; }
   if(a === "ouv-suite"){ ouvSuite(); return true; }
   if(a === "ouv-passer"){ ouvBilan(); return true; }
   if(a === "ouv-son"){
@@ -9008,6 +9169,7 @@ function etatVierge(){
     classe: "",         // « 3e B » : facultatif, pour que le professeur trie ses eleves par classe
     quotidien: {},      // { "AAAA-MM-JJ": { justes, temps, fini, choix, envoye, enCours, rang, classes } } : quiz du jour (z0k_quotidien.js)
     qjSemaines: {},     // { lundi: { rang, classes, points, final } } : historique des classements de la semaine
+    saisons: { base: {}, prix: {} },       // { base: { n: points au debut de la saison n }, prix: { n: { rang } } } (z0j_classement.js)
     collection: { graine: "", plis: {} }   // cartes EPOK : { graine, plis: { "AAAA-MM-JJ": [n, n, n] } } (z0l_cartes.js)
   };
 }
@@ -9086,6 +9248,7 @@ function fusionnerEtat(base, lu){
   e.quotidien = nettoyerQuotidien(lu.quotidien);
   e.qjSemaines = nettoyerSemainesQJ(lu.qjSemaines);
   e.collection = nettoyerCollection(lu.collection);
+  e.saisons = typeof nettoyerSaisons === "function" ? nettoyerSaisons(lu.saisons) : { base: {}, prix: {} };
   return e;
 }
 
@@ -9145,6 +9308,7 @@ function sauverEtat(depuisSynchro){
      d'ici que part l'envoi au serveur quand un compte est connecte (sauf
      si la sauvegarde vient justement de la synchronisation). */
   noterPalier();
+  if(typeof noterSaison === "function") noterSaison();
   majInsigne();
   try{
     localStorage.setItem(CLE_STOCKAGE, JSON.stringify(ETAT));
@@ -9502,7 +9666,7 @@ function pointsCours(coursId){
 function pointsTotal(){
   let p = 0;
   COURS.forEach(c => { p += pointsCours(c.id); });
-  return p + pointsBrevet() + pointsQuotidien() + pointsCartes();
+  return p + pointsBrevet() + pointsQuotidien() + pointsCartes() + (typeof pointsPrixSaisons === "function" ? pointsPrixSaisons() : 0);
 }
 
 /* Onze rangs, trois niveaux chacun : le niveau 3 est le plus haut, et au
@@ -9635,6 +9799,8 @@ function echelleEtBareme(){
         <dt>Quiz of the Day</dt><dd>${QJ_PTS} pts par bonne réponse</dd>
         <dt>&#8195;podium du jour (1<sup>er</sup>, 2<sup>e</sup>, 3<sup>e</sup>)</dt><dd>${qjPodium(QJ_PODIUM_JOUR)} pts</dd>
         <dt>&#8195;podium de la semaine</dt><dd>${qjPodium(QJ_PODIUM_SEMAINE)} pts</dd>
+        <dt>Podium de la saison (3 mois)</dt><dd>${PRIX_SAISON.join(" / ")} pts</dd>
+        <dt>&#8195;et en plus</dt><dd>1 pack de 3 rares</dd>
       </dl>
       <p class="minuscule" style="margin:10px 0 0">Seul votre meilleur score compte&#8239;: refaire
         un QCM ne rapporte rien de plus, et aucun point ne se perd jamais. Le grand et le giga
@@ -11867,7 +12033,7 @@ document.addEventListener("click", function(ev){
   const el = ev.target.closest("[data-action]");
   if(!el) return;
   const a = el.dataset.action;
-  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el)) return;
+  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el)) return;
 
   /* -- Navigation generale -- */
   if(a === "onglet"){ if(el.dataset.onglet === "cours") ECRAN = {nom:"catalogue"}; aller(el.dataset.onglet); }
