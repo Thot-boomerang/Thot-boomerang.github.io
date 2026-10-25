@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-HcT8S2rOqcfhhd6bBr9xXcNFLPex6OqLyt4v3rPi9Wo=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-kyQCiwysJwSFLlM0JavbW51GYgKAdK8s3TX8/gHk1do=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1708,6 +1708,31 @@ table.chances td{font-variant-numeric:tabular-nums}
 .ecu-bilan{display:flex;align-items:center;gap:12px}
 .ecu-bilan .corps{flex:1}
 .ecu-bilan h3{margin:0 0 4px;color:#7a5a10}
+
+/* --- Beta : vitrine, amis, defis ------------------------------------- */
+.vitrine{min-height:60px}
+.vitrine-vide{display:grid;place-items:center;aspect-ratio:9/20;border:1.5px dashed var(--laiton);border-radius:8px;font-size:11px;text-align:center;color:var(--texte-2);padding:6px}
+.amis-elo{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:15px}
+.amis-titre{margin:14px 0 6px}
+.amis-liste{list-style:none;margin:0;padding:0}
+.amis-liste li{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--filet,#e2d6bd)}
+.amis-liste .t{flex:1;min-width:0}.amis-liste small{display:block;font-size:12px;color:var(--texte-2)}
+.amis-classement li .bouton{padding:4px 8px;min-height:0;margin-left:6px}
+.amis-histo{list-style:none;margin:0;padding:0;font-size:13.5px}
+.amis-histo li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--filet,#e2d6bd)}
+.amis-histo li.v span:first-child{color:#2e7a45;font-weight:700}.amis-histo li.d span:first-child{color:var(--bordeaux)}
+.amis-cherche{display:flex;gap:8px}
+.amis-cherche input{flex:1;min-width:0;padding:8px 12px;font:inherit;border:1px solid var(--laiton);border-radius:999px;background:var(--fond-2);color:var(--texte)}
+.defi-ecran{position:fixed;inset:0;z-index:72;overflow-y:auto;background:var(--fond);padding:calc(16px + env(safe-area-inset-top)) 16px 24px}
+.defi-ecran .carte{max-width:640px;margin:0 auto}
+.defi-barre{height:6px;border-radius:6px;background:var(--fond-3,#e8dcc2);overflow:hidden}
+.defi-barre i{display:block;height:100%;width:100%;background:var(--bordeaux);transition:width .2s linear}
+.defi-sec{margin:4px 0 0;text-align:right;font:800 14px var(--police-titre);color:var(--bordeaux)}
+.defi-options{display:grid;gap:8px}
+.defi-options .bouton{text-transform:none;letter-spacing:0;font-family:inherit;font-size:15px;text-align:left;padding:12px 14px}
+.defi-corrige{padding-left:18px;font-size:14px}
+.defi-corrige li{margin:0 0 8px}.defi-corrige li.juste{color:#2e7a45}.defi-corrige li.faux{color:var(--bordeaux)}
+.defi-corrige li b{color:var(--texte);font-weight:600}
 </style>
 
 <!-- Charte et taille du texte appliquees AVANT le premier affichage :
@@ -6187,6 +6212,10 @@ const AIDES = {
     <li><strong>Classique</strong>&#8239;: 3 cartes, toutes raretés.</li>
     <li><strong>Premium</strong>&#8239;: la 3<sup>e</sup> carte rare ou mieux.</li>
     <li><strong>Ultra premium</strong>&#8239;: 3 cartes rares ou mieux.</li></ul>` },
+  defis: { titre: "Défis entre amis", corps: () => `<ul class="aide-liste">
+    <li>5 questions d’anciens Quiz of the Day, 30 secondes chacune.</li>
+    <li>Votre ami a 24 heures pour jouer les mêmes&#8239;; le gagnant prend 5 écus.</li>
+    <li>L’Elo monte quand vous gagnez, comme aux échecs.</li></ul>` },
   passe: { titre: "Pass de saison", corps: () => `<ul class="aide-liste">
     <li>Chaque tranche de ${PASSE_PALIER} points gagnés pendant la saison ouvre un palier.</li>
     <li>Touchez un palier atteint pour récupérer ses écus ou son pack.</li>
@@ -6937,6 +6966,8 @@ function ouvrirProfil(uid, el){
     if(!v) return;
     const boite = v.querySelector(".eclat-boite");
     boite.innerHTML = fermer + (p ? contenuProfil(p, ici) : `<p class="secondaire" style="margin:0">Ce joueur n’a pas encore de profil.</p>`);
+    /* Beta : la vitrine du joueur, et l'ajouter en ami ou le defier. */
+    if(typeof BETA !== "undefined" && BETA && typeof profilSocial === "function") profilSocial(uid).then(h => { const w = document.getElementById("fenetre-profil"); if(h && w) w.querySelector(".eclat-boite").insertAdjacentHTML("beforeend", h); });
   }, () => {
     const v = document.getElementById("fenetre-profil");
     if(v) v.querySelector(".eclat-boite").innerHTML = fermer + `<p class="secondaire" style="margin:0">Profil indisponible pour l’instant.</p>`;
@@ -8752,6 +8783,7 @@ function rendreCartes(){
     parts.push(carteAlbums());
   }
 
+  if(typeof BETA !== "undefined" && BETA && typeof carteVitrine === "function") parts.push(carteVitrine());
   const total = CARTES.length, nbDiff = Object.keys(m).length;
   const liste = CARTES.filter(c => (!ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0) && (ALBUM.vue === "toutes" || m[c.n]))
     .slice().sort(ordreAlbum);
@@ -8784,7 +8816,8 @@ function voirCarte(n, el){
   ouvrirEnBulle("fenetre-carte", `<button class="bouton petit discret fr-fermer" data-action="carte-fermer">&#10005; Fermer</button>
     <div class="c-grande" style="--rar:${r.c}"><span class="c-cadre">${IMG} class="c-img" src="${imageCarte(n)}" alt="${esc(c.nom)}">
       <span class="c-repli"><b>${esc(c.nom)}</b><small>PV ${c.pv}</small></span></span></div>
-    <p class="minuscule" style="text-align:center;margin:10px 0 0">${r.nom} &#8226; PV ${c.pv}${nb > 1 ? ` &#8226; ${nb} exemplaires` : ""}</p>`, "carte fenetre-carte", el);
+    <p class="minuscule" style="text-align:center;margin:10px 0 0">${r.nom} &#8226; PV ${c.pv}${nb > 1 ? ` &#8226; ${nb} exemplaires` : ""}</p>
+    ${typeof BETA !== "undefined" && BETA && nb && typeof enVitrine === "function" ? `<button class="bouton petit" data-action="vitrine-basculer" data-n="${n}" style="display:block;margin:10px auto 0">${enVitrine(n) ? "Retirer de la vitrine" : "Mettre en vitrine (" + social().vitrine.length + "/3)"}</button>` : ""}`, "carte fenetre-carte", el);
 }
 
 /* ---------- Le booster ----------
@@ -9655,6 +9688,403 @@ function actionEcus(a, el){
   if(a === "ecu-saison"){ if(typeof choisirPrixSaison === "function") choisirPrixSaison(el.dataset.n, el.dataset.choix); rendre(); return true; }
   return false;
 }
+/* ==========================================================================
+   SOCIAL (beta, novembre 2026) : vitrine, amis, defis, Elo
+
+   - La vitrine : 3 cartes choisies dans l'album, montrees sur le profil.
+   - Les amis : une demande (amities/{a_b}), que l'autre accepte. On se
+     compare entre amis : points, rang, Elo, bilan des defis.
+   - Les defis : 5 questions tirees d'anciens Quiz of the Day (1 tres
+     facile, 1 facile, 2 moyennes, 1 difficile), 30 s chacune. Celui qui
+     lance joue d'abord ; l'ami a 24 h pour jouer les memes. Le plus de
+     bonnes reponses gagne ; a egalite, le plus rapide. Le gagnant gagne
+     5 ecus ; chacun ajuste son Elo (comme aux echecs, K = 32).
+   Le serveur (serveur/firestore.rules) n'accepte un defi qu'entre amis,
+   un score de 0 a 5, et la reponse dans les 24 h. Les scores restent
+   donnes par l'application : c'est une beta.
+   ========================================================================== */
+
+const DEFI_NB = 5, DEFI_SECONDES = 30, DEFI_ECUS = 5, ELO_DEPART = 1000, ELO_K = 32;
+/* Les cases d'une partie du jour : 0 tres facile, 1-3 faciles, 4-6
+   moyennes, 7-9 difficiles. */
+const DEFI_CASES = [[0], [1, 2, 3], [4, 5, 6], [4, 5, 6], [7, 8, 9]];
+const SOC = { moi: null, amities: null, defis: null, joueurs: {}, points: {}, maj: 0, enCours: false, erreur: null, recherche: null };
+
+function nettoyerSocial(x){
+  const r = { vitrine: [], appliques: {} };
+  if(!x || typeof x !== "object") return r;
+  if(Array.isArray(x.vitrine)) r.vitrine = x.vitrine.filter(n => Number.isInteger(n) && carteN(n)).slice(0, 3);
+  Object.keys(x.appliques || {}).forEach(k => { if(/^[0-9A-Za-z]{6,30}$/.test(k) && x.appliques[k] === true) r.appliques[k] = true; });
+  return r;
+}
+function social(){
+  if(!ETAT.social || !Array.isArray(ETAT.social.vitrine)) ETAT.social = nettoyerSocial(ETAT.social);
+  return ETAT.social;
+}
+function monNom(){ return COMPTE.user ? pseudoClassement(COMPTE.user.displayName) : ""; }
+function socialPossible(){ return typeof BETA !== "undefined" && BETA && compteConfigure() && compteConnecte() && !!monNom(); }
+function idAmitie(x, y){ return x < y ? x + "_" + y : y + "_" + x; }
+function egal(champ, val){ return { fieldFilter: { field: { fieldPath: champ }, op: "EQUAL", value: { stringValue: val } } }; }
+function requeteListe(collection, ou){
+  return requeteJeton("POST", urlDocuments(":runQuery"), { structuredQuery: { from: [{ collectionId: collection }], where: ou, limit: 200 } })
+    .then(r => r.ok ? r.json() : Promise.reject(qjErreur(r)))
+    .then(l => (l || []).filter(x => x.document).map(x => Object.assign({ id: decodeURIComponent(x.document.name.split("/").pop()) }, qjChamps(x.document))));
+}
+
+/* ---------- La fiche publique : nom, vitrine, Elo ---------- */
+function publierJoueur(elo){
+  if(!socialPossible()) return Promise.resolve(false);
+  const uid = COMPTE.user.uid, e = typeof elo === "number" ? elo : (SOC.moi ? SOC.moi.elo : ELO_DEPART);
+  return qjCommit({ update: { name: qjNomDoc("/joueurs/" + uid), fields: qjChampsEncodes({ nom: monNom(), vitrine: social().vitrine, elo: Math.round(e) }) },
+    updateTransforms: QJ_HEURE }).then(() => { SOC.moi = Object.assign(SOC.moi || {}, { nom: monNom(), vitrine: social().vitrine.slice(), elo: Math.round(e) }); return true; }, () => false);
+}
+function lireJoueur(uid){
+  return requeteJeton("GET", urlDocuments("/joueurs/" + encodeURIComponent(uid)))
+    .then(r => r.status === 404 ? null : r.ok ? r.json().then(qjChamps) : null, () => null);
+}
+
+/* ---------- La vitrine ---------- */
+function enVitrine(n){ return social().vitrine.indexOf(+n) >= 0; }
+function basculerVitrine(n){
+  const v = social().vitrine, k = v.indexOf(+n);
+  if(k >= 0) v.splice(k, 1);
+  else { if(v.length >= 3 || !cartesPossedees()[n]) return false; v.push(+n); }
+  sauverEtat();
+  publierJoueur();
+  return true;
+}
+function carteVitrine(){
+  const v = social().vitrine;
+  const cases = [0, 1, 2].map(i => v[i] ? miniCarte(v[i], 1) : `<span class="vitrine-vide">Touchez une carte de l’album</span>`).join("");
+  return `<div class="carte"><p class="capitales" style="margin:0 0 8px">Ma vitrine</p>
+    <div class="pli-jour vitrine">${cases}</div>
+    <p class="minuscule" style="margin:8px 0 0">Vos 3 plus belles cartes, sur votre profil. Touchez une carte de l’album, puis «&#8239;Mettre en vitrine&#8239;».</p></div>`;
+}
+
+/* ---------- Chargement : mes amities, mes defis, les fiches ---------- */
+function chargerSocial(force){
+  if(!socialPossible() || SOC.enCours) return Promise.resolve(false);
+  if(!force && SOC.amities && Date.now() - SOC.maj < 60 * 1000) return Promise.resolve(true);
+  SOC.enCours = true;
+  const moi = COMPTE.user.uid;
+  return Promise.all([
+    lireJoueur(moi),
+    requeteListe("amities", egal("a", moi)), requeteListe("amities", egal("b", moi)),
+    requeteListe("defis", egal("de", moi)), requeteListe("defis", egal("a", moi))
+  ]).then(([j, a1, a2, d1, d2]) => {
+    SOC.moi = j;
+    SOC.amities = a1.concat(a2);
+    SOC.defis = d1.concat(d2).sort((x, y) => String(y.cree || "").localeCompare(String(x.cree || "")));
+    SOC.erreur = null;
+    const autres = SOC.amities.map(x => x.a === moi ? x.b : x.a);
+    return Promise.all([
+      Promise.all(autres.map(u => lireJoueur(u).then(f => { if(f) SOC.joueurs[u] = f; }))),
+      typeof paliersDe === "function" ? lirePointsDe(autres) : null,
+      j ? null : publierJoueur(ELO_DEPART)
+    ]);
+  }).then(() => appliquerDefis()).catch(e => {
+    SOC.erreur = e && e.statut === 403 ? "Les règles Firestore doivent être republiées pour les amis et les défis." : "Amis indisponibles pour l’instant.";
+  }).finally(() => {
+    SOC.enCours = false; SOC.maj = Date.now();
+    const z = document.getElementById("zone-amis");
+    if(z) z.innerHTML = contenuAmis();
+    if(typeof rendre === "function" && ONGLET !== "classements") majPastilleAmis();
+  });
+}
+/* Les points et le rang des amis, lus dans le classement general. */
+function lirePointsDe(uids){
+  uids = uids.filter(Boolean);
+  if(!uids.length) return Promise.resolve();
+  const racine = urlDocuments("").replace("https://firestore.googleapis.com/v1/", "");
+  return requeteJeton("POST", urlDocuments(":batchGet"), { documents: uids.map(u => racine + "/classement/" + encodeURIComponent(u)) })
+    .then(r => r.ok ? r.json() : []).then(l => (l || []).forEach(x => { if(x && x.found){ const f = qjChamps(x.found);
+      SOC.points[decodeURIComponent(x.found.name.split("/").pop())] = Number(f.points) || 0; } }), () => {});
+}
+function amisConfirmes(){
+  const moi = COMPTE.user.uid;
+  return (SOC.amities || []).filter(x => x.statut === "ami").map(x => ({ id: x.id, uid: x.a === moi ? x.b : x.a, nom: x.a === moi ? x.nb : x.na }));
+}
+
+/* ---------- Les demandes ---------- */
+function demanderAmi(uid, nom){
+  const moi = COMPTE.user.uid;
+  if(!socialPossible() || uid === moi) return Promise.resolve(false);
+  const a = moi < uid ? moi : uid, b = moi < uid ? uid : moi;
+  const champs = { a, b, de: moi, na: a === moi ? monNom() : nom, nb: b === moi ? monNom() : nom, statut: "demande" };
+  return qjCommit({ update: { name: qjNomDoc("/amities/" + a + "_" + b), fields: qjChampsEncodes(champs) },
+    currentDocument: { exists: false }, updateTransforms: QJ_HEURE }).then(() => chargerSocial(true).then(() => true), () => false);
+}
+function accepterAmi(id){
+  return qjCommit({ update: { name: qjNomDoc("/amities/" + id), fields: qjChampsEncodes({ statut: "ami" }) },
+    updateMask: { fieldPaths: ["statut"] }, updateTransforms: QJ_HEURE }).then(() => chargerSocial(true), () => false);
+}
+function retirerAmi(id){
+  return requeteJeton("DELETE", urlDocuments("/amities/" + id)).then(() => chargerSocial(true), () => false);
+}
+function chercherJoueurs(nom){
+  nom = String(nom || "").trim().replace(/\s+/g, " ");
+  if(!nom) return Promise.resolve([]);
+  const moi = COMPTE.user.uid, vus = {};
+  const lire = c => requeteListe(c, egal("nom", nom)).catch(() => []);
+  return Promise.all([lire("classement"), lire("joueurs")]).then(([a, b]) => a.concat(b).filter(x => {
+    if(x.id === moi || vus[x.id]) return false; vus[x.id] = true; return true; }).map(x => ({ uid: x.id, nom: x.nom })));
+}
+
+/* ---------- Les defis ---------- */
+function dateDefiMax(){ return qjDecaler(aujourdhui(), -2); }   /* corrige lisible : jour fini */
+function tirerQuestionsDefi(){
+  const debut = new Date(QJ_PREMIER).toISOString().slice(0, 10), fin = dateDefiMax();
+  const jours = [];
+  for(let d = debut; d <= fin; d = qjDecaler(d, 1)) jours.push(d);
+  if(!jours.length) return null;
+  const pris = {}, q = [];
+  DEFI_CASES.forEach(cases => {
+    for(let essai = 0; essai < 40; essai++){
+      const d = jours[Math.floor(Math.random() * jours.length)], k = cases[Math.floor(Math.random() * cases.length)];
+      if(!pris[d + ":" + k] || essai === 39){ pris[d + ":" + k] = true; q.push(d + ":" + k); break; }
+    }
+  });
+  return q;
+}
+const CLES_DEFI = {};
+function questionsDefi(q){
+  return Promise.all(q.map(x => {
+    const [d, k] = x.split(":");
+    const cle = CLES_DEFI[d] || (CLES_DEFI[d] = qjDoc("qj_cles/" + d).then(qjChamps));
+    return Promise.all([qjDoc("qj/" + d + "/q/" + k).then(qjChamps), cle]).then(([f, c]) => qjItem(f, +k, c));
+  }));
+}
+function resultatDefi(d, moi){
+  if(d.statut !== "fini") return null;
+  const jeSuisDe = d.de === moi;
+  const mj = jeSuisDe ? d.jde : d.ja, mt = jeSuisDe ? d.tde : d.ta, aj = jeSuisDe ? d.ja : d.jde, at = jeSuisDe ? d.ta : d.tde;
+  const s = mj !== aj ? (mj > aj ? 1 : 0) : mt !== at ? (mt < at ? 1 : 0) : 0.5;
+  return { s, mj, mt, aj, at, adv: jeSuisDe ? d.a : d.de, nomAdv: jeSuisDe ? d.na : d.nde };
+}
+function monElo(){ return Math.max(100, Math.min(4000, Math.round(SOC.moi && typeof SOC.moi.elo === "number" ? SOC.moi.elo : ELO_DEPART))); }
+function defiExpire(d){ return d.statut === "attente" && Date.now() > Date.parse(d.cree || 0) + 24 * 3600e3; }
+/* Une fois le resultat connu : 5 ecus au gagnant, l'Elo de chacun, calcule
+   sur les Elo d'avant le defi (inscrits dans le defi) : ce que l'un gagne,
+   l'autre le perd. Un defi n'est compte qu'une fois. */
+function appliquerDefis(){
+  if(!socialPossible() || !SOC.defis || SOC.application) return Promise.resolve();
+  SOC.application = true;
+  const moi = COMPTE.user.uid, s = social();
+  const a = SOC.defis.filter(d => d.statut === "fini" && !s.appliques[d.id]).sort((x, y) => String(x.fini || "").localeCompare(String(y.fini || "")));
+  return a.reduce((ch, d) => ch.then(() => {
+    const r = resultatDefi(d, moi);
+    if(!r || s.appliques[d.id]) return;
+    const jeSuisDe = d.de === moi, ent = x => typeof x === "number" ? x : ELO_DEPART;
+    const avant = ent(jeSuisDe ? d.ede : d.ea), sien = ent(jeSuisDe ? d.ea : d.ede);
+    const attendu = 1 / (1 + Math.pow(10, (sien - avant) / 400));
+    const delta = Math.round(ELO_K * (r.s - attendu));
+    s.appliques[d.id] = true;
+    return publierJoueur(Math.max(100, monElo() + delta)).then(ok => {
+      if(!ok){ delete s.appliques[d.id]; return; }
+      if(r.s === 1 && typeof ECU_DEPART !== "undefined"){ ecus().bonus["defi-" + d.id] = DEFI_ECUS; annoncerGain(DEFI_ECUS); }
+      sauverEtat();
+    });
+  }), Promise.resolve()).finally(() => { SOC.application = false; });
+}
+function majPastilleAmis(){
+  const n = aRelever().length + demandesRecues().length;
+  const b = document.querySelector('nav.onglets button[data-onglet="classements"]');
+  if(!b) return;
+  const p = b.querySelector(".point");
+  if(n && !p && ONGLET !== "classements"){ const x = document.createElement("span"); x.className = "point"; x.setAttribute("aria-hidden", "true"); b.appendChild(x); }
+  else if((!n || ONGLET === "classements") && p) p.remove();
+}
+function aRelever(){ const moi = COMPTE.user && COMPTE.user.uid; return (SOC.defis || []).filter(d => d.a === moi && d.statut === "attente" && !defiExpire(d)); }
+function demandesRecues(){ const moi = COMPTE.user && COMPTE.user.uid; return (SOC.amities || []).filter(x => x.statut === "demande" && x.de !== moi); }
+
+/* ---------- La partie : un ecran par-dessus l'application ---------- */
+let DEFI = null;
+function ecranDefi(){
+  let v = document.getElementById("defi");
+  if(!v){ v = document.createElement("div"); v.id = "defi"; v.className = "defi-ecran"; v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); document.body.appendChild(v); }
+  return v;
+}
+function fermerDefi(){
+  if(DEFI && DEFI.minuteur) clearInterval(DEFI.minuteur);
+  DEFI = null;
+  const v = document.getElementById("defi"); if(v) v.remove();
+  rendre();
+}
+/* mode « lancer » (contre un ami) ou « relever » (un defi recu). */
+function ouvrirDefi(mode, x){
+  if(DEFI) return;
+  const q = mode === "lancer" ? tirerQuestionsDefi() : x.q;
+  const v = ecranDefi();
+  if(!q){ v.innerHTML = `<div class="carte"><p>Pas encore assez d’anciens Quiz of the Day pour un défi. Revenez dans quelques jours.</p>
+    <button class="bouton-plein" data-action="defi-fermer">Fermer</button></div>`; return; }
+  DEFI = { mode, x, q, items: null, i: -1, choix: [], temps: [], debut: 0, minuteur: null };
+  const nom = mode === "lancer" ? x.nom : x.nde;
+  v.innerHTML = `<div class="carte defi-intro"><p class="capitales" style="margin:0 0 6px">Défi</p>
+    <h2 style="margin:0 0 8px">${mode === "lancer" ? "Contre " : "Défi de "}${esc(nom)}</h2>
+    <p class="secondaire">${DEFI_NB} questions d’anciens Quiz of the Day, ${DEFI_SECONDES} secondes chacune. Le plus de bonnes réponses gagne&#8239;; à égalité, le plus rapide. Le gagnant&#8239;: +${DEFI_ECUS} écus.</p>
+    ${mode === "lancer" ? `<p class="minuscule">Vous jouez d’abord&#8239;; ${esc(nom)} aura 24 heures pour jouer les mêmes questions.</p>`
+      : `<p class="minuscule">${esc(nom)} a fait ${x.jde}/${DEFI_NB}. À vous&#8239;!</p>`}
+    <p class="minuscule" id="defi-etat">Chargement des questions…</p>
+    <div class="rang-boutons"><button class="bouton-plein" data-action="defi-go" disabled style="flex:2">C’est parti</button>
+    <button class="bouton" data-action="defi-fermer" style="flex:1">Annuler</button></div></div>`;
+  questionsDefi(q).then(items => {
+    if(!DEFI) return;
+    DEFI.items = items;
+    const e = document.getElementById("defi-etat"); if(e) e.textContent = "";
+    const b = v.querySelector('[data-action="defi-go"]'); if(b) b.disabled = false;
+  }, () => { const e = document.getElementById("defi-etat"); if(e) e.textContent = "Questions indisponibles pour l’instant."; });
+}
+function questionDefi(){
+  const v = ecranDefi(), it = DEFI.items[DEFI.i];
+  DEFI.debut = Date.now();
+  v.innerHTML = `<div class="carte defi-q"><p class="minuscule" style="margin:0 0 4px">Question ${DEFI.i + 1} / ${DEFI_NB} &#8226; ${esc(it.titre)}</p>
+    <div class="defi-barre"><i></i></div><p class="defi-sec">${DEFI_SECONDES}</p>
+    <h3 style="margin:8px 0 12px">${tx(it.q.enonce)}</h3>
+    <div class="defi-options">${it.q.options.map((o, k) => `<button class="bouton" data-action="defi-rep" data-k="${k}">${tx(o)}</button>`).join("")}</div></div>`;
+  clearInterval(DEFI.minuteur);
+  DEFI.minuteur = setInterval(() => {
+    const s = (Date.now() - DEFI.debut) / 1000, reste = Math.max(0, DEFI_SECONDES - s);
+    const i = v.querySelector(".defi-barre i"), n = v.querySelector(".defi-sec");
+    if(i) i.style.width = (reste / DEFI_SECONDES * 100) + "%";
+    if(n) n.textContent = Math.ceil(reste);
+    if(reste <= 0) repondreDefi(-1);
+  }, 200);
+}
+function repondreDefi(k){
+  if(!DEFI || !DEFI.items || DEFI.i < 0 || DEFI.choix.length > DEFI.i) return;
+  clearInterval(DEFI.minuteur);
+  DEFI.choix.push(k);
+  DEFI.temps.push(Math.min(DEFI_SECONDES, Math.ceil((Date.now() - DEFI.debut) / 1000)));
+  DEFI.i++;
+  if(DEFI.i < DEFI_NB) questionDefi(); else finirDefi();
+}
+function finirDefi(){
+  const d = DEFI, v = ecranDefi();
+  const justes = d.items.reduce((t, it, i) => t + ((it.q.correctes || []).indexOf(d.choix[i]) >= 0 ? 1 : 0), 0);
+  const temps = d.temps.reduce((t, x) => t + x, 0);
+  v.innerHTML = `<div class="carte"><p class="minuscule">Envoi…</p></div>`;
+  const moi = COMPTE.user.uid;
+  const envoi = d.mode === "lancer"
+    ? qjCommit({ update: { name: qjNomDoc("/defis/" + moi.slice(0, 6) + Date.now().toString(36)),
+        fields: qjChampsEncodes({ de: moi, a: d.x.uid, nde: monNom(), na: d.x.nom, q: d.q, jde: justes, tde: temps, ede: monElo(), statut: "attente" }) },
+        currentDocument: { exists: false }, updateTransforms: [{ fieldPath: "cree", setToServerValue: "REQUEST_TIME" }] })
+    : qjCommit({ update: { name: qjNomDoc("/defis/" + d.x.id), fields: qjChampsEncodes({ ja: justes, ta: temps, ea: monElo(), statut: "fini" }) },
+        updateMask: { fieldPaths: ["ja", "ta", "ea", "statut"] }, updateTransforms: [{ fieldPath: "fini", setToServerValue: "REQUEST_TIME" }] });
+  envoi.then(() => chargerSocial(true)).then(() => {
+    if(!DEFI) return;
+    let titre = `${justes}/${DEFI_NB} en ${temps} s`, sous = "";
+    if(d.mode === "lancer") sous = `Défi envoyé à ${esc(d.x.nom)}&#8239;: 24 heures pour répondre.`;
+    else {
+      const r = resultatDefi(Object.assign({}, d.x, { ja: justes, ta: temps, statut: "fini" }), moi);
+      sous = r.s === 1 ? `Victoire contre ${esc(d.x.nde)} (${r.aj}/${DEFI_NB} en ${r.at} s)&#8239;! +${DEFI_ECUS} écus` : r.s === 0 ? `Défaite contre ${esc(d.x.nde)} (${r.aj}/${DEFI_NB} en ${r.at} s).` : `Égalité parfaite avec ${esc(d.x.nde)}.`;
+    }
+    v.innerHTML = `<div class="carte"><p class="capitales" style="margin:0 0 6px">Défi</p><h2 style="margin:0 0 6px">${titre}</h2>
+      <p class="secondaire">${sous}</p>
+      <ol class="defi-corrige">${d.items.map((it, i) => { const ok = (it.q.correctes || []).indexOf(d.choix[i]) >= 0;
+        return `<li class="${ok ? "juste" : "faux"}"><b>${tx(it.q.enonce)}</b><br>${ok ? "&#10003; " : "&#10007; "}${tx(it.q.options[(it.q.correctes || [0])[0]])}</li>`; }).join("")}</ol>
+      <button class="bouton-plein" data-action="defi-fermer">Fermer</button></div>`;
+  }, () => { if(DEFI) v.innerHTML = `<div class="carte"><p>Envoi impossible (connexion ou délai de 24 h dépassé).</p><button class="bouton-plein" data-action="defi-fermer">Fermer</button></div>`; });
+}
+if(typeof document !== "undefined") document.addEventListener("visibilitychange", () => {
+  /* Quitter l'application pendant une question : elle compte fausse. */
+  if(document.hidden && DEFI && DEFI.items && DEFI.i >= 0 && DEFI.choix.length === DEFI.i) repondreDefi(-1);
+});
+
+/* ---------- L'affichage, dans l'onglet Classements ---------- */
+function carteAmis(){
+  if(!(typeof BETA !== "undefined" && BETA)) return "";
+  if(!compteConnecte()) return "";
+  if(!monNom()) return filet("Amis") + `<div class="carte"><p class="secondaire" style="margin:0">Indiquez votre prénom et votre nom (Réglages, carte Compte) pour ajouter des amis.</p></div>`;
+  chargerSocial(false);
+  return filet("Amis") + `<div class="carte" id="zone-amis">${contenuAmis()}</div>`;
+}
+function contenuAmis(){
+  if(SOC.erreur && !SOC.amities) return `<p class="minuscule" style="margin:0">${esc(SOC.erreur)}</p>`;
+  if(!SOC.amities) return `<p class="minuscule" style="margin:0">Chargement…</p>`;
+  const moi = COMPTE.user.uid, parts = [];
+  const elo = SOC.moi && typeof SOC.moi.elo === "number" ? SOC.moi.elo : ELO_DEPART;
+  parts.push(`<p class="amis-elo">Votre Elo&#8239;: <strong>${elo}</strong>${aideBouton("defis")}</p>`);
+  const rel = aRelever();
+  if(rel.length) parts.push(`<p class="capitales amis-titre">À relever</p><ul class="amis-liste">${rel.map(d => {
+    const h = Math.max(0, Math.ceil((Date.parse(d.cree) + 24 * 3600e3 - Date.now()) / 3600e3));
+    return `<li><span class="t"><strong>${esc(d.nde)}</strong> vous défie (${d.jde}/${DEFI_NB})<small>encore ${h} h</small></span>
+      <button class="bouton-plein petit" data-action="defi-relever" data-id="${esc(d.id)}">Jouer</button></li>`; }).join("")}</ul>`);
+  const dem = demandesRecues();
+  if(dem.length) parts.push(`<p class="capitales amis-titre">Demandes reçues</p><ul class="amis-liste">${dem.map(x => `<li><span class="t">${lienProfil(x.de, x.a === x.de ? x.na : x.nb)}</span>
+    <button class="bouton-plein petit" data-action="ami-accepter" data-id="${esc(x.id)}">Accepter</button>
+    <button class="bouton petit" data-action="ami-retirer" data-id="${esc(x.id)}" aria-label="Refuser">&#10005;</button></li>`).join("")}</ul>`);
+  const amis = amisConfirmes();
+  const bilan = uid => { let v = 0, d = 0; (SOC.defis || []).forEach(x => { const r = resultatDefi(x, moi); if(r && r.adv === uid){ if(r.s === 1) v++; else if(r.s === 0) d++; } }); return v + "-" + d; };
+  parts.push(`<p class="capitales amis-titre">Mes amis (${amis.length})</p>`);
+  if(amis.length){
+    const lignes = amis.map(a => ({ a, pts: SOC.points[a.uid] || 0, elo: (SOC.joueurs[a.uid] || {}).elo || ELO_DEPART }))
+      .concat([{ a: { uid: moi, nom: monNom() + " (vous)" }, pts: Math.round(pointsTotal()), elo, moi: true }])
+      .sort((x, y) => y.pts - x.pts);
+    parts.push(`<ol class="st-classement amis-classement">${lignes.map((l, i) => `<li${l.moi ? ` class="moi"` : ""}>
+      <span class="st-num">${i + 1}</span>
+      <span class="st-nom"><strong>${l.moi ? esc(l.a.nom) : lienProfil(l.a.uid, l.a.nom)}</strong><small>Elo ${l.elo}${l.moi ? "" : " &#8226; vous&#8239;: " + bilan(l.a.uid)}</small></span>
+      ${badgeClassement(indicePalier(l.pts))}<span class="st-pts">${l.pts.toLocaleString("fr-FR")} pts</span>
+      ${l.moi ? "" : `<button class="bouton petit" data-action="defi-lancer" data-uid="${esc(l.a.uid)}" data-nom="${esc(l.a.nom)}">Défier</button>`}</li>`).join("")}</ol>`);
+  } else parts.push(`<p class="secondaire" style="margin:0 0 8px">Pas encore d’ami. Cherchez un joueur ci-dessous, ou touchez un nom dans un classement.</p>`);
+  const envoyes = (SOC.amities || []).filter(x => x.statut === "demande" && x.de === moi);
+  if(envoyes.length) parts.push(`<p class="minuscule">Demandes envoyées&#8239;: ${envoyes.map(x => esc(x.a === moi ? x.nb : x.na)).join(", ")}</p>`);
+  const enCours = (SOC.defis || []).filter(d => d.de === moi && d.statut === "attente");
+  if(enCours.length) parts.push(`<p class="minuscule">Défis envoyés&#8239;: ${enCours.map(d => esc(d.na) + (defiExpire(d) ? " (expiré)" : " (en attente)")).join(", ")}</p>`);
+  const hist = (SOC.defis || []).filter(d => d.statut === "fini").slice(0, 10);
+  if(hist.length) parts.push(`<p class="capitales amis-titre">Rencontres</p><ul class="amis-histo">${hist.map(d => { const r = resultatDefi(d, moi);
+    return `<li class="${r.s === 1 ? "v" : r.s === 0 ? "d" : "n"}"><span>${r.s === 1 ? "Victoire" : r.s === 0 ? "Défaite" : "Égalité"} contre ${esc(r.nomAdv)}</span>
+      <span>${r.mj}/${DEFI_NB} (${r.mt} s) – ${r.aj}/${DEFI_NB} (${r.at} s)</span></li>`; }).join("")}</ul>`);
+  parts.push(`<p class="capitales amis-titre">Ajouter un ami</p>
+    <div class="amis-cherche"><input id="ami-nom" type="search" placeholder="Prénom et initiale, ex. Léa M." autocomplete="off">
+    <button class="bouton petit" data-action="ami-chercher">Chercher</button></div>
+    <div id="ami-resultats">${SOC.recherche ? resultatsRecherche() : ""}</div>`);
+  return parts.join("");
+}
+function resultatsRecherche(){
+  const r = SOC.recherche || [];
+  if(!r.length) return `<p class="minuscule" style="margin:6px 0 0">Personne sous ce nom (écrivez-le comme au classement&#8239;: «&#8239;Léa M.&#8239;»).</p>`;
+  const deja = {}; (SOC.amities || []).forEach(x => { deja[x.a] = x.statut; deja[x.b] = x.statut; });
+  return `<ul class="amis-liste">${r.map(x => `<li><span class="t">${lienProfil(x.uid, x.nom)}</span>${deja[x.uid] === "ami" ? `<span class="minuscule">ami</span>`
+    : deja[x.uid] ? `<span class="minuscule">demande en cours</span>` : `<button class="bouton-plein petit" data-action="ami-demander" data-uid="${esc(x.uid)}" data-nom="${esc(x.nom)}">Ajouter</button>`}</li>`).join("")}</ul>`;
+}
+/* Sur le profil d'un joueur : sa vitrine, et l'ajouter ou le defier. */
+function profilSocial(uid){
+  if(!socialPossible() || uid === COMPTE.user.uid) return Promise.resolve("");
+  return Promise.all([lireJoueur(uid), chargerSocial(false)]).then(([j]) => {
+    const am = (SOC.amities || []).find(x => x.a === uid || x.b === uid);
+    const v = j && Array.isArray(j.vitrine) ? j.vitrine.filter(n => carteN(n)) : [];
+    const nom = j && j.nom || "";
+    return (v.length ? `<p class="capitales" style="margin:12px 0 6px">Vitrine</p><div class="pli-jour vitrine">${v.map(n => miniCarte(n, 1)).join("")}</div>` : "")
+      + (j && typeof j.elo === "number" ? `<p class="minuscule" style="margin:8px 0 0">Elo ${j.elo}</p>` : "")
+      + `<div class="rang-boutons" style="margin-top:10px">${!am ? `<button class="bouton-plein" data-action="ami-demander" data-uid="${esc(uid)}" data-nom="${esc(nom)}">Ajouter en ami</button>`
+        : am.statut === "ami" ? `<button class="bouton-plein" data-action="defi-lancer" data-uid="${esc(uid)}" data-nom="${esc(am.a === uid ? am.na : am.nb)}">Défier</button>`
+        : `<span class="minuscule">Demande d’ami en cours</span>`}</div>`;
+  });
+}
+function actionSocial(a, el){
+  if(a === "ami-chercher"){
+    const i = document.getElementById("ami-nom"), z = document.getElementById("ami-resultats");
+    if(z) z.innerHTML = `<p class="minuscule">Recherche…</p>`;
+    chercherJoueurs(i && i.value).then(r => { SOC.recherche = r; const z2 = document.getElementById("ami-resultats"); if(z2) z2.innerHTML = resultatsRecherche(); });
+    return true;
+  }
+  if(a === "ami-demander"){ el.disabled = true; demanderAmi(el.dataset.uid, el.dataset.nom).then(ok => { el.outerHTML = `<span class="minuscule">${ok ? "Demande envoyée" : "Impossible pour l’instant"}</span>`; }); return true; }
+  if(a === "ami-accepter"){ accepterAmi(el.dataset.id); return true; }
+  if(a === "ami-retirer"){ if(confirm("Retirer cette demande ou cet ami ?")) retirerAmi(el.dataset.id); return true; }
+  if(a === "defi-lancer"){ if(typeof fermerBulle === "function") fermerBulle("fenetre-profil", true); ouvrirDefi("lancer", { uid: el.dataset.uid, nom: el.dataset.nom }); return true; }
+  if(a === "defi-relever"){ const d = (SOC.defis || []).find(x => x.id === el.dataset.id); if(d) ouvrirDefi("relever", d); return true; }
+  if(a === "defi-go"){ if(DEFI && DEFI.items){ DEFI.i = 0; questionDefi(); } return true; }
+  if(a === "defi-rep"){ repondreDefi(+el.dataset.k); return true; }
+  if(a === "defi-fermer"){ fermerDefi(); return true; }
+  if(a === "vitrine-basculer"){
+    const n = +el.dataset.n, ok = basculerVitrine(n);
+    if(!ok) alert("Votre vitrine est pleine (3 cartes) : retirez-en une d’abord.");
+    if(typeof fermerBulle === "function") fermerBulle("fenetre-carte", true);
+    rendre();
+    return true;
+  }
+  return false;
+}
 /* =====================================================================
    4. LOGIQUE DE L'APPLICATION
    ---------------------------------------------------------------------
@@ -9860,6 +10290,7 @@ function fusionnerEtat(base, lu){
   e.collection = nettoyerCollection(lu.collection);
   e.saisons = typeof nettoyerSaisons === "function" ? nettoyerSaisons(lu.saisons) : { base: {}, prix: {} };
   if(lu.ecus && typeof nettoyerEcus === "function") e.ecus = nettoyerEcus(lu.ecus);
+  if(lu.social && typeof nettoyerSocial === "function") e.social = nettoyerSocial(lu.social);
   return e;
 }
 
@@ -12540,6 +12971,7 @@ function rendreClassements(){
     parts.push(`<div class="carte"><p class="secondaire" style="margin:0 0 10px">Connectez-vous pour voir les classements.</p>
       <button class="bouton-plein" data-action="onglet" data-onglet="reglages">Se connecter</button></div>`);
   else {
+    parts.push(carteAmis());
     parts.push(carteClassement());
     parts.push(filet("Quiz of the Day"));
     parts.push(`<div class="carte"><p class="secondaire" style="margin:0 0 10px">Jour, semaine, médailles de la saison et historique.</p>
@@ -12712,7 +13144,7 @@ document.addEventListener("click", function(ev){
   const el = ev.target.closest("[data-action]");
   if(!el) return;
   const a = el.dataset.action;
-  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el))) return;
+  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el))) return;
 
   /* -- Navigation generale -- */
   if(a === "onglet"){ if(el.dataset.onglet === "cours") ECRAN = {nom:"catalogue"}; aller(el.dataset.onglet); }
