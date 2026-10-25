@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-9QQrPLcA+f92mLkIbeuZwWIEjCwhQLyX0tidr6I4geM=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-5lF63Y8s3VgSMi94LBciLgUqYcLsFmRKA3Hk0dOtFrU=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -4355,6 +4355,7 @@ function rendreMenuBrevet(){
   const parts = [];
   const prets = chapitresPrets();
   const dues = cartesDues().length;
+  parts.push(carteQuizJour());
   parts.push(filet("QCM de chapitre", "b-qcm"));
   parts.push(`<div class="carte"><select id="b-sel-chap">${prets.map(c => {
       const e = etatChapitre(c.id);
@@ -11650,6 +11651,8 @@ function rendreQuiz(){
 function rendreMenuQuiz(){
   const parts = [];
   const c = coursEnCours();
+  /* Le Quiz of the Day en tete de l'onglet aussi, comme a l'accueil. */
+  parts.push(carteQuizJour());
 
   parts.push(filet("QCM de séance", "seance"));
   if(c){
