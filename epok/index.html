@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-oQUb9wz3BL4UVOfKshA2Oo5m/gB3rVfWhLmia5xjmTQ=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-EYe9/rr6TzqgRZF+L6sW3AypO+o+Nk1jAWsRVyNX2zI=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1485,6 +1485,21 @@ select{width:100%}
 .pli-carte{text-align:center}
 .pli-ferme{position:relative;display:block;margin:14px auto 10px;padding:0;border:0;background:none;cursor:pointer}
 /* Le booster « Cartes EPOK » : sachet metallise dessine en SVG (voir booster()). */
+/* Bulle du pack (grand ecran) : dans la marge de droite, un petit booster
+   qui penche a droite, a gauche, deux fois, puis se tient tranquille. */
+.bulle-pack{display:none}
+@media (min-width:960px){
+  .bulle-pack{display:flex;flex-direction:column;align-items:center;gap:6px;position:fixed;top:96px;
+    right:max(16px,calc((100vw - 720px) / 4 - 48px));z-index:40;padding:12px 12px 10px;border-radius:18px;cursor:pointer;
+    background:var(--fond-2);border:1.5px solid var(--laiton);box-shadow:0 10px 26px rgba(0,0,0,.18);font:inherit}
+  .bulle-pack:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.24)}
+  .bulle-pack:focus-visible{outline:3px solid var(--or);outline-offset:3px}
+  .bulle-pack-paquet{display:block;transform-origin:50% 92%;animation:vacille 3.6s ease-in-out infinite}
+  .bulle-pack .booster{width:56px;height:83px;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}
+  .bulle-pack-texte{font-size:12.5px;font-weight:700;letter-spacing:.02em;color:var(--texte)}
+  body.ouv-active .bulle-pack,body.qj-actif .bulle-pack{display:none}
+}
+@keyframes vacille{0%,28%,100%{transform:rotate(0)}4%{transform:rotate(8deg)}10%{transform:rotate(-8deg)}16%{transform:rotate(7deg)}22%{transform:rotate(-6deg)}}
 .booster{position:relative;display:block;width:120px;height:178px;margin:0 auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
 .booster.grand{width:190px;height:282px}
 .booster-haut,.booster-corps{position:absolute;left:0;right:0;display:block}
@@ -8354,6 +8369,31 @@ function booster(grand){
     <span class="booster-corps"><svg viewBox="0 30 200 266" preserveAspectRatio="none">${dessinBooster(id + "b")}</svg><span class="booster-reflet"></span></span></span>`;
 }
 
+/* ---------- La bulle du pack (novembre 2026) ----------
+   Sur un grand ecran, les marges de droite et de gauche restent vides : un
+   pack pas encore ouvert (celui du jour, ou un pack offert) s'y montre, en
+   haut a droite, un petit booster qui penche a droite, a gauche, deux fois,
+   puis se tient tranquille, et recommence. Le toucher mene a l'onglet
+   Cartes. Sur un telephone, la place manque : la pastille de l'onglet
+   suffit (la bulle est masquee par la feuille de style). */
+function packEnAttente(){
+  return typeof CARTES !== "undefined" && CARTES.length > 0 && !!(ETAT.reglages && ETAT.reglages.mode)
+    && (!pliOuvert() || !!packOffertSuivant());
+}
+function majBulleCartes(){
+  if(typeof document === "undefined" || !document.body) return;
+  let b = document.getElementById("bulle-pack");
+  const voulu = packEnAttente() && typeof ONGLET !== "undefined" && ONGLET !== "cartes" && !OUV;
+  if(!voulu){ if(b) b.remove(); return; }
+  if(b) return;
+  b = document.createElement("button");
+  b.type = "button"; b.id = "bulle-pack"; b.className = "bulle-pack";
+  b.dataset.action = "onglet-cartes";
+  b.setAttribute("aria-label", "Un pack de cartes vous attend : ouvrir l’onglet Cartes");
+  b.innerHTML = `<span class="bulle-pack-paquet">${booster()}</span><span class="bulle-pack-texte">Pack à ouvrir</span>`;
+  document.body.appendChild(b);
+}
+
 /* ---------- L'ouverture ----------
    On dechire le haut du booster ; les cartes viennent, face cachee, de la
    plus faible a la plus forte. On touche une carte pour la retourner : elle
@@ -8388,6 +8428,7 @@ function ouvrirPli(cle){
     </div>`;
   document.body.appendChild(v);
   document.body.classList.add("ouv-active");
+  majBulleCartes();
 }
 
 function boutonSonOuv(){
@@ -8689,6 +8730,7 @@ function fermerOuverture(){
 }
 
 function actionCartes(a, el){
+  if(a === "onglet-cartes"){ aller("cartes"); return true; }
   if(a === "pli-ouvrir"){ ouvrirPli(); return true; }
   if(a === "pli-offert"){ const k = packOffertSuivant(); if(k) ouvrirPli(k); return true; }
   if(a === "ouv-suite"){ ouvSuite(); return true; }
@@ -11504,6 +11546,8 @@ function rendre(){
       p.className = "point"; p.setAttribute("aria-hidden","true");
       b.appendChild(p);
     }else if(!voulu && point){ point.remove(); }
+    /* Sur grand ecran, la bulle du pack, dans la marge (z0l_cartes.js). */
+    if(b.dataset.onglet === "cartes" && typeof majBulleCartes === "function") majBulleCartes();
   });
 
   document.querySelectorAll(".vue").forEach(v => v.classList.remove("active"));
