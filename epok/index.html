@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-5lF63Y8s3VgSMi94LBciLgUqYcLsFmRKA3Hk0dOtFrU=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-AWU6K4NaTnSymj/HG4p8AGQi7ksO/u6tevcZ1iqbggc=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -6088,7 +6088,7 @@ const AIDES = {
     <li><span class="bulle bulle-or">+${QJ_PTS}</span> par bonne réponse &#8226; quitter l’appli = question perdue.</li>
     <li>Podium du jour <span class="bulle bulle-or">${qjPodium(QJ_PODIUM_JOUR)}</span> &#8226; semaine <span class="bulle bulle-or">${qjPodium(QJ_PODIUM_SEMAINE)}</span></li></ul>` },
   classement: { titre: "Classement", corps: () => `<ul class="aide-liste">
-    <li><strong>Saison</strong>&#8239;: les points des 3 derniers mois. Tout le monde repart de 0.</li>
+    <li><strong>Saison</strong>&#8239;: 3 mois, puis tout le monde repart de 0 (la saison 1 compte tout).</li>
     <li>Podium&#8239;: ${typeof PRIX_SAISON !== "undefined" ? PRIX_SAISON.join(" / ") : "300 / 150 / 75"} pts et un pack de 3 rares ou mieux.</li>
     <li><strong>Général</strong>&#8239;: tous les points depuis le début.</li></ul>` },
   semaine: { titre: "Votre semaine", corps: () => `<ul class="aide-liste">
@@ -6375,7 +6375,7 @@ function contenuClassement(){
   const parts = [ongletsClassement()];
   if(saison){
     const sn = typeof qjSaison === "function" ? qjSaison(aujourdhui()) : null, reste = sn ? qjJoursAvant(sn.fin) : 0;
-    parts.push(`<p class="minuscule" style="margin:0 0 8px">Les points gagnés depuis le début de la saison${sn ? `&#8239;; fin dans ${reste} jour${reste > 1 ? "s" : ""}` : ""}.
+    parts.push(`<p class="minuscule" style="margin:0 0 8px">${saisonEnCours() === 1 ? "Saison 1&#8239;: tous les points depuis le lancement" : "Les points gagnés depuis le début de la saison"}${sn ? `&#8239;; fin dans ${reste} jour${reste > 1 ? "s" : ""}` : ""}.
       Podium&#8239;: <strong>${PRIX_SAISON.join(" / ")} pts</strong> et un pack de 3 cartes rares ou mieux.</p>`);
   }
   if(E.erreur && !E.liste){
@@ -6434,8 +6434,9 @@ function carteClassement(){
    Le classement general avantage ceux qui sont la depuis longtemps : un
    nouveau venu ne les rattrape jamais. D'ou le classement de la saison,
    affiche en premier. Les saisons sont celles du Quiz of the Day (3 mois,
-   voir qjSaison dans z0k_quotidien.js) ; la saison 1 compte a partir de
-   cette version (avant, rien ne datait les points).
+   voir qjSaison dans z0k_quotidien.js). La saison 1 compte tous les
+   points depuis le lancement d'EPOK (choix du professeur) : elle se
+   confond avec le classement general ; les suivantes repartent de 0.
 
    Points de la saison = points d'aujourd'hui - points au debut de la
    saison. Le debut est note (ETAT.saisons.base[n]) a la premiere ouverture
@@ -6473,7 +6474,7 @@ function noterSaison(){
 }
 function pointsSaison(){
   noterSaison();
-  const b = (((ETAT.saisons || {}).base) || {})[saisonEnCours()] || 0;
+  const n = saisonEnCours(), b = n === 1 ? 0 : (((ETAT.saisons || {}).base) || {})[n] || 0;
   return Math.max(0, pointsHorsPrix() - b);
 }
 /* Deux etats complets (ceux de fusionnerProgressions). */
