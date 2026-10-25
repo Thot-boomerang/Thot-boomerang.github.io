@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-EYe9/rr6TzqgRZF+L6sW3AypO+o+Nk1jAWsRVyNX2zI=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-bS60J/+k/uLEVHA5AW96usd6LJwOaMu7XYJMEyU4n9E=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1485,6 +1485,15 @@ select{width:100%}
 .pli-carte{text-align:center}
 .pli-ferme{position:relative;display:block;margin:14px auto 10px;padding:0;border:0;background:none;cursor:pointer}
 /* Le booster « Cartes EPOK » : sachet metallise dessine en SVG (voir booster()). */
+/* Profils publics : le nom, a toucher, dans les classements. */
+.lien-profil{all:unset;cursor:pointer;color:inherit;font:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);text-underline-offset:3px}
+.lien-profil:hover{text-decoration-color:currentColor}
+.lien-profil:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+.fenetre-profil{width:min(100%,480px);max-height:min(86vh,720px);overflow:auto}
+.fenetre-profil .fr-fermer{float:right;margin:-4px -4px 6px 8px}
+.pf-tete{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.pf-tuiles{margin-bottom:10px}
+.pf-cours{margin:0;padding-left:18px;font-size:14.5px;line-height:1.5}
 /* Bulle du pack (grand ecran) : dans la marge de droite, un petit booster
    qui penche a droite, a gauche, deux fois, puis se tient tranquille. */
 .bulle-pack{display:none}
@@ -5061,6 +5070,8 @@ function effacerDistant(){
     requeteJeton("DELETE", urlDocuments("/classement/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
   if(typeof urlDocuments === "function" && COMPTE.user)
     requeteJeton("DELETE", urlDocuments("/albums/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
+  if(typeof urlDocuments === "function" && COMPTE.user)
+    requeteJeton("DELETE", urlDocuments("/profils/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
   if(typeof effacerQuotidien === "function" && COMPTE.user) effacerQuotidien();
   return requete("DELETE").then(r => (r.ok || r.status === 404) ? true : erreurHttp(r));
 }
@@ -5123,6 +5134,7 @@ function synchroniser(){
     /* Sa ligne du classement general suit (z0j_classement.js). */
     if(typeof publierClassement === "function") publierClassement();
     if(typeof publierAlbum === "function") publierAlbum();
+    if(typeof publierProfil === "function") publierProfil();
     if(typeof publierQuotidien === "function") publierQuotidien().then(() => { if(typeof qjMajRangsDiscret === "function") qjMajRangsDiscret(); });
     return true;
   }).catch(e => {
@@ -5282,6 +5294,7 @@ function actionCompte(a, el){
       /* La ligne du classement prend aussitot le nouveau nom. */
       if(typeof publierClassement === "function") publierClassement().then(() => chargerClassement(true));
       if(typeof publierAlbum === "function") publierAlbum().then(() => chargerAlbums(true));
+      if(typeof publierProfil === "function") publierProfil();
       if(typeof publierQuotidien === "function") publierQuotidien();
     });
     return true;
@@ -6335,7 +6348,7 @@ function contenuClassement(){
   if(!CLASSEMENT_GENERAL.liste.length) parts.push(`<p class="secondaire" style="margin:0">Personne n’est encore classé.</p>`);
   else parts.push(`<ol class="st-classement">${CLASSEMENT_GENERAL.liste.map((e, i) => `<li${e.uid === moi ? ` class="moi"` : ""}>
       <span class="st-num">${i + 1}</span>
-      <span class="st-nom"><strong>${esc(e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${esc(libellePalier(Math.min(e.palier, NB_PALIERS - 1)))}</small></span>
+      <span class="st-nom"><strong>${lienProfil(e.uid, e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${esc(libellePalier(Math.min(e.palier, NB_PALIERS - 1)))}</small></span>
       ${badgeClassement(e.palier)}<span class="st-pts">${e.points.toLocaleString("fr-FR")} pts</span></li>`).join("")}</ol>`);
   const pseudo = pseudoClassement(COMPTE.user && COMPTE.user.displayName);
   if(!participeClassement()) parts.push(`<p class="minuscule" style="margin:8px 0 0">Vous n’apparaissez pas dans le classement (Réglages, carte Compte).</p>`);
@@ -6523,9 +6536,96 @@ function leverSanction(uid){ return requeteJeton("DELETE", urlSanction(uid)); }
 function supprimerCompteJoueur(e){
   const uid = encodeURIComponent(e.uid), auj = aujourdhui();
   return ecrireSanction(e.uid, { etat: "supprime", nom: e.nomBrut || e.nom, email: e.email }).then(() => Promise.all([
-    urlDocuments("/classement/" + uid), urlDocuments("/albums/" + uid), urlDocuments("/progressions/" + uid),
+    urlDocuments("/classement/" + uid), urlDocuments("/albums/" + uid), urlDocuments("/profils/" + uid), urlDocuments("/progressions/" + uid),
     urlDocuments("/jour/" + auj + "/scores/" + uid), urlDocuments("/semaine/" + qjLundi(auj) + "/scores/" + uid)
   ].map(u => requeteJeton("DELETE", u).catch(() => null))));
+}
+
+/* ======================================================================
+   PROFILS PUBLICS (novembre 2026)
+
+   Toucher un nom dans un classement (general, collections, Quiz of the
+   Day) ouvre le profil du joueur : ses cours termines et en cours, sa
+   precision aux QCM, son Quiz of the Day, ses cartes. On ne fait que
+   consulter. Chaque joueur publie lui-meme ce resume dans profils/{uid}
+   a chaque synchronisation ; rien de personnel n'y figure (ni adresse,
+   ni classe, ni detail des reponses). Regles : serveur/firestore.rules.
+   ====================================================================== */
+
+function resumeProfil(){
+  const q = Object.values(ETAT.quotidien || {}).filter(e => e && e.fini && e.verifie !== false);
+  const h = (ETAT.historique || []).filter(l => l && l.total > 0);
+  const justes = h.reduce((t, l) => t + (l.justes || 0), 0), total = h.reduce((t, l) => t + l.total, 0);
+  const m = typeof cartesPossedees === "function" ? cartesPossedees() : {};
+  const podiums = q.filter(e => e.rangFinal && e.rang >= 1 && e.rang <= 3).length
+    + Object.values(ETAT.qjSemaines || {}).filter(w => w && w.final && w.rang >= 1 && w.rang <= 3).length;
+  let brevet = 0;
+  try{ brevet = chapitresRediges().filter(c => chapitreMaitrise(c.id)).length; }catch(e){}
+  return {
+    points: Math.max(0, Math.round(pointsTotal())), palier: rangActuel().i,
+    termines: COURS.filter(c => coursTermine(c.id)).map(c => c.id).slice(0, 300),
+    commences: COURS.filter(c => !coursTermine(c.id) && coursCommence(c.id)).map(c => c.id).slice(0, 300),
+    precision: total ? Math.round(justes * 100 / total) : 0, qcm: h.length, serie: serie(),
+    qjJoues: q.length, qjMoyenne: q.length ? Math.round(q.reduce((t, e) => t + (e.justes || 0), 0) * 10 / q.length) : 0,
+    qjSansFaute: q.filter(e => e.justes === QJ_NB).length, qjPodiums: podiums,
+    cartes: Object.keys(m).length, pv: typeof scoreCollection === "function" ? scoreCollection(m) : 0,
+    packs: Object.keys(((ETAT.collection || {}).plis) || {}).length, brevet
+  };
+}
+function publierProfil(){
+  if(!compteConnecte()) return Promise.resolve(false);
+  const pseudo = pseudoClassement(COMPTE.user.displayName);
+  const uid = COMPTE.user.uid;
+  if(!pseudo) return requeteJeton("DELETE", urlDocuments("/profils/" + encodeURIComponent(uid))).then(() => true, () => false);
+  const r = Object.assign({ nom: pseudo }, resumeProfil());
+  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+    update: { name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/profils/" + uid, fields: qjChampsEncodes(r) },
+    updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
+  }] }).then(x => x.ok, () => false);
+}
+/* Le nom d'un joueur, a toucher pour voir son profil. */
+function lienProfil(uid, nom){
+  return `<button type="button" class="lien-profil" data-action="profil-voir" data-uid="${esc(uid)}">${esc(nom)}</button>`;
+}
+function ouvrirProfil(uid, el){
+  const fermer = `<button class="bouton petit discret fr-fermer" data-action="profil-fermer" aria-label="Fermer">&#10005; Fermer</button>`;
+  ouvrirEnBulle("fenetre-profil", fermer + `<p class="secondaire" style="margin:0">Chargement du profil…</p>`, "carte fenetre-profil", el);
+  const ici = COMPTE.user && uid === COMPTE.user.uid;
+  /* Son propre profil : tel qu'il est, sans attendre le serveur. */
+  const lu = ici ? Promise.resolve(Object.assign({ nom: pseudoClassement(COMPTE.user.displayName) || "Vous" }, resumeProfil()))
+    : requeteJeton("GET", urlDocuments("/profils/" + encodeURIComponent(uid))).then(r => r.status === 404 ? null : r.ok ? r.json().then(qjChamps) : Promise.reject(r));
+  lu.then(p => {
+    const v = document.getElementById("fenetre-profil");
+    if(!v) return;
+    const boite = v.querySelector(".eclat-boite");
+    boite.innerHTML = fermer + (p ? contenuProfil(p, ici) : `<p class="secondaire" style="margin:0">Ce joueur n’a pas encore de profil&#8239;: il apparaîtra à sa prochaine ouverture d’EPOK (version à jour).</p>`);
+  }, () => {
+    const v = document.getElementById("fenetre-profil");
+    if(v) v.querySelector(".eclat-boite").innerHTML = fermer + `<p class="secondaire" style="margin:0">Profil indisponible pour l’instant.</p>`;
+  });
+}
+function contenuProfil(p, ici){
+  const n = x => Number(x) || 0, pts = n(p.points), palier = indicePalier(pts);
+  const titres = l => (Array.isArray(l) ? l : []).map(id => coursParId(id)).filter(Boolean);
+  const termines = titres(p.termines), commences = titres(p.commences);
+  const liste = (l, coche) => l.length ? `<ul class="pf-cours">${l.map(c => `<li>${coche ? "&#10003; " : ""}${tx(c.titre)}</li>`).join("")}</ul>` : "";
+  const moy = (n(p.qjMoyenne) / 10).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+  return `<div class="pf-tete">${emblemeRang(palier, 56)}<div><h3 style="margin:0">${esc(p.nom || "?")}${ici ? " (vous)" : ""}</h3>
+      <p class="minuscule" style="margin:2px 0 0">${esc(libellePalier(palier))} &#8226; ${pts.toLocaleString("fr-FR")} pts${n(p.serie) > 1 ? ` &#8226; ${n(p.serie)} jours d’affilée` : ""}</p></div></div>
+    <div class="st-tuiles pf-tuiles">${tuile(termines.length, "cours terminé" + (termines.length > 1 ? "s" : ""), commences.length + " en cours")}
+      ${tuile(n(p.precision) + "&#8239;%", "précision aux QCM", n(p.qcm) + " QCM passé" + (n(p.qcm) > 1 ? "s" : ""))}
+      ${tuile(n(p.qjJoues), "Quiz of the Day joué" + (n(p.qjJoues) > 1 ? "s" : ""), (n(p.qjJoues) ? moy + "/10 en moyenne" : "pas encore joué"))}
+      ${tuile(n(p.cartes) + (typeof CARTES !== "undefined" && CARTES.length ? "/" + CARTES.length : ""), "cartes", n(p.pv).toLocaleString("fr-FR") + " PV &#8226; " + n(p.packs) + " packs")}</div>
+    ${n(p.qjSansFaute) || n(p.qjPodiums) ? `<p class="minuscule" style="margin:0 0 10px">Quiz of the Day&#8239;: ${n(p.qjSansFaute)} sans-faute &#8226; ${n(p.qjPodiums)} podium${n(p.qjPodiums) > 1 ? "s" : ""}</p>` : ""}
+    ${n(p.brevet) ? `<p class="minuscule" style="margin:0 0 10px">Mode Brevet&#8239;: ${n(p.brevet)} chapitre${n(p.brevet) > 1 ? "s" : ""} réussi${n(p.brevet) > 1 ? "s" : ""}</p>` : ""}
+    ${termines.length ? `<p class="capitales" style="margin:6px 0 4px">Cours terminés</p>${liste(termines, true)}` : ""}
+    ${commences.length ? `<p class="capitales" style="margin:10px 0 4px">En cours</p>${liste(commences, false)}` : ""}
+    ${!termines.length && !commences.length ? `<p class="secondaire" style="margin:6px 0 0">Aucun cours commencé pour l’instant.</p>` : ""}`;
+}
+function actionProfil(a, el){
+  if(a === "profil-voir"){ if(el && el.dataset.uid) ouvrirProfil(el.dataset.uid, el); return true; }
+  if(a === "profil-fermer"){ fermerBulle("fenetre-profil"); return true; }
+  return false;
 }
 
 /* ======================================================================
@@ -7100,7 +7200,7 @@ function qjRemplirOnglet(){
     const paliers = QJ.paliers || {};
     paliers[moi] = rangActuel().i;
     const lignes = r.liste.map((x, i) => `<li${x.uid === moi ? ` class="moi"` : ""}><span class="st-num">${i + 1}</span>
-      <span class="st-nom"><strong>${esc(x.nom)}${x.uid === moi ? " (vous)" : ""}</strong><small>${jour
+      <span class="st-nom"><strong>${lienProfil(x.uid, x.nom)}${x.uid === moi ? " (vous)" : ""}</strong><small>${jour
         ? Math.floor(x.temps / 60) + " min " + String(x.temps % 60).padStart(2, "0")
         : x.jours + " jour" + (x.jours > 1 ? "s" : "") + " joué" + (x.jours > 1 ? "s" : "")}</small></span>
       <span class="qj-badge" data-uid="${esc(x.uid)}">${badgeClassement(paliers[x.uid])}</span><span class="st-pts">${jour ? x.justes + "/" + QJ_NB : x.points + " pts"}</span></li>`).join("");
@@ -8195,7 +8295,7 @@ function contenuAlbums(){
   if(!ALBUMS.liste.length) return `<p class="secondaire" style="margin:0">Personne n’est encore classé.</p>`;
   const parts = [`<ol class="st-classement">${ALBUMS.liste.map((e, i) => `<li${e.uid === moi ? ` class="moi"` : ""}>
       <span class="st-num">${i + 1}</span>
-      <span class="st-nom"><strong>${esc(e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${e.cartes} carte${e.cartes > 1 ? "s" : ""}</small></span>
+      <span class="st-nom"><strong>${lienProfil(e.uid, e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${e.cartes} carte${e.cartes > 1 ? "s" : ""}</small></span>
       <span class="st-pts">${e.pv.toLocaleString("fr-FR")} PV</span></li>`).join("")}</ol>`];
   if(!pseudoClassement(COMPTE.user && COMPTE.user.displayName))
     parts.push(`<p class="minuscule" style="margin:8px 0 0">Indiquez votre prénom et votre nom dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
@@ -11728,7 +11828,7 @@ document.addEventListener("click", function(ev){
   const el = ev.target.closest("[data-action]");
   if(!el) return;
   const a = el.dataset.action;
-  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el)) return;
+  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el)) return;
 
   /* -- Navigation generale -- */
   if(a === "onglet"){ if(el.dataset.onglet === "cours") ECRAN = {nom:"catalogue"}; aller(el.dataset.onglet); }
