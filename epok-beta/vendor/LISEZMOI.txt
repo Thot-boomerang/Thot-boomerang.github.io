@@ -1,0 +1,5 @@
+firebase-app-compat.js et firebase-auth-compat.js : SDK JavaScript de
+Firebase, version 10.14.1 (paquet npm « firebase »), sous licence Apache 2.0
+(https://www.apache.org/licenses/LICENSE-2.0). Copies telles quelles, sans
+modification. Chargees par Epok seulement quand un projet est configure
+dans config-compte.js.

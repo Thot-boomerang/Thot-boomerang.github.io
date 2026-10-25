@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-v97BPtDkEmOBPY0SA6X3kMOPflmHcDECJK8/OkM3ATs=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Connexion — Epok</title>
+<!-- Page de connexion de l'application Android. Google refuse de
+     s'ouvrir dans le WebView de l'APK : l'application ouvre donc cette
+     page dans le navigateur du telephone (?appli=1). Elle fait la
+     connexion Google par Firebase, puis renvoie le jeton a l'application
+     par le lien fr.epok.histoire://auth, qui finit d'ouvrir la session.
+     Aucune session n'est gardee dans le navigateur. -->
+<style>
+:root{--fond:#efe3c8;--carte:#faf6ec;--texte:#3a3020;--doux:#6a5c40;--accent:#7c1d26;--filet:#b89b5e}
+@media (prefers-color-scheme:dark){:root{--fond:#1b150e;--carte:#261e14;--texte:#efe3c8;--doux:#c9b892;--accent:#c4505c;--filet:#7a6640}}
+body{margin:0;padding:40px 16px;background:var(--fond);color:var(--texte);
+  font:17px/1.55 Georgia,"Times New Roman",serif;text-align:center}
+.boite{max-width:420px;margin:0 auto;background:var(--carte);border:1px solid var(--filet);padding:28px 22px}
+h1{margin:0 0 4px;color:var(--accent);font-size:34px;letter-spacing:.12em}
+.sous{margin:0 0 22px;color:var(--doux);font-style:italic}
+#msg{margin:0 0 6px}
+button,a.bouton{display:block;box-sizing:border-box;width:100%;margin-top:18px;padding:14px;border:0;
+  background:var(--accent);color:#fff;font:700 15px/1.2 Georgia,serif;letter-spacing:.08em;
+  text-transform:uppercase;text-decoration:none;cursor:pointer}
+[hidden]{display:none!important}
+.petit{margin-top:18px;font-size:14px;color:var(--doux)}
+</style>
+</head>
+<body>
+<div class="boite">
+  <h1>EPOK</h1>
+  <p class="sous">Sauvegarder votre progression</p>
+  <p id="msg">Connectez-vous avec votre compte Google&#8239;: votre progression, vos points et votre rang seront
+    sauvegardés et retrouvés sur tous vos appareils.</p>
+  <button id="go" type="button">Se connecter avec Google</button>
+  <a id="retour" class="bouton" hidden>Revenir dans Epok</a>
+  <p class="petit">Seule votre progression est enregistrée, avec l’adresse de votre compte, qui sert à vous
+    reconnaître. Vous pouvez tout supprimer depuis les réglages d’Epok.</p>
+</div>
+<script src="config-compte.js"></script>
+<script src="vendor/firebase-app-compat.js"></script>
+<script src="vendor/firebase-auth-compat.js"></script>
+<script>
+"use strict";
+(function () {
+  var appli = new URLSearchParams(location.search).get("appli") === "1";
+  var msg = document.getElementById("msg"), go = document.getElementById("go"), retour = document.getElementById("retour");
+  var cfg = window.EPOK_COMPTE || {};
+  if (!cfg.apiKey) { msg.textContent = "Le compte n’est pas encore configuré."; go.hidden = true; return; }
+  var auth = firebase.initializeApp(cfg, "connexion").auth();
+  var fournisseur = new firebase.auth.GoogleAuthProvider();
+  fournisseur.setCustomParameters({ prompt: "select_account" });
+
+  function renvoyer(jeton) {
+    var lien = (/epok-beta/.test(location.pathname) ? "fr.epok.histoire.beta" : "fr.epok.histoire") + "://auth?id_token=" + encodeURIComponent(jeton);
+    retour.href = lien; retour.hidden = false; go.hidden = true;
+    msg.textContent = "Connexion réussie. Revenez dans Epok pour terminer.";
+    auth.signOut();
+    try { location.href = lien; } catch (e) {}
+  }
+  function reussite(r) {
+    var jeton = r && r.credential && r.credential.idToken;
+    if (!jeton) return;
+    if (appli) renvoyer(jeton);
+    else { auth.signOut(); location.href = "./"; }
+  }
+  function echec(e) {
+    go.hidden = false;
+    msg.textContent = "Connexion impossible : " + (e && e.message ? e.message : "erreur inconnue") + ".";
+  }
+  auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function () {
+    return auth.getRedirectResult();
+  }).then(reussite).catch(echec);
+  go.addEventListener("click", function () {
+    msg.textContent = "Connexion en cours…";
+    auth.signInWithPopup(fournisseur).then(reussite).catch(function (e) {
+      if (e && e.code === "auth/popup-blocked") { auth.signInWithRedirect(fournisseur); return; }
+      if (e && e.code === "auth/popup-closed-by-user") { msg.textContent = "Connexion annulée."; return; }
+      echec(e);
+    });
+  });
+})();
+</script>
+</body>
+</html>
