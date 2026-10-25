@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-bS60J/+k/uLEVHA5AW96usd6LJwOaMu7XYJMEyU4n9E=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-67AkPIOcKR4jZisoL5Emz4QMz30fN+ci9PrmA58rD3Y=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -987,16 +987,16 @@ body[data-haut="1"] #haut{display:block}
 .aide-liste{margin:0 0 12px;padding-left:1.1em}
 .aide-liste li{margin:0 0 8px;line-height:1.45}
 .aide-liste .bulle{font-size:12px;padding:1px 7px}
-.eclat{position:fixed;inset:0;z-index:65;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;
+.eclat{position:fixed;inset:0;z-index:75;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;
   overflow-y:auto;padding:24px 12px}
 .eclat-boite{width:min(100%,540px);margin:auto 0;position:relative}
 .eclat .fr-fermer{float:right;margin:-4px -4px 6px 8px}
 #fenetre-aide .eclat-boite{width:min(100%,440px)}
 .eclat.eclat-ferme{pointer-events:none}
-.eclat-bulle{position:fixed;z-index:66;border-radius:50%;pointer-events:none;opacity:0;
+.eclat-bulle{position:fixed;z-index:76;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 10%,rgba(255,255,255,.3) 12% 50%,rgba(226,196,124,.35) 72%,rgba(168,128,31,.75) 100%);
   border:2px solid rgba(168,128,31,.85)}
-.eclat-goutte{position:fixed;z-index:66;border-radius:50%;pointer-events:none;background:var(--or-vif);opacity:0;
+.eclat-goutte{position:fixed;z-index:76;border-radius:50%;pointer-events:none;background:var(--or-vif);opacity:0;
   box-shadow:0 0 4px rgba(226,196,124,.8)}
 /* Fenetre des rangs, ouverte depuis l'insigne de l'en-tete. */
 #fenetre-rangs{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;
@@ -5135,6 +5135,7 @@ function synchroniser(){
     if(typeof publierClassement === "function") publierClassement();
     if(typeof publierAlbum === "function") publierAlbum();
     if(typeof publierProfil === "function") publierProfil();
+    if(typeof completerProfils === "function") completerProfils();
     if(typeof publierQuotidien === "function") publierQuotidien().then(() => { if(typeof qjMajRangsDiscret === "function") qjMajRangsDiscret(); });
     return true;
   }).catch(e => {
@@ -6583,6 +6584,44 @@ function publierProfil(){
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
   }] }).then(x => x.ok, () => false);
 }
+/* Le professeur, qui lit deja les progressions, complete les profils des
+   joueurs qui n'ont pas encore rouvert l'application a jour (ou dont le
+   profil est plus ancien que leur progression). Seulement ceux qui sont
+   dans un classement, sous leur pseudo. Au plus toutes les 6 h. */
+const CLE_PROFILS = "epok.profils.v1";
+function completerProfils(force){
+  if(typeof estProfesseur !== "function" || !estProfesseur() || !compteConnecte()) return Promise.resolve(0);
+  let dernier = 0;
+  try{ dernier = Number(localStorage.getItem(CLE_PROFILS)) || 0; }catch(e){}
+  if(!force && Date.now() - dernier < 6 * 3600e3) return Promise.resolve(0);
+  try{ localStorage.setItem(CLE_PROFILS, String(Date.now())); }catch(e){}
+  const id = d => String(d.name || "").split("/").pop();
+  const table = c => lireToutesProgressions(c).then(l => Object.fromEntries(l.map(d => [id(d), d.fields || {}])), () => ({}));
+  const date = f => Date.parse(((f || {}).maj || {}).timestampValue || "") || 0;
+  return Promise.all([lireToutesProgressions(), table("classement"), table("albums"), table("profils")]).then(([docs, cl, al, pr]) => {
+    const moi = COMPTE.user.uid, writes = [];
+    docs.forEach(doc => {
+      const uid = id(doc), nom = ((cl[uid] || al[uid] || {}).nom || {}).stringValue;
+      if(uid === moi || !nom || (pr[uid] && date(pr[uid]) >= date(doc.fields))) return;
+      let lu = null;
+      try{ lu = JSON.parse(((doc.fields || {}).etat || {}).stringValue || "null"); }catch(e){}
+      if(!lu || typeof lu !== "object") return;
+      const e = fusionnerEtat(etatVierge(), lu);
+      if(e.palierMax === null) e.palierMax = 0;
+      let r;
+      try{ r = avecEtat(e, resumeProfil); }catch(x){ return; }
+      writes.push({ update: { name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/profils/" + uid,
+        fields: qjChampsEncodes(Object.assign({ nom }, r)) }, updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }] });
+    });
+    /* Par paquets : une ligne refusee ne bloque que son paquet. */
+    let n = 0, ch = Promise.resolve();
+    for(let i = 0; i < writes.length; i += 50){
+      const lot = writes.slice(i, i + 50);
+      ch = ch.then(() => requeteJeton("POST", urlDocuments(":commit"), { writes: lot }).then(x => { if(x.ok) n += lot.length; }, () => {}));
+    }
+    return ch.then(() => n);
+  }, () => 0);
+}
 /* Le nom d'un joueur, a toucher pour voir son profil. */
 function lienProfil(uid, nom){
   return `<button type="button" class="lien-profil" data-action="profil-voir" data-uid="${esc(uid)}">${esc(nom)}</button>`;
@@ -6598,7 +6637,7 @@ function ouvrirProfil(uid, el){
     const v = document.getElementById("fenetre-profil");
     if(!v) return;
     const boite = v.querySelector(".eclat-boite");
-    boite.innerHTML = fermer + (p ? contenuProfil(p, ici) : `<p class="secondaire" style="margin:0">Ce joueur n’a pas encore de profil&#8239;: il apparaîtra à sa prochaine ouverture d’EPOK (version à jour).</p>`);
+    boite.innerHTML = fermer + (p ? contenuProfil(p, ici) : `<p class="secondaire" style="margin:0">Ce joueur n’a pas encore de profil.</p>`);
   }, () => {
     const v = document.getElementById("fenetre-profil");
     if(v) v.querySelector(".eclat-boite").innerHTML = fermer + `<p class="secondaire" style="margin:0">Profil indisponible pour l’instant.</p>`;
