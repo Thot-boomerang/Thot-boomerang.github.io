@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-xJS1V5C8kS2aszpbqwSH18/Un/lJyNyeweST9PHRPCs=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-sOKu0Yh5QXmJ+bPZ5LYvitUEu/gfMF/e/S3+YEh1VfU=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -5253,7 +5253,7 @@ function importerPourBeta(){
       const garde = ETAT.ecus;
       ETAT = fusionnerProgressions(ETAT, fusionnerEtat(etatVierge(), lu));
       ETAT.ecus = garde;
-      garde.ref = null; garde.rangDepart = null; garde.passeBase = {};
+      garde.ref = null; garde.refPts = null;
     }
     sauverEtat(true);
     rafraichirApresSynchro();
@@ -5269,9 +5269,12 @@ function synchroniser(){
      verifie par le serveur, s'y publie. */
   if(typeof BETA !== "undefined" && BETA){
     if(typeof publierQuotidien === "function") publierQuotidien().catch(() => {});
-    if(typeof verifierPrixSaison === "function") verifierPrixSaison();
-    if(typeof assurerJoueur === "function") assurerJoueur();
-    return importerPourBeta().then(() => true, () => false);
+    /* Dans cet ordre : la progression d'abord (la bourse, creee ensuite,
+       part de ces points et de cette collection), puis la bourse, puis la
+       fiche publique (sa vitrine : des cartes de la bourse). */
+    return importerPourBeta().catch(() => false)
+      .then(() => typeof chargerBourse === "function" ? chargerBourse() : null)
+      .then(() => { if(typeof assurerJoueur === "function") assurerJoueur(); return true; }, () => false);
   }
   if(COMPTE.enCours){ COMPTE.encore = true; return Promise.resolve(false); }
   COMPTE.enCours = true;
@@ -6223,7 +6226,7 @@ const AIDES = {
   ecus: { titre: "Les écus", corps: () => `<ul class="aide-liste">
     <li>Chaque point gagné rapporte 1 écu, ${ECU_PLAFOND} écus par jour au plus.</li>
     <li>Un QCM refait&#8239;: 1 écu par bonne réponse (${ECU_REVISION} par jour).</li>
-    <li>Les écus achètent des boosters&#8239;; les points font le rang.</li></ul>` },
+    <li>Les écus achètent des boosters, gardés sur le serveur&#8239;: impossible d’en créer.</li></ul>` },
   boutique: { titre: "Boutique", corps: () => `<ul class="aide-liste">
     <li><strong>Classique</strong>&#8239;: 3 cartes, toutes raretés.</li>
     <li><strong>Premium</strong>&#8239;: la 3<sup>e</sup> carte rare ou mieux.</li>
@@ -6233,7 +6236,7 @@ const AIDES = {
     <li>Votre ami a 24 heures pour jouer les mêmes&#8239;; le gagnant prend 5 écus.</li>
     <li>L’Elo monte quand vous gagnez, comme aux échecs.</li></ul>` },
   passe: { titre: "Pass de saison", corps: () => `<ul class="aide-liste">
-    <li>Chaque tranche de ${PASSE_PALIER} points gagnés pendant la saison ouvre un palier.</li>
+    <li>Chaque tranche de ${PASSE_PALIER} écus gagnés pendant la saison ouvre un palier.</li>
     <li>Touchez un palier atteint pour récupérer ses écus ou son pack.</li>
     <li>${PASSE.length} paliers&#8239;; le dernier donne un Ultra premium.</li></ul>` },
   seance: { titre: "QCM de séance", corps: () => `<ul class="aide-liste">
@@ -6679,8 +6682,11 @@ function publierSaison(pseudo){
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
   }] }).then(r => r.ok, () => false);
 }
-/* Le podium des saisons finies depuis 2 jours, lu une fois. */
+/* Le podium des saisons finies depuis 2 jours, lu une fois. Beta : le
+   podium inscrit sur le serveur par le professeur (z0o_bourse.js), qui
+   ouvre aussi les prix en ecus et en packs. */
 function verifierPrixSaison(){
+  if(typeof BETA !== "undefined" && BETA) return typeof verifierPodiumBourse === "function" ? verifierPodiumBourse() : Promise.resolve(null);
   if(!compteConnecte() || typeof qjSaisonNumero !== "function") return Promise.resolve(null);
   const p = saisonEnCours() - 1;
   noterSaison();
@@ -6699,28 +6705,11 @@ function verifierPrixSaison(){
       return rang;
     }, () => null);
 }
-/* Les packs gagnes en fin de saison (beta Ecus) : le 1er choisit 1 Ultra
-   ou 2 Premium et 200 ecus ; le 2e, 1 Premium ou 2 Classiques et 100
-   ecus ; le 3e a 1 Premium. Sans choix encore fait, rien. */
+/* Les packs gagnes en fin de saison : un pack de saison (3 rares ou
+   mieux) par podium. (Beta : les prix sont dans la bourse.) */
 function packsSaison(){
-  const p = ((ETAT.saisons || {}).prix) || {}, l = [];
-  /* Hors beta : un pack de saison (3 rares ou mieux) par podium. */
-  if(!(typeof BETA !== "undefined" && BETA)) return Object.keys(p).filter(n => p[n].rang >= 1).sort((a, b) => a - b).map(n => "saison-" + n);
-  Object.keys(p).sort((a, b) => a - b).forEach(n => {
-    const r = p[n].rang, c = p[n].choix;
-    if(r === 1 && c) l.push(...(c === "a" ? ["saison-" + n + "-u"] : ["saison-" + n + "-p1", "saison-" + n + "-p2"]));
-    else if(r === 2 && c) l.push(...(c === "a" ? ["saison-" + n + "-p"] : ["saison-" + n + "-c1", "saison-" + n + "-c2"]));
-    else if(r === 3) l.push("saison-" + n + "-p");
-  });
-  return l;
-}
-function choisirPrixSaison(n, choix){
-  const p = (((ETAT.saisons || {}).prix) || {})[n];
-  if(!p || p.choix || (p.rang !== 1 && p.rang !== 2) || (choix !== "a" && choix !== "b")) return false;
-  p.choix = choix;
-  if(choix === "b" && typeof ajouterBonus === "function") ajouterBonus("saison-" + n, p.rang === 1 ? 200 : 100);
-  sauverEtat();
-  return true;
+  const p = ((ETAT.saisons || {}).prix) || {};
+  return Object.keys(p).filter(n => p[n].rang >= 1).sort((a, b) => a - b).map(n => "saison-" + n);
 }
 function actionClassement(a, el){
   if(a === "classement-vue"){
@@ -8499,14 +8488,22 @@ const PACKS_OFFERTS = ["offert-1", "offert-2"];
 function estPackSaison(cle){ return /^saison-\d{1,3}(-[cpu]\d?)?$/.test(cle); }
 /* Les cles des plis (beta Ecus) : le jour, les packs offerts, les packs
    gagnes (saison, rang, passe) et achetes. La derniere lettre dit la
-   qualite : c Classique, p Premium, u Ultra premium. */
+   qualite : c Classique, p Premium, u Ultra premium. Depuis la bourse
+   (z0o_bourse.js) : « j-2026-10-26 » (pack du jour), « bienvenue-c »,
+   « a-3-u » (3e achat), « passe-1-10 » (palier 10 de la saison 1). */
 function clePliValide(d){
   return /^\d{4}-\d{2}-\d{2}$/.test(d) || PACKS_OFFERTS.indexOf(d) >= 0 || estPackSaison(d)
-    || /^achat-[0-9a-z]{4,12}-[cpu]$/.test(d) || /^rang-\d{1,2}-[cp]$/.test(d) || /^passe-\d{1,3}-\d{1,2}-[cpu]$/.test(d);
+    || /^achat-[0-9a-z]{4,12}-[cpu]$/.test(d) || /^rang-\d{1,2}-[cp]$/.test(d) || /^passe-\d{1,3}-\d{1,2}(-[cpu])?$/.test(d)
+    || /^j-\d{4}-\d{2}-\d{2}$/.test(d) || /^bienvenue-[cp]$/.test(d) || /^a-\d{1,6}-[cpu]$/.test(d);
 }
 /* Le pack du jour et le 1er pack de bienvenue sont des Classiques ; le
    2e pack de bienvenue, un Premium ; l'ancien pack de saison, un Ultra. */
 function typePack(cle){
+  const b = typeof bourse === "function" ? bourse() : null;
+  if(b && b.packs[cle] && /^[cpu]$/.test(b.packs[cle].t)) return b.packs[cle].t;
+  if(/^j-/.test(cle)) return "c";
+  const pa = /^passe-\d{1,3}-(\d{1,2})$/.exec(cle);
+  if(pa && typeof typePasse === "function") return typePasse(+pa[1]);
   const m = /-([cpu])\d?$/.exec(cle);
   if(m) return m[1];
   if(/^saison-\d{1,3}$/.test(cle)) return "u";
@@ -8583,7 +8580,7 @@ function pointsCartes(){
      points ; acheter ou gagner un pack n'en rapporte pas. */
   if(!c || !c.plis) return 0;
   if(!(typeof BETA !== "undefined" && BETA)) return PTS_PACK * Object.keys(c.plis).length;
-  return PTS_PACK * Object.keys(c.plis).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k) || PACKS_OFFERTS.indexOf(k) >= 0 || /^saison-\d{1,3}$/.test(k)).length;
+  return PTS_PACK * Object.keys(c.plis).filter(k => /^(j-)?\d{4}-\d{2}-\d{2}$/.test(k) || PACKS_OFFERTS.indexOf(k) >= 0 || /^saison-\d{1,3}$/.test(k)).length;
 }
 function collection(){
   if(!ETAT.collection) ETAT.collection = nettoyerCollection(null);
@@ -8593,6 +8590,9 @@ function collection(){
 /* { numero: nombre d'exemplaires } */
 function cartesPossedees(){
   const m = {};
+  /* Beta : les cartes de la bourse, sur le serveur. */
+  const b = typeof bourse === "function" ? bourse() : null;
+  if(b){ ["cartes", "importe"].forEach(c => Object.keys(b[c]).forEach(k => b[c][k].forEach(n => { if(carteN(n)) m[n] = (m[n] || 0) + 1; }))); return m; }
   Object.values(collection().plis).forEach(p => p.forEach(n => { m[n] = (m[n] || 0) + 1; }));
   /* Les doubles recycles en ecus (z0m_ecus.js) ne comptent plus. */
   const rec = (ETAT.ecus && ETAT.ecus.recycles) || {};
@@ -8647,11 +8647,17 @@ function pliDuJour(){
   const d = aujourdhui();
   return collection().plis[d] || tirerPli(d);
 }
-function pliOuvert(){ return !!collection().plis[aujourdhui()]; }
-/* Le prochain pack offert encore ferme, ou null. */
-function packOffertSuivant(){ return PACKS_OFFERTS.find(k => !collection().plis[k]) || null; }
+function pliOuvert(){
+  /* Beta : le pack gratuit du jour est pris sur la bourse ; sans bourse,
+     rien a ouvrir. */
+  if(typeof BETA !== "undefined" && BETA){ const b = typeof bourse === "function" ? bourse() : null; return !b || !!b.pris["j-" + jourBourse()]; }
+  return !!collection().plis[aujourdhui()];
+}
+/* Le prochain pack offert encore ferme, ou null (hors beta : la beta a
+   ses packs de bienvenue dans la bourse). */
+function packOffertSuivant(){ return typeof BETA !== "undefined" && BETA ? null : PACKS_OFFERTS.find(k => !collection().plis[k]) || null; }
 /* Le prochain pack de saison gagne encore ferme, ou null. */
-function packSaisonSuivant(){ return (typeof packsSaison === "function" ? packsSaison() : []).find(k => !collection().plis[k]) || null; }
+function packSaisonSuivant(){ return typeof BETA !== "undefined" && BETA ? null : (typeof packsSaison === "function" ? packsSaison() : []).find(k => !collection().plis[k]) || null; }
 
 /* ---------- Classement des collections (novembre 2026) ----------
    Chaque joueur connecte publie dans albums/{uid} son nom (« Lea M. »),
@@ -8947,21 +8953,24 @@ const OUV_TREMBLE = [2000, 2000, 3000, 3000, 3000, 3000];
 
 function titrePack(cle){
   const t = NOMS_PACKS_C[typePack(cle)];
-  if(/^\d{4}-\d{2}-\d{2}$/.test(cle)) return "Pack du jour";
+  if(/^(j-)?\d{4}-\d{2}-\d{2}$/.test(cle)) return "Pack du jour";
   if(!(typeof BETA !== "undefined" && BETA)) return estPackSaison(cle) ? "Pack de la saison" : "Pack offert";
-  if(PACKS_OFFERTS.indexOf(cle) >= 0) return "Pack de bienvenue · " + t;
+  if(PACKS_OFFERTS.indexOf(cle) >= 0 || /^bienvenue-/.test(cle)) return "Pack de bienvenue · " + t;
   if(/^rang-/.test(cle)) return "Pack de rang · " + t;
   if(/^passe-/.test(cle)) return "Pass de saison · " + t;
   if(estPackSaison(cle)) return "Pack de la saison · " + t;
   return "Pack " + t;
 }
 const NOMS_PACKS_C = { c: "Classique", p: "Premium", u: "Ultra premium" };
-function ouvrirPli(cle){
+/* pli, avant : beta, le pack vient d'etre ouvert par le serveur (ses
+   cartes, et la collection d'avant pour les tampons « Deja tiree »). */
+function ouvrirPli(cle, pliServeur, avantServeur){
   if(OUV) return;
   cle = cle || aujourdhui();
-  const offert = PACKS_OFFERTS.indexOf(cle) >= 0, gagne = estPackSaison(cle), jour = /^\d{4}-\d{2}-\d{2}$/.test(cle);
-  if(collection().plis[cle] && !jour) return;
-  const avant = cartesPossedees(), pli = collection().plis[cle] || tirerPli(cle);
+  const jour = /^\d{4}-\d{2}-\d{2}$/.test(cle);
+  if(!pliServeur && typeof BETA !== "undefined" && BETA) return;
+  if(collection().plis[cle] && !jour && !pliServeur) return;
+  const avant = avantServeur || cartesPossedees(), pli = pliServeur || collection().plis[cle] || tirerPli(cle);
   const ordre = pli.slice().sort((a, b) => rangRarete(carteN(a).r) - rangRarete(carteN(b).r) || carteN(a).pv - carteN(b).pv);
   /* Inscrit des l'ouverture : quitter en cours de route garde les cartes. */
   collection().plis[cle] = pli;
@@ -9285,7 +9294,8 @@ function fermerOuverture(){
 
 function actionCartes(a, el){
   if(a === "onglet-cartes"){ aller("cartes"); return true; }
-  if(a === "pli-ouvrir"){ ouvrirPli(); return true; }
+  /* Beta : le pack du jour s'ouvre par la bourse (actionEcus). */
+  if(a === "pli-ouvrir" && !(typeof BETA !== "undefined" && BETA)){ ouvrirPli(); return true; }
   if(a === "pli-offert"){ const k = packOffertSuivant(); if(k) ouvrirPli(k); return true; }
   if(a === "pli-saison"){ const k = packSaisonSuivant(); if(k) ouvrirPli(k); return true; }
   if(a === "ouv-suite"){ ouvSuite(); return true; }
@@ -9326,28 +9336,35 @@ if(typeof document !== "undefined") document.addEventListener("error", ev => {
    classements et ne se depensent jamais ; les ecus se gagnent avec les
    memes actions et s'echangent contre des boosters.
 
+   Le solde, les packs et les cartes sont sur le serveur (z0o_bourse.js,
+   bourses/{uid}) : ce fichier-ci compte ce que le joueur gagne en jouant,
+   le garde « en attente » sur l'appareil, et l'envoie a la bourse, qui
+   l'accepte dans la limite de 150 ecus par jour. Il faut donc un compte :
+   sans compte, l'onglet Cartes montre l'album, pas de boutique.
+
    Contre le « farming » (comme Brawl Stars : des quotas, pas de la
    repetition) :
    - 1 ecu par point nouveau, et 1 ecu par bonne reponse a un QCM refait
-     (30 par jour au plus) ; missions et serie s'y ajoutent ; le tout est
-     plafonne a 150 ecus par jour ;
+     (30 par jour au plus) ; missions, serie et defis gagnes s'y ajoutent ;
+     le tout est plafonne a 150 ecus par jour, par le serveur ;
    - le recyclage d'un double rend environ 10 % de sa valeur : ouvrir des
      packs pour les recycler fait toujours perdre des ecus ;
    - aucun gain du passe : les points des cartes et des podiums de saison
      ne donnent pas d'ecus.
-   Ce qui ne passe pas par le plafond est borne autrement : 300 ecus de
-   depart, le pass de saison, les prix de saison.
-
-   Le solde n'est pas stocke : gains (par jour et bonus) moins achats,
-   recalcule a chaque fois, a partir de ETAT.ecus.
+   Ce qui ne passe pas par le plafond est borne par le serveur : 300 ecus
+   de depart, le pass de saison (d'apres les ecus gagnes), les prix de
+   saison (d'apres le podium).
    ========================================================================== */
 
 const ECU_PLAFOND = 150, ECU_REVISION = 30, ECU_DEPART = 300, ECU_MISSION = 20;
+/* Hors ligne, les gains attendent sur l'appareil : 3 jours au plus. */
+const ATTENTE_MAX = 3 * ECU_PLAFOND;
 const PRIX_PACKS = { c: 100, p: 250, u: 600 };
 const NOMS_PACKS = { c: "Classique", p: "Premium", u: "Ultra premium" };
 const RECYCLAGE = { "commune": 1, "peu-commune": 2, "rare": 5, "epique": 15, "legendaire": 40, "mythique": 100 };
-/* Passe de saison : un palier tous les 120 points gagnes pendant la
-   saison, 25 paliers. Des ecus surtout, des packs aux paliers ronds. */
+/* Passe de saison : un palier tous les 120 ecus gagnes pendant la saison
+   (gagnes en jouant, donc plafonnes par jour), 25 paliers. Des ecus
+   surtout, des packs aux paliers ronds. */
 const PASSE_PALIER = 120;
 const PASSE = Array.from({ length: 25 }, (_, k) => {
   const t = k + 1;
@@ -9357,54 +9374,44 @@ const PASSE = Array.from({ length: 25 }, (_, k) => {
   return { e: t % 2 ? 30 : 50 };
 });
 
+/* Ce que l'appareil garde : les reperes (points deja comptes), ce qui a
+   ete gagne chaque jour, les missions et series deja comptees, et ce qui
+   attend d'etre envoye a la bourse (attente : ecus, attentePts : points). */
 function etatEcusVierge(){
-  return { depart: false, importe: false, ref: null, jours: {}, revision: {}, bonus: {}, achats: {}, missions: {}, series: {},
-           recycles: {}, rangDepart: null, rangs: {}, passeBase: {}, passe: {} };
+  return { importe: false, uid: null, ref: null, refPts: null, jours: {}, revision: {}, missions: {}, series: {}, attente: 0, attentePts: 0 };
 }
 function nettoyerEcus(x){
   const r = etatEcusVierge();
   if(!x || typeof x !== "object") return r;
   const entier = v => Number.isInteger(v) && v >= 0 && v <= 10000000;
   const dates = (src, dst, ok) => Object.keys(src || {}).forEach(k => { if(/^\d{4}-\d{2}-\d{2}$/.test(k) && ok(src[k])) dst[k] = src[k]; });
-  const cles = (src, dst, motif, ok) => Object.keys(src || {}).forEach(k => { if(motif.test(k) && ok(src[k])) dst[k] = src[k]; });
-  r.depart = x.depart === true;
   r.importe = x.importe === true;
+  r.uid = typeof x.uid === "string" && /^[A-Za-z0-9]{1,128}$/.test(x.uid) ? x.uid : null;
   r.ref = entier(x.ref) ? x.ref : null;
+  r.refPts = entier(x.refPts) ? x.refPts : null;
+  r.attente = entier(x.attente) ? Math.min(x.attente, ATTENTE_MAX) : 0;
+  r.attentePts = entier(x.attentePts) ? Math.min(x.attentePts, 3 * PTS_PLAFOND) : 0;
   dates(x.jours, r.jours, entier);
   dates(x.revision, r.revision, entier);
   dates(x.series, r.series, v => v === true);
   Object.keys(x.missions || {}).forEach(d => { const m = x.missions[d];
     if(/^\d{4}-\d{2}-\d{2}$/.test(d) && m && typeof m === "object"){ r.missions[d] = {}; Object.keys(m).forEach(id => { if(/^[a-z]{2,12}$/.test(id) && m[id] === true) r.missions[d][id] = true; }); } });
-  cles(x.bonus, r.bonus, /^[a-z0-9-]{2,40}$/, entier);
-  cles(x.achats, r.achats, /^achat-[0-9a-z]{4,12}-[cpu]$/, v => entier(v) && v > 0);
-  cles(x.recycles, r.recycles, /^\d{1,5}$/, entier);
-  r.rangDepart = Number.isInteger(x.rangDepart) && x.rangDepart >= 0 && x.rangDepart <= 20 ? x.rangDepart : null;
-  cles(x.rangs, r.rangs, /^\d{1,2}$/, v => v === true);
-  cles(x.passeBase, r.passeBase, /^\d{1,3}$/, entier);
-  cles(x.passe, r.passe, /^\d{1,3}-\d{1,2}$/, v => v === true);
   return r;
 }
 function ecus(){
   if(!ETAT.ecus || !ETAT.ecus.jours) ETAT.ecus = nettoyerEcus(ETAT.ecus);
   return ETAT.ecus;
 }
-const somme = o => Object.keys(o || {}).reduce((t, k) => t + (o[k] || 0), 0);
-function soldeEcus(){
-  const e = ecus();
-  return Math.max(0, somme(e.jours) + somme(e.bonus) - somme(e.achats));
-}
+/* Le solde : celui de la bourse (le serveur), rien d'autre. */
+function soldeEcus(){ const d = typeof bourse === "function" ? bourse() : null; return d ? d.solde : 0; }
 function ecusDuJour(){ return ecus().jours[aujourdhui()] || 0; }
-/* Credite n ecus sur la journee, dans la limite du plafond ; rend ce qui
-   a ete credite. */
+/* Gagne n ecus aujourd'hui, dans la limite du plafond : ils partent a la
+   bourse (qui revérifie le plafond). Rend ce qui a ete gagne. */
 function crediter(n){
   const e = ecus(), d = aujourdhui(), deja = e.jours[d] || 0;
   const g = Math.max(0, Math.min(Math.round(n), ECU_PLAFOND - deja));
-  if(g) e.jours[d] = deja + g;
+  if(g){ e.jours[d] = deja + g; e.attente = Math.min(ATTENTE_MAX, (e.attente || 0) + g); }
   return g;
-}
-function ajouterBonus(cle, n){
-  const e = ecus();
-  e.bonus[cle] = (e.bonus[cle] || 0) + Math.max(0, Math.round(n));
 }
 
 /* Les points qui donnent des ecus : tous, sauf ceux des packs ouverts et
@@ -9454,94 +9461,69 @@ function serieVerifiee(){
 
 /* ---------- Revision : un QCM refait sans nouveau point ---------- */
 function ecusRevision(justes){
+  if(!(typeof bourse === "function" && bourse())) return 0;
   const e = ecus(), d = aujourdhui(), deja = e.revision[d] || 0;
   const n = Math.min(Math.max(0, justes | 0), ECU_REVISION - deja);
   if(n <= 0) return 0;
   const g = crediter(n);
-  if(g) e.revision[d] = deja + g;
+  if(g){ e.revision[d] = deja + g; planifierGains(); }
   return g;
 }
 
-/* ---------- Passe de saison (gratuit) ---------- */
+/* ---------- Passe de saison (gratuit), d'apres la bourse ---------- */
 function passeSaison(){
-  const e = ecus(), n = String(typeof saisonEnCours === "function" ? saisonEnCours() : 1);
-  if(!(n in e.passeBase)) e.passeBase[n] = pointsSources();
-  const pts = Math.max(0, pointsSources() - e.passeBase[n]);
+  const d = (typeof bourse === "function" && bourse()) || { saison: 1, gagneSaison: 0, pris: {} };
+  const n = String(d.saison), pts = d.gagneSaison;
   const palier = Math.min(PASSE.length, Math.floor(pts / PASSE_PALIER));
   return { n, pts, palier, reste: palier >= PASSE.length ? 0 : PASSE_PALIER - pts % PASSE_PALIER,
-           pris: t => !!e.passe[n + "-" + t] };
-}
-function recupererPasse(t){
-  const p = passeSaison(), r = PASSE[t - 1];
-  if(!r || t > p.palier || p.pris(t)) return false;
-  ecus().passe[p.n + "-" + t] = true;
-  if(r.e){ ajouterBonus("passe", r.e); annoncerGain(r.e); }
-  sauverEtat();
-  return true;
+           pris: t => !!d.pris["passe-" + n + "-" + t] };
 }
 
-/* ---------- Les packs gagnes, a ouvrir ---------- */
-function packsGagnes(){
-  const e = ecus(), l = [];
-  PACKS_OFFERTS.forEach(k => l.push(k));
-  Object.keys(e.rangs).sort((a, b) => a - b).forEach(k => { l.push("rang-" + k + "-c", "rang-" + k + "-p"); });
-  Object.keys(e.passe).forEach(k => { const t = +k.split("-")[1], r = PASSE[t - 1]; if(r && r.pack) l.push("passe-" + k + "-" + r.pack); });
-  if(typeof packsSaison === "function") packsSaison().forEach(k => l.push(k));
-  /* Les boosters achetes se gardent et s'ouvrent quand on veut. */
-  Object.keys(e.achats).forEach(k => l.push(k));
-  return l;
-}
-function packsAOuvrir(){ return packsGagnes().filter(k => !collection().plis[k]); }
-
-/* ---------- La boutique ---------- */
-function acheterPack(t){
-  if(!PRIX_PACKS[t] || OUV) return false;
-  if(soldeEcus() < PRIX_PACKS[t]) return false;
-  const cle = "achat-" + Date.now().toString(36) + "-" + t;
-  ecus().achats[cle] = PRIX_PACKS[t];
-  sauverEtat();
-  return cle;
+/* ---------- Les packs a ouvrir : ceux de la bourse, du plus ancien au
+   plus recent (bienvenue, rangs, pass, saison, achats) ---------- */
+function packsAOuvrir(){
+  const d = typeof bourse === "function" ? bourse() : null;
+  if(!d) return [];
+  const ms = k => msHorodatage(((d.packs[k] || {}).cree || {}).horodatage) || 0;
+  return Object.keys(d.packs).sort((a, b) => ms(a) - ms(b) || (a < b ? -1 : 1));
 }
 
 /* ---------- Le recyclage des doubles ---------- */
+/* Les doubles qui se recyclent : les cartes tirees de packs, moins un
+   exemplaire de chaque (la collection importee, elle, reste entiere). */
 function doublesARecycler(){
-  const m = cartesPossedees();
+  const b = typeof bourse === "function" ? bourse() : null;
   let n = 0, v = 0;
-  Object.keys(m).forEach(k => { const x = m[k] - 1, c = carteN(+k); if(x > 0 && c){ n += x; v += x * (RECYCLAGE[c.r] || 0); } });
+  if(!b) return { n, v };
+  Object.keys(b.cartes).forEach(k => { const vus = {};
+    b.cartes[k].forEach(x => { if(vus[x] || b.importe[k].indexOf(x) >= 0){ const c = carteN(x); if(c){ n++; v += RECYCLAGE[c.r] || 0; } } vus[x] = true; }); });
   return { n, v };
 }
-function recyclerDoubles(){
-  const m = cartesPossedees(), e = ecus();
-  let v = 0;
-  Object.keys(m).forEach(k => { const x = m[k] - 1, c = carteN(+k);
-    if(x > 0 && c){ e.recycles[k] = (e.recycles[k] || 0) + x; v += x * (RECYCLAGE[c.r] || 0); } });
-  if(v){ ajouterBonus("recyclage", v); sauverEtat(); annoncerGain(v); }
-  return v;
-}
 
-/* ---------- Ce qui se credite tout seul ----------
+/* ---------- Ce qui se gagne tout seul ----------
    Appele a chaque sauvegarde (sauverEtat) : les points nouveaux, les
-   missions accomplies, la serie du jour, les rangs atteints. Au premier
-   lancement, rien de retroactif : 300 ecus pour tout le monde, et la route
-   des rangs part du rang actuel. */
+   missions accomplies, la serie du jour. Les ecus gagnes, et les points
+   pour la route des rangs, partent ensuite a la bourse (planifierGains).
+   Rien avant la bourse : sa creation donne 300 ecus a tout le monde, et
+   la route des rangs part du rang de ce moment-la. */
 function majEcus(){
-  if(typeof COURS === "undefined" || typeof pointsTotal !== "function") return 0;
+  if(typeof COURS === "undefined" || typeof pointsTotal !== "function" || typeof bourse !== "function") return 0;
+  const b = bourse();
+  if(!b) return 0;
   const e = ecus(), d = aujourdhui();
+  if(e.uid !== BOURSE.uid){ e.uid = BOURSE.uid; e.ref = null; e.refPts = null; e.attente = 0; e.attentePts = 0; }
   let gain = 0;
-  if(!e.depart){ e.depart = true; ajouterBonus("depart", ECU_DEPART); }
   const p = pointsSources();
   if(e.ref === null || p < e.ref) e.ref = p;
   else if(p > e.ref){ gain += crediter(p - e.ref); e.ref = p; }
+  const pt = Math.round(pointsTotal());
+  if(e.refPts === null || pt < e.refPts) e.refPts = pt;
+  else if(pt > e.refPts){ e.attentePts = Math.min(3 * PTS_PLAFOND, (e.attentePts || 0) + pt - e.refPts); e.refPts = pt; }
   const m = e.missions[d] = e.missions[d] || {};
   missionsDuJour().forEach(x => { if(x.faite && !m[x.id]){ m[x.id] = true; gain += crediter(ECU_MISSION); } });
   if(!e.series[d] && joursVerifies()[d]){ e.series[d] = true; gain += crediter(5 * Math.min(serieVerifiee(), 10)); }
-  /* Route des rangs : chaque nouveau rang (Or -> Platine...) donne un
-     Classique et un Premium. */
-  const k = Math.floor(rangActuel().i / NIVEAUX_PAR_RANG);
-  if(e.rangDepart === null) e.rangDepart = k;
-  for(let r = e.rangDepart + 1; r <= k; r++) e.rangs[r] = true;
-  passeSaison();
   if(gain) annoncerGain(gain);
+  planifierGains();
   return gain;
 }
 
@@ -9555,7 +9537,7 @@ function majSolde(){
   if(!b) return;
   const s = soldeEcus(), vu = String(s);
   if(b.dataset.vu !== vu){ b.innerHTML = pieceEcu(22) + `<span>${s.toLocaleString("fr-FR")}</span>`; b.dataset.vu = vu; }
-  b.setAttribute("aria-label", s + " écus. Voir les cartes et la boutique");
+  b.setAttribute("aria-label", bourse() ? s + " écus. Voir les cartes et la boutique" : "Écus : connectez-vous pour en gagner");
 }
 /* « +38 écus » qui s'envole vers le solde. */
 let GAIN_EN_ATTENTE = 0, GAIN_MINUTEUR = null;
@@ -9625,10 +9607,10 @@ function chancesPack(t){
 }
 function pourcent(x){ return x ? (x >= 10 ? Math.round(x) : Math.round(x * 10) / 10).toLocaleString("fr-FR") + "&#8239;%" : "–"; }
 function carteBoutique(){
-  const s = soldeEcus(), ouvert = pliOuvert();
+  const s = soldeEcus(), ouvert = pliOuvert(), sur = bourseSure();
   const gratuit = `<div class="offre offre-g">${boosterType("c", true)}<b>Pack du jour</b><small>Classique offert</small>
     ${ouvert ? `<p class="decompte-boite"><small>Prochain dans</small><span class="decompte">${avantMinuit()}</span></p>`
-      : `<button class="bouton-plein petit" data-action="pli-ouvrir">Gratuit</button>`}</div>`;
+      : `<button class="bouton-plein petit" data-action="ecu-jour"${sur ? "" : " disabled"}>Gratuit</button>`}</div>`;
   if(ouvert) lancerDecompte();
   const lignes = [["c", "Classique<small>et gratuit</small>"], ["p", "Premium"], ["u", "Ultra"]].map(([t, nom]) =>
     `<tr><th scope="row">${nom}</th>${chancesPack(t).map(x => `<td>${pourcent(x)}</td>`).join("")}</tr>`).join("");
@@ -9637,7 +9619,7 @@ function carteBoutique(){
   return `<div class="carte"><p class="capitales" style="margin:0 0 8px">Boutique${aideBouton("boutique")}</p>
     <div class="boutique">${gratuit}${["c", "p", "u"].map(t => `<div class="offre offre-${t}">
       ${boosterType(t, true)}<b>${NOMS_PACKS[t]}</b><small>${t === "c" ? "3 cartes" : t === "p" ? "1 rare ou mieux" : "3 rares ou mieux"}</small>
-      <button class="bouton${s >= PRIX_PACKS[t] ? "-plein" : ""} petit" data-action="ecu-acheter" data-t="${t}"${s >= PRIX_PACKS[t] ? "" : " disabled"}>${montantEcus(PRIX_PACKS[t], 14)}</button>
+      <button class="bouton${s >= PRIX_PACKS[t] ? "-plein" : ""} petit" data-action="ecu-acheter" data-t="${t}"${s >= PRIX_PACKS[t] && sur ? "" : " disabled"}>${montantEcus(PRIX_PACKS[t], 14)}</button>
     </div>`).join("")}</div>
     <p class="minuscule" style="margin:10px 0 4px">Chances par carte</p>
     <div class="chances-boite"><table class="chances"><thead><tr><th></th>${tete}</tr></thead><tbody>${lignes}</tbody></table></div>
@@ -9654,52 +9636,96 @@ function cartePasse(){
     <p class="minuscule" style="margin:0 0 8px">Palier ${p.palier}/${PASSE.length}${p.reste ? ` &#8226; encore ${p.reste} pts pour le suivant` : ""}${dispo ? ` &#8226; <strong>${dispo} à récupérer</strong>` : ""}</p>
     <div class="passe">${cases}</div></div>`;
 }
-/* Podium de saison : le 1er et le 2e choisissent leur recompense. */
+/* Podium de saison : le 1er et le 2e choisissent leur recompense
+   (verifierPodiumBourse, z0o_bourse.js). */
 function carteChoixSaison(){
-  const p = ((ETAT.saisons || {}).prix) || {};
-  const n = Object.keys(p).find(k => (p[k].rang === 1 || p[k].rang === 2) && !p[k].choix);
-  if(!n) return "";
-  const r = p[n].rang;
+  const x = BOURSE.prix, d = bourse();
+  if(!x || !d || d.pris["saison-" + x.n]) return "";
+  const n = x.n, r = x.rang;
   const a = r === 1 ? "1 pack Ultra premium" : "1 pack Premium", b = r === 1 ? "2 packs Premium + 200 écus" : "2 packs Classiques + 100 écus";
   return `<div class="carte maitrise"><p class="capitales" style="margin:0 0 6px">Saison ${n}&#8239;: ${r}<sup>${r === 1 ? "er" : "e"}</sup>&#8239;!</p>
     <p class="secondaire" style="margin:0 0 10px">Choisissez votre récompense.</p>
     <div class="rang-boutons"><button class="bouton-plein" data-action="ecu-saison" data-n="${n}" data-choix="a" style="flex:1">${a}</button>
     <button class="bouton" data-action="ecu-saison" data-n="${n}" data-choix="b" style="flex:1">${b}</button></div></div>`;
 }
-function partiesCartesBeta(){
-  return [carteChoixSaison(), carteMissions(), carteBoutique(), cartePacksGratuits(), cartePasse()];
+/* Sans compte, pas de bourse : l'album seulement. */
+function carteSansBourse(){
+  return `<div class="carte"><p class="capitales" style="margin:0 0 6px">Écus et packs</p>
+    <p class="secondaire" style="margin:0 0 10px">Connectez-vous pour recevoir vos 300 écus, ouvrir le pack du jour et acheter des packs. Vos écus et vos cartes sont gardés sur le serveur&#8239;: personne ne peut en créer.</p>
+    <button class="bouton-plein" data-action="onglet-reglages">Se connecter</button></div>`;
 }
-/* Pendant l'ouverture : un double tire peut partir aussitot contre des ecus. */
-function recyclerUne(n){
-  const c = carteN(+n), m = cartesPossedees();
-  if(!c || !(m[n] > 1)) return 0;
-  const e = ecus(), v = RECYCLAGE[c.r] || 0;
-  e.recycles[n] = (e.recycles[n] || 0) + 1;
-  ajouterBonus("recyclage", v);
-  sauverEtat();
-  annoncerGain(v);
-  return v;
+function carteErreurBourse(){
+  const regles = BOURSE.erreur === "regles";
+  return `<div class="carte"><p class="secondaire" style="margin:0 0 10px">${regles
+    ? "La boutique n’est pas encore ouverte&#8239;: les règles du serveur doivent être republiées."
+    : "Hors ligne&#8239;: la boutique, les packs et les gains reviennent avec le réseau. Vos écus attendent sur l’appareil."}</p>
+    <button class="bouton petit" data-action="ecu-recharger">Réessayer</button></div>`;
+}
+function partiesCartesBeta(){
+  if(!bourseConnectee()) return [carteSansBourse()];
+  chargerBourse();
+  if(!bourse()) return [BOURSE.etat === "erreur" ? carteErreurBourse() : `<div class="carte"><p class="secondaire" style="margin:0">Ouverture de votre bourse…</p></div>`];
+  return [BOURSE.etat === "erreur" ? carteErreurBourse() : "", carteChoixSaison(), carteMissions(), carteBoutique(), cartePacksGratuits(), cartePasse()];
 }
 function boutonRecyclage(){
   const d = doublesARecycler();
-  if(!d.n) return "";
-  return `<button class="bouton petit" data-action="ecu-recycler" style="margin:0 0 10px">Recycler ${d.n} double${d.n > 1 ? "s" : ""} (+${d.v} écus)</button>`;
+  if(!d.n || !bourse()) return "";
+  return `<button class="bouton petit" data-action="ecu-recycler" style="margin:0 0 10px"${bourseSure() ? "" : " disabled"}>Recycler ${d.n} double${d.n > 1 ? "s" : ""} (+${d.v} écus)</button>`;
+}
+/* Une operation de la bourse depuis un bouton : un appui a la fois ; en
+   cas d'echec (hors ligne, refus), un mot, et l'etat du serveur. */
+function viaBourse(el, promesse, suite){
+  if(BOURSE.occupe) return Promise.resolve(null);
+  BOURSE.occupe = true;
+  if(el){ el.disabled = true; el.setAttribute("aria-busy", "true"); }
+  return promesse().then(r => { BOURSE.occupe = false; return suite ? suite(r) : r; }, e => {
+    BOURSE.occupe = false;
+    if(el && el.isConnected){ el.disabled = false; el.removeAttribute("aria-busy"); }
+    if(typeof alert === "function") alert(e && e.horsLigne || (e && !e.statut) ? "Pas de connexion au serveur : réessayez dans un instant." : "Le serveur a refusé l’opération. Rechargez la page et réessayez.");
+    if(!OUV && typeof rendre === "function") rendre();
+    return null;
+  });
+}
+/* Ouvre un pack de la bourse : le serveur l'ouvre d'abord, puis vient
+   l'animation, avec les cartes qu'il a acceptees. */
+function ouvrirPackBourse(cle, el){
+  const avant = cartesPossedees();
+  return viaBourse(el, () => bourseOuvrir(cle), pli => { if(pli && pli.length) ouvrirPli(cle, pli, avant); else if(typeof rendre === "function") rendre(); return pli; });
 }
 function actionEcus(a, el){
-  if(a === "ecu-acheter"){ if(acheterPack(el.dataset.t)) rendre(); return true; }
-  if(a === "ouv-recycler"){
-    const v = recyclerUne(el.dataset.n);
-    el.outerHTML = v ? `<span class="recyclee">Recyclée +${v} écus</span>` : `<span class="recyclee">Déjà recyclée</span>`;
+  if(a === "ecu-acheter"){
+    viaBourse(el, () => bourseAcheter(el.dataset.t), k => { majSolde(); rendre(); return k; });
     return true;
   }
-  if(a === "pli-gagne"){ const k = el.dataset.cle; if(packsAOuvrir().indexOf(k) >= 0) ouvrirPli(k); return true; }
-  if(a === "ecu-passe"){ recupererPasse(+el.dataset.t); rendre(); return true; }
+  if(a === "ecu-jour" || (a === "pli-ouvrir" && typeof BETA !== "undefined" && BETA)){
+    viaBourse(el, () => bourseJour(), k => { if(k){ BOURSE.occupe = false; ouvrirPackBourse(k, null); } else rendre(); return k; });
+    return true;
+  }
+  if(a === "ouv-recycler"){
+    el.disabled = true;
+    bourseRecycler(el.dataset.n).then(v => {
+      if(el.isConnected) el.outerHTML = v ? `<span class="recyclee">Recyclée +${v} écus</span>` : `<span class="recyclee">Déjà recyclée</span>`;
+      if(v){ annoncerGain(v); majSolde(); }
+    }, () => { if(el.isConnected){ el.disabled = false; } alert("Pas de connexion au serveur : réessayez dans un instant."); });
+    return true;
+  }
+  if(a === "pli-gagne"){ const k = el.dataset.cle; if(packsAOuvrir().indexOf(k) >= 0) ouvrirPackBourse(k, el); return true; }
+  if(a === "ecu-passe"){
+    viaBourse(el, () => bourseRecupererPasse(+el.dataset.t), r => { if(r && r.e) annoncerGain(r.e); majSolde(); rendre(); return r; });
+    return true;
+  }
   if(a === "ecu-recycler"){
     const d = doublesARecycler();
-    if(d.n && confirm("Recycler " + d.n + " double" + (d.n > 1 ? "s" : "") + " contre " + d.v + " écus ? Un exemplaire de chaque carte est gardé.")){ recyclerDoubles(); rendre(); }
+    if(d.n && confirm("Recycler " + d.n + " double" + (d.n > 1 ? "s" : "") + " contre " + d.v + " écus ? Un exemplaire de chaque carte est gardé."))
+      viaBourse(el, () => bourseRecyclerTout(), v => { if(v) annoncerGain(v); majSolde(); rendre(); return v; });
     return true;
   }
-  if(a === "ecu-saison"){ if(typeof choisirPrixSaison === "function") choisirPrixSaison(el.dataset.n, el.dataset.choix); rendre(); return true; }
+  if(a === "ecu-saison"){
+    const x = BOURSE.prix;
+    if(x && String(x.n) === el.dataset.n) viaBourse(el, () => boursePrixSaison(x.n, x.rang, el.dataset.choix === "b" ? "b" : "a"), r => { majSolde(); rendre(); return r; });
+    return true;
+  }
+  if(a === "ecu-recharger"){ chargerBourse(true); return true; }
   return false;
 }
 /* ==========================================================================
@@ -9714,7 +9740,8 @@ function actionEcus(a, el){
      bonnes reponses gagne ; a egalite, le plus rapide. Le gagnant gagne
      5 ecus ; chacun ajuste son Elo (comme aux echecs, K = 32).
    Le serveur (serveur/firestore.rules) n'accepte un defi qu'entre amis,
-   un score de 0 a 5, et la reponse dans les 24 h. Les scores restent
+   un score de 0 a 5, et la reponse dans les 24 h ; l'Elo ne change que
+   d'un defi fini a la fois, du montant de la formule. Les scores restent
    donnes par l'application : c'est une beta.
    ========================================================================== */
 
@@ -9751,12 +9778,30 @@ function requeteListe(collection, ou){
 function monCode(){ const u = COMPTE.user ? COMPTE.user.uid : ""; return (u.length > 8 ? u.slice(0, 8) : u).toUpperCase(); }
 /* Pour la recherche : minuscules, sans accents. */
 function nomRecherche(t){ return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
-function publierJoueur(elo){
+/* defi : le defi fini dont on applique l'Elo ({ id, fini }). Sans lui,
+   l'Elo n'est pas ecrit (le serveur ne le laisse changer que par un
+   defi) : la fiche est relue d'abord si on ne la connait pas, et creee a
+   1000 si elle n'existe pas. Les champs sont fusionnes : eloDefi et eloMaj
+   (le dernier defi compte) restent. */
+function publierJoueur(elo, defi){
   if(!socialPossible()) return Promise.resolve(false);
-  const uid = COMPTE.user.uid, e = typeof elo === "number" ? elo : (SOC.moi ? SOC.moi.elo : ELO_DEPART);
-  return qjCommit({ update: { name: qjNomDoc("/joueurs/" + uid), fields: qjChampsEncodes({ nom: monNom(), nomMin: nomRecherche(monNom()), code: monCode(),
-      vitrine: social().vitrine, elo: Math.round(e) }) },
-    updateTransforms: QJ_HEURE }).then(() => { SOC.moi = Object.assign(SOC.moi || {}, { nom: monNom(), vitrine: social().vitrine.slice(), elo: Math.round(e) }); return true; }, () => false);
+  if(!defi && !SOC.moi) return lireJoueur(COMPTE.user.uid).then(j => { SOC.moi = j; return ecrireJoueur(null, !j); });
+  return ecrireJoueur(defi ? { elo, defi } : null, false);
+}
+function ecrireJoueur(x, nouvelle){
+  const uid = COMPTE.user.uid;
+  /* Le serveur n'accepte en vitrine que des cartes de la bourse. */
+  const m = cartesPossedees(), vitrine = typeof bourse === "function" && bourse() ? social().vitrine.filter(n => m[n]) : [];
+  const valeurs = { nom: monNom(), nomMin: nomRecherche(monNom()), code: monCode(), vitrine };
+  if(x) valeurs.elo = Math.max(100, Math.min(4000, Math.round(x.elo)));
+  else if(nouvelle) valeurs.elo = ELO_DEPART;
+  const champs = qjChampsEncodes(valeurs);
+  if(x){ champs.eloDefi = { stringValue: x.defi.id }; champs.eloMaj = { timestampValue: x.defi.fini }; }
+  return qjCommit({ update: { name: qjNomDoc("/joueurs/" + uid), fields: champs }, updateMask: { fieldPaths: Object.keys(champs) },
+    updateTransforms: QJ_HEURE }).then(() => {
+      SOC.moi = Object.assign(SOC.moi || { elo: ELO_DEPART }, { nom: valeurs.nom, nomMin: valeurs.nomMin, code: valeurs.code, vitrine: vitrine.slice() },
+        "elo" in valeurs ? { elo: valeurs.elo } : {}, x ? { eloDefi: x.defi.id, eloMaj: x.defi.fini } : {});
+      return true; }, () => false);
 }
 /* A la connexion : la fiche existe et porte le nom et le code a jour,
    pour qu'un ami puisse nous trouver des le premier jour. */
@@ -9920,9 +9965,12 @@ function appliquerDefis(){
     const attendu = 1 / (1 + Math.pow(10, (sien - avant) / 400));
     const delta = Math.round(ELO_K * (r.s - attendu));
     s.appliques[d.id] = true;
-    return publierJoueur(Math.max(100, monElo() + delta)).then(ok => {
+    /* Deja compte (sur un autre appareil) : le dernier defi applique est plus recent. */
+    if(SOC.moi && SOC.moi.eloMaj && msHorodatage(d.fini) <= msHorodatage(SOC.moi.eloMaj)){ sauverEtat(); return; }
+    return publierJoueur(Math.max(100, monElo() + delta), { id: d.id, fini: d.fini }).then(ok => {
       if(!ok){ delete s.appliques[d.id]; return; }
-      if(r.s === 1 && typeof ECU_DEPART !== "undefined"){ ecus().bonus["defi-" + d.id] = DEFI_ECUS; annoncerGain(DEFI_ECUS); }
+      /* 5 ecus au gagnant, dans le plafond du jour (la bourse le revérifie). */
+      if(r.s === 1 && typeof crediter === "function" && bourse()){ const g = crediter(DEFI_ECUS); if(g){ annoncerGain(g); planifierGains(); } }
       sauverEtat();
     });
   }), Promise.resolve()).finally(() => { SOC.application = false; });
@@ -10132,6 +10180,485 @@ function actionSocial(a, el){
 if(typeof document !== "undefined") document.addEventListener("keydown", ev => {
   if(ev.key === "Enter" && ev.target && ev.target.id === "ami-nom"){ ev.preventDefault(); actionSocial("ami-chercher", ev.target); }
 });
+/* ==========================================================================
+   BOURSE (beta Ecus, octobre 2026) : les ecus, les packs et les cartes
+   sont sur le serveur
+
+   Avant, le solde se recalculait dans l'application, a partir de ce
+   qu'elle gardait sur l'appareil : quelques lignes tapees dans la console
+   du navigateur suffisaient pour se donner des ecus ou des packs.
+   Desormais, tout ce qui a de la valeur est dans bourses/{uid}, et les
+   regles Firestore (serveur/firestore.rules, « Bourse ») n'acceptent que
+   des operations exactes : un achat retire le prix, un pack ne s'ouvre
+   qu'une fois, ses cartes sont tirees par le serveur, les gains sont
+   plafonnes a l'heure du serveur. L'application ne fait que demander, et
+   montrer ce que le serveur a accepte.
+
+   Le tirage d'un pack : l'empreinte SHA-256 de « uid|cle|heure », l'heure
+   etant celle, au millieme de seconde, ou le serveur a cree le pack.
+   L'application refait le meme calcul (tirageBourse) pour ecrire les
+   cartes ; le serveur le refait aussi et refuse toute autre carte.
+
+   Ce que l'application calcule encore elle-meme : les ecus et les points
+   gagnes en jouant (les reponses des cours sont dans l'application, le
+   serveur ne peut pas les verifier). Ils restent « en attente » sur
+   l'appareil jusqu'a ce que le serveur les accepte, dans la limite de 150
+   ecus et 600 points par jour : c'est le maximum, meme en trichant.
+   ========================================================================== */
+
+/* ---------- SHA-256 (FIPS 180-4), en JavaScript pur ----------
+   crypto.subtle n'existe pas partout (WebView ouverte depuis un fichier),
+   et il est asynchrone : ce calcul-ci est synchrone et partout le meme. */
+const SHA_K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+function sha256Hex(texte){
+  const o = unescape(encodeURIComponent(texte)), n = o.length;
+  const mots = new Array(((n + 9 + 63) >> 6) << 4).fill(0);
+  for(let i = 0; i < n; i++) mots[i >> 2] |= o.charCodeAt(i) << (24 - (i & 3) * 8);
+  mots[n >> 2] |= 0x80 << (24 - (n & 3) * 8);
+  mots[mots.length - 1] = n * 8;
+  const h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const w = new Array(64), rot = (x, k) => (x >>> k) | (x << (32 - k));
+  for(let b = 0; b < mots.length; b += 16){
+    for(let i = 0; i < 64; i++){
+      if(i < 16) w[i] = mots[b + i] | 0;
+      else {
+        const s0 = rot(w[i - 15], 7) ^ rot(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rot(w[i - 2], 17) ^ rot(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+    }
+    let [a, bb, c, d, e, f, g, hh] = h;
+    for(let i = 0; i < 64; i++){
+      const t1 = (hh + (rot(e, 6) ^ rot(e, 11) ^ rot(e, 25)) + ((e & f) ^ (~e & g)) + SHA_K[i] + w[i]) | 0;
+      const t2 = ((rot(a, 2) ^ rot(a, 13) ^ rot(a, 22)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0;
+      hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0;
+    }
+    h[0] = (h[0] + a) | 0; h[1] = (h[1] + bb) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+  }
+  return h.map(x => (x >>> 0).toString(16).padStart(8, "0")).join("").toUpperCase();
+}
+
+/* ---------- Le tirage, comme les regles (tirage, troisCartes) ----------
+   Chaque carte lit 7 chiffres hexadecimaux de l'empreinte : 3 pour la
+   rarete (0 a 4 095, les chances de PLI_CHANCES et PLI_CHANCES_3E en
+   4 096es), 4 pour la carte dans sa rarete. */
+const BOURSE_RARETES = { debut: [1, 151, 219, 307, 362, 394], nb: [149, 67, 87, 54, 31, 12] };
+const BOURSE_SEUILS = [2253, 3359, 3850, 4035, 4084], BOURSE_SEUILS_3E = [0, 0, 2867, 3727, 4014];
+function rareteTireeBourse(h, i, garantie){
+  const x = parseInt(h.slice(i * 7, i * 7 + 3), 16), s = garantie ? BOURSE_SEUILS_3E : BOURSE_SEUILS;
+  let r = 0;
+  while(r < 5 && x >= s[r]) r++;
+  return r;
+}
+function carteBourse(r, y, k){ return BOURSE_RARETES.debut[r] + (y + k) % BOURSE_RARETES.nb[r]; }
+/* Les 3 cartes du pack « cle » (type t), cree par le serveur a ms. */
+function tirageBourse(uid, cle, ms, t){
+  const h = sha256Hex(uid + "|" + cle + "|" + ms), g = t !== "c";
+  const r = [rareteTireeBourse(h, 0, t === "u"), rareteTireeBourse(h, 1, t === "u"), rareteTireeBourse(h, 2, g)];
+  const y = [3, 10, 17].map(i => parseInt(h.slice(i, i + 4), 16));
+  const c0 = carteBourse(r[0], y[0], 0), a = carteBourse(r[1], y[1], 0), c1 = a === c0 ? carteBourse(r[1], y[1], 1) : a;
+  const x = carteBourse(r[2], y[2], 0), z = carteBourse(r[2], y[2], 1);
+  return [c0, c1, x !== c0 && x !== c1 ? x : z !== c0 && z !== c1 ? z : carteBourse(r[2], y[2], 2)];
+}
+/* L'heure d'un horodatage Firestore (« 2026-10-26T12:00:00.123456Z »), en
+   millisecondes, tronquee comme toMillis() cote serveur. */
+function msHorodatage(t){
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z$/.exec(String(t || ""));
+  if(!m) return NaN;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) + (m[7] ? +(m[7] + "00").slice(0, 3) : 0);
+}
+
+/* ---------- Le document bourses/{uid}, lu et ecrit en REST ----------
+   BOURSE.doc : la bourse telle que le serveur l'a acceptee (ou relue).
+   Une copie reste sur l'appareil (CLE_BOURSE), pour montrer le solde et
+   les cartes hors ligne ; mais rien ne s'achete ni ne s'ouvre sans le
+   serveur. Chaque ecriture porte l'heure de la version lue
+   (currentDocument.updateTime) : si un autre appareil a change la bourse
+   entre-temps, le serveur refuse, on relit, on recommence une fois. */
+const BOURSE = { uid: null, doc: null, maj: null, etat: "inconnu", erreur: null, lu: 0, decalage: 0,
+                 file: Promise.resolve(), chargement: null, occupe: false, prix: null };
+const CLE_BOURSE = "epok.beta.bourse";
+const PTS_PLAFOND = 600, CARTES_LANCEMENT = Date.UTC(2026, 9, 23);
+const RARETES_BOURSE = ["r0", "r1", "r2", "r3", "r4", "r5"];
+
+function bourseConnectee(){ return typeof BETA !== "undefined" && BETA && compteConfigure() && compteConnecte(); }
+/* La bourse du joueur connecte : celle du serveur, ou sa copie hors ligne. */
+function bourse(){
+  const u = COMPTE.user ? COMPTE.user.uid : null;
+  if(!u || !(typeof BETA !== "undefined" && BETA)) return null;
+  if(BOURSE.uid === u && BOURSE.doc) return BOURSE.doc;
+  try{
+    const c = JSON.parse(localStorage.getItem(CLE_BOURSE) || "null");
+    if(c && c.uid === u && c.doc){ BOURSE.uid = u; BOURSE.doc = nettoyerBourse(c.doc); BOURSE.maj = c.maj || null; return BOURSE.doc; }
+  }catch(e){}
+  return null;
+}
+/* Le serveur a confirme l'etat (lu, ou ecrit a l'instant) : on peut operer. */
+function bourseSure(){ return !!bourse() && BOURSE.etat === "ok" && bourseConnectee(); }
+function sauverCacheBourse(){
+  try{ localStorage.setItem(CLE_BOURSE, JSON.stringify({ uid: BOURSE.uid, doc: BOURSE.doc, maj: BOURSE.maj })); }catch(e){}
+}
+function nettoyerBourse(d){
+  const r = Object.assign({ solde: 0, jour: "", duJour: 0, ptsJour: 0, pts: 0, gagne: 0, saison: 1, gagneSaison: 0, pris: {}, packs: {},
+    cartes: {}, importe: {}, achats: 0, ouverts: 0, rangDepart: 0, ptsDepart: 0 }, d || {});
+  ["cartes", "importe"].forEach(champ => {
+    const c = {}, src = r[champ] && typeof r[champ] === "object" ? r[champ] : {};
+    RARETES_BOURSE.forEach(k => { c[k] = Array.isArray(src[k]) ? src[k].filter(n => Number.isInteger(n)) : []; });
+    r[champ] = c;
+  });
+  if(!r.pris || typeof r.pris !== "object") r.pris = {};
+  if(!r.packs || typeof r.packs !== "object") r.packs = {};
+  return r;
+}
+
+/* Valeurs Firestore <-> JavaScript. Un horodatage reste sa chaine, dans
+   { horodatage } : renvoye tel quel, il est identique au millionieme. */
+function bvValeur(v){
+  if(!v || typeof v !== "object") return null;
+  if("integerValue" in v) return Number(v.integerValue);
+  if("doubleValue" in v) return Number(v.doubleValue);
+  if("stringValue" in v) return v.stringValue;
+  if("booleanValue" in v) return v.booleanValue;
+  if("timestampValue" in v) return { horodatage: v.timestampValue };
+  if("arrayValue" in v) return (v.arrayValue.values || []).map(bvValeur);
+  if("mapValue" in v){ const r = {}, f = v.mapValue.fields || {}; Object.keys(f).forEach(k => { r[k] = bvValeur(f[k]); }); return r; }
+  return null;
+}
+function bvEncoder(v){
+  if(v === null || v === undefined) return { nullValue: null };
+  if(typeof v === "boolean") return { booleanValue: v };
+  if(typeof v === "number") return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if(typeof v === "string") return { stringValue: v };
+  if(Array.isArray(v)) return { arrayValue: v.length ? { values: v.map(bvEncoder) } : {} };
+  if(typeof v.horodatage === "string") return { timestampValue: v.horodatage };
+  const f = {};
+  Object.keys(v).forEach(k => { f[k] = bvEncoder(v[k]); });
+  return { mapValue: { fields: f } };
+}
+/* Chemin de champ : packs.`a-3-c`.cree (les cles avec un tiret entre
+   accents graves). */
+function cheminChamp(l){ return l.map(k => /^[A-Za-z_][A-Za-z_0-9]*$/.test(k) ? k : "`" + String(k).replace(/[`\\]/g, "\\$&") + "`").join("."); }
+function copieBourse(d){ return JSON.parse(JSON.stringify(d)); }
+function placer(o, chemin, v){
+  for(let i = 0; i < chemin.length - 1; i++){ if(!o[chemin[i]] || typeof o[chemin[i]] !== "object") o[chemin[i]] = {}; o = o[chemin[i]]; }
+  if(v === undefined) delete o[chemin[chemin.length - 1]]; else o[chemin[chemin.length - 1]] = v;
+}
+
+/* Une ecriture : w = { op, ecrire: [[chemin, valeur]], effacer: [chemin],
+   heures: [chemin] (heure du serveur), apres : la bourse attendue }. */
+function commitBourse(w, creation){
+  const racine = {};
+  (w.ecrire || []).forEach(([c, v]) => placer(racine, c, v));
+  placer(racine, ["op"], w.op);
+  const heures = [["maj"]].concat(w.heures || []);
+  const ecriture = {
+    update: { name: qjNomDoc("/bourses/" + BOURSE.uid), fields: bvEncoder(racine).mapValue.fields },
+    updateTransforms: heures.map(c => ({ fieldPath: cheminChamp(c), setToServerValue: "REQUEST_TIME" })),
+    currentDocument: creation ? { exists: false } : { updateTime: BOURSE.maj }
+  };
+  if(!creation) ecriture.updateMask = { fieldPaths: (w.ecrire || []).map(x => cheminChamp(x[0])).concat((w.effacer || []).map(cheminChamp), ["op"]) };
+  const envoi = Date.now();
+  return requeteJeton("POST", urlDocuments(":commit"), { writes: [ecriture] })
+    .then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(Object.assign(new Error("réponse " + r.status), { statut: r.status, texte: t }))))
+    .then(rep => {
+      const res = (rep.writeResults || [])[0] || {}, tr = res.transformResults || [];
+      const apres = w.apres;
+      heures.forEach((c, i) => { if(tr[i] && tr[i].timestampValue) placer(apres, c, { horodatage: tr[i].timestampValue }); });
+      apres.op = w.op;
+      BOURSE.doc = nettoyerBourse(apres);
+      BOURSE.maj = res.updateTime || BOURSE.maj;
+      BOURSE.etat = "ok"; BOURSE.erreur = null;
+      if(rep.commitTime){ const t = Date.parse(rep.commitTime); if(isFinite(t)) BOURSE.decalage = t - (envoi + Date.now()) / 2; }
+      sauverCacheBourse();
+      if(typeof majSolde === "function") majSolde();
+      return BOURSE.doc;
+    });
+}
+/* Les operations passent une a une, dans l'ordre. construire(bourse) rend
+   l'ecriture, ou null s'il n'y a rien a faire (ou { rien, resultat } : rien
+   a ecrire, mais un resultat). */
+function opererBourse(construire){
+  const p = BOURSE.file.then(() => tenterBourse(construire, 0));
+  BOURSE.file = p.catch(() => {});
+  return p;
+}
+function tenterBourse(construire, essai){
+  if(!bourseSure() || COMPTE.user.uid !== BOURSE.uid) return Promise.reject(Object.assign(new Error("bourse indisponible"), { horsLigne: true }));
+  const w = construire(BOURSE.doc);
+  if(!w) return Promise.resolve(null);
+  if(w.rien) return Promise.resolve(w.resultat);
+  return commitBourse(w).then(() => w.resultat === undefined ? true : w.resultat, e => {
+    /* Version perimee (autre appareil) ou refus : on relit et on reessaie une fois. */
+    if(essai < 1 && e && e.statut && e.statut !== 401) return chargerBourse(true).then(() => tenterBourse(construire, essai + 1));
+    if(e && !e.statut) BOURSE.etat = "erreur";
+    throw e;
+  });
+}
+
+/* ---------- L'heure et le jour du serveur ---------- */
+function maintenantServeur(){ return Date.now() + (BOURSE.decalage || 0); }
+/* Le jour de Paris (celui des regles : de minuit UTC - 2 h a minuit UTC + 24 h). */
+function jourBourse(){
+  try{ return new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(maintenantServeur())); }
+  catch(e){ return aujourdhui(); }
+}
+function saisonActuelle(d){ return Math.max(d ? d.saison : 1, typeof qjSaison === "function" ? qjSaison(jourBourse()).n : 1); }
+function rangDepartDe(pts){ let k = 0; while(k < 10 && pts >= SEUILS_RANGS[k + 1]) k++; return k; }
+
+/* ---------- Lecture, creation ---------- */
+function chargerBourse(force){
+  if(!bourseConnectee()) return Promise.resolve(null);
+  const uid = COMPTE.user.uid;
+  if(BOURSE.chargement && BOURSE.uid === uid) return BOURSE.chargement;
+  /* Relue au plus une fois par minute (meme apres un echec : « Reessayer »
+     force la lecture). */
+  if(!force && BOURSE.uid === uid && BOURSE.lu && Date.now() - BOURSE.lu < 60 * 1000) return Promise.resolve(BOURSE.doc);
+  if(BOURSE.uid !== uid){ BOURSE.uid = uid; BOURSE.doc = null; BOURSE.maj = null; BOURSE.etat = "inconnu"; bourse(); }
+  if(BOURSE.etat !== "ok") BOURSE.etat = "chargement";
+  BOURSE.chargement = requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(uid)))
+    .then(r => r.status === 404 ? null : r.ok ? r.json() : Promise.reject(qjErreur(r)))
+    .then(doc => {
+      if(!COMPTE.user || COMPTE.user.uid !== uid) return null;
+      if(!doc) return creerBourse();
+      BOURSE.doc = nettoyerBourse(bvValeur({ mapValue: { fields: doc.fields || {} } }));
+      BOURSE.maj = doc.updateTime;
+      BOURSE.etat = "ok"; BOURSE.erreur = null;
+      sauverCacheBourse();
+      return BOURSE.doc;
+    })
+    .then(d => { BOURSE.lu = Date.now(); if(d) apresBourse(); return d; },
+      e => { BOURSE.lu = Date.now(); BOURSE.etat = "erreur"; BOURSE.erreur = e && e.statut === 403 ? "regles" : "reseau"; return null; })
+    .finally(() => { BOURSE.chargement = null; if(typeof rendre === "function" && typeof ONGLET !== "undefined" && ONGLET === "cartes" && !OUV) rendre(); majSolde(); });
+  return BOURSE.chargement;
+}
+/* La collection deja ouverte avant la bourse (packs du jour, de bienvenue,
+   de saison de la vraie version), sous les bornes du serveur : 3 cartes par
+   jour ecoule depuis le lancement, raretes plafonnees. Les packs achetes ou
+   gagnes avec les anciens ecus de la beta (calcules sur l'appareil) ne
+   sont pas repris. Elle va dans « importe » : jamais recyclee. */
+function collectionAImporter(){
+  const plis = ((ETAT.collection || {}).plis) || {};
+  let l = [];
+  Object.keys(plis).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k) || PACKS_OFFERTS.indexOf(k) >= 0 || /^saison-\d{1,3}$/.test(k))
+    .forEach(k => (plis[k] || []).forEach(n => { if(Number.isInteger(n) && carteN(n)) l.push(n); }));
+  const rar = n => rangRarete(carteN(n).r);
+  const max = 3 * (Math.floor((maintenantServeur() - CARTES_LANCEMENT) / 864e5) + 2);
+  /* Les plus rares d'abord : ce sont elles qu'on garde si la borne coupe. */
+  l.sort((a, b) => rar(b) - rar(a) || a - b);
+  const plafond = (r, t) => r === 5 ? 2 + Math.floor(t / 50) : r === 4 ? 3 + Math.floor(t / 12) : r === 3 ? 4 + Math.floor(t / 6) : r === 2 ? 5 + Math.floor(t * 2 / 5) : Infinity;
+  for(let essai = 0; essai < 1000; essai++){
+    if(l.length > max){ l = l.slice(0, max); continue; }
+    const nb = [0, 0, 0, 0, 0, 0]; l.forEach(n => nb[rar(n)]++);
+    const trop = [5, 4, 3, 2].find(r => nb[r] > plafond(r, l.length));
+    if(trop === undefined) break;
+    l.splice(l.findIndex(n => rar(n) === trop), 1);
+  }
+  const c = {}; RARETES_BOURSE.forEach(k => { c[k] = []; });
+  l.forEach(n => c["r" + rar(n)].push(n));
+  RARETES_BOURSE.forEach(k => c[k].sort((a, b) => a - b));
+  return c;
+}
+function creerBourse(){
+  const pts = Math.max(0, Math.min(200000, Math.round(pointsTotal())));
+  const doc = { solde: ECU_DEPART, jour: "", duJour: 0, ptsJour: 0, pts: 0, gagne: 0, saison: saisonActuelle(null), gagneSaison: 0,
+    pris: {}, packs: { "bienvenue-c": { t: "c" }, "bienvenue-p": { t: "p" } }, cartes: { r0: [], r1: [], r2: [], r3: [], r4: [], r5: [] },
+    importe: collectionAImporter(), achats: 0, ouverts: 0,
+    rangDepart: rangDepartDe(pts), ptsDepart: pts };
+  const w = { op: { k: "creation" }, ecrire: Object.keys(doc).map(k => [[k], doc[k]]), heures: [["packs", "bienvenue-c", "cree"], ["packs", "bienvenue-p", "cree"]],
+    apres: copieBourse(doc) };
+  return commitBourse(w, true).then(d => {
+    /* Les ecus et les points partent d'ici : rien de retroactif. */
+    const e = ecus();
+    e.uid = BOURSE.uid; e.ref = pointsSources(); e.refPts = pts; e.attente = 0; e.attentePts = 0;
+    sauverEtat();
+    return d;
+  }, e => {
+    /* Deja creee par un autre appareil : on la relit. */
+    if(e && (e.statut === 409 || e.statut === 400)) return requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(BOURSE.uid)))
+      .then(r => r.ok ? r.json() : Promise.reject(qjErreur(r))).then(doc => {
+        BOURSE.doc = nettoyerBourse(bvValeur({ mapValue: { fields: doc.fields || {} } })); BOURSE.maj = doc.updateTime; BOURSE.etat = "ok"; sauverCacheBourse(); return BOURSE.doc; });
+    throw e;
+  });
+}
+/* Apres chaque lecture : les gains en attente partent, les rangs atteints
+   donnent leurs packs, le podium de saison se verifie. */
+function apresBourse(){
+  envoyerGains();
+  reclamerRangs();
+  if(typeof verifierPodiumBourse === "function") verifierPodiumBourse();
+  if(typeof publierJoueur === "function" && typeof social === "function" && social().vitrine.length) publierJoueur();
+}
+
+/* ---------- Les gains : de l'appareil a la bourse ---------- */
+let ENVOI_GAINS = null;
+function gainsAEnvoyer(d){
+  const e = ecus(), j = jourBourse(), meme = j === d.jour;
+  if(j < d.jour) return null;   /* horloge de l'appareil en retard */
+  const eg = Math.max(0, Math.min(e.attente || 0, ECU_PLAFOND - (meme ? d.duJour : 0)));
+  const pg = Math.max(0, Math.min(e.attentePts || 0, PTS_PLAFOND - (meme ? d.ptsJour : 0)));
+  return eg + pg > 0 ? { j, meme, eg, pg } : null;
+}
+function planifierGains(){
+  if(ENVOI_GAINS || !bourseSure() || !gainsAEnvoyer(BOURSE.doc)) return;
+  ENVOI_GAINS = setTimeout(() => { ENVOI_GAINS = null; envoyerGains(); }, 700);
+}
+function envoyerGains(){
+  if(!bourseSure()) return Promise.resolve(false);
+  return opererBourse(d => {
+    const g = gainsAEnvoyer(d);
+    if(!g) return null;
+    const s = saisonActuelle(d), a = copieBourse(d);
+    a.solde += g.eg; a.jour = g.j; a.duJour = (g.meme ? d.duJour : 0) + g.eg; a.ptsJour = (g.meme ? d.ptsJour : 0) + g.pg;
+    a.pts += g.pg; a.gagne += g.eg; a.gagneSaison = (s === d.saison ? d.gagneSaison : 0) + g.eg; a.saison = s;
+    return { op: { k: "gain", jour: g.j, e: g.eg, p: g.pg }, apres: a, resultat: g,
+      ecrire: ["solde", "jour", "duJour", "ptsJour", "pts", "gagne", "saison", "gagneSaison"].map(k => [[k], a[k]]) };
+  }).then(g => {
+    if(!g) return false;
+    const e = ecus();
+    e.attente = Math.max(0, (e.attente || 0) - g.eg); e.attentePts = Math.max(0, (e.attentePts || 0) - g.pg);
+    sauverEtat();
+    majSolde();
+    reclamerRangs();
+    return true;
+  }, () => false);
+}
+
+/* ---------- Les operations ---------- */
+function avecPacks(a, cles, types){ cles.forEach((k, i) => { a.packs[k] = { t: types[i] }; }); }
+function ecriturePacks(cles, types){ return cles.map((k, i) => [["packs", k], { t: types[i] }]); }
+function heuresPacks(cles){ return cles.map(k => ["packs", k, "cree"]); }
+/* Le pack gratuit du jour : sa cle (« j-2026-10-26 »), cree sur le serveur. */
+function bourseJour(){
+  return opererBourse(d => {
+    const j = jourBourse(), cle = "j-" + j;
+    if(d.pris[cle]) return d.packs[cle] ? { rien: true, resultat: cle } : null;
+    const a = copieBourse(d); a.pris[cle] = true; avecPacks(a, [cle], ["c"]);
+    return { op: { k: "jour", jour: j }, apres: a, resultat: cle, ecrire: [[["pris", cle], true]].concat(ecriturePacks([cle], ["c"])), heures: heuresPacks([cle]) };
+  });
+}
+function bourseAcheter(t){
+  return opererBourse(d => {
+    if(!PRIX_PACKS[t] || d.solde < PRIX_PACKS[t]) return null;
+    const a = copieBourse(d), cle = "a-" + (d.achats + 1) + "-" + t;
+    a.solde -= PRIX_PACKS[t]; a.achats += 1; avecPacks(a, [cle], [t]);
+    return { op: { k: "achat", t }, apres: a, resultat: cle, ecrire: [[["solde"], a.solde], [["achats"], a.achats]].concat(ecriturePacks([cle], [t])), heures: heuresPacks([cle]) };
+  });
+}
+/* Ouvre le pack « cle » : rend ses 3 cartes, tirees comme le serveur. */
+function bourseOuvrir(cle){
+  return opererBourse(d => {
+    const p = d.packs[cle];
+    if(!p || !p.cree || !p.cree.horodatage) return null;
+    const pli = tirageBourse(BOURSE.uid, cle, msHorodatage(p.cree.horodatage), p.t), a = copieBourse(d);
+    delete a.packs[cle];
+    const touchees = [];
+    pli.forEach(n => { const k = "r" + rangRarete(carteN(n).r); a.cartes[k].push(n); if(touchees.indexOf(k) < 0) touchees.push(k); });
+    a.ouverts += 1;
+    return { op: { k: "ouvrir", c: cle }, apres: a, resultat: pli, effacer: [["packs", cle]],
+      ecrire: touchees.map(k => [["cartes", k], a.cartes[k]]).concat([[["ouverts"], a.ouverts]]) };
+  });
+}
+/* Un double : une carte tiree d'un pack dont un autre exemplaire reste
+   (tire aussi, ou dans la collection importee, qui ne se recycle pas). */
+function bourseRecycler(n){
+  return opererBourse(d => {
+    const c = carteN(+n); if(!c) return null;
+    const k = "r" + rangRarete(c.r), tirees = d.cartes[k].filter(x => x === +n).length;
+    if(!(tirees >= 2 || (tirees === 1 && d.importe[k].indexOf(+n) >= 0))) return null;
+    const a = copieBourse(d), v = RECYCLAGE[c.r] || 0;
+    a.cartes[k].splice(a.cartes[k].lastIndexOf(+n), 1); a.solde += v;
+    return { op: { k: "recycler", n: +n }, apres: a, resultat: v, ecrire: [[["cartes", k], a.cartes[k]], [["solde"], a.solde]] };
+  });
+}
+function bourseRecyclerTout(){
+  return opererBourse(d => {
+    const a = copieBourse(d); let v = 0;
+    RARETES_BOURSE.forEach((k, i) => { const u = [];
+      d.cartes[k].forEach(n => { if(u.indexOf(n) < 0 && d.importe[k].indexOf(n) < 0) u.push(n); else v += RECYCLAGE[RARETES[i].k] || 0; });
+      a.cartes[k] = u; });
+    if(!v) return null;
+    a.solde += v;
+    return { op: { k: "recyclerTout" }, apres: a, resultat: v, ecrire: RARETES_BOURSE.map(k => [["cartes", k], a.cartes[k]]).concat([[["solde"], a.solde]]) };
+  });
+}
+function typePasse(t){ return t === 25 ? "u" : (t === 10 || t === 20) ? "p" : "c"; }
+function bourseRecupererPasse(t){
+  return opererBourse(d => {
+    const n = d.saison, cle = "passe-" + n + "-" + t, r = PASSE[t - 1];
+    if(!r || d.pris[cle] || d.gagneSaison < t * PASSE_PALIER) return null;
+    const a = copieBourse(d); a.pris[cle] = true;
+    if(t % 5 === 0){
+      avecPacks(a, [cle], [typePasse(t)]);
+      return { op: { k: "passe", n, t }, apres: a, resultat: { pack: cle }, ecrire: [[["pris", cle], true]].concat(ecriturePacks([cle], [typePasse(t)])), heures: heuresPacks([cle]) };
+    }
+    a.solde += t % 2 ? 30 : 50;
+    return { op: { k: "passe", n, t }, apres: a, resultat: { e: t % 2 ? 30 : 50 }, ecrire: [[["pris", cle], true], [["solde"], a.solde]] };
+  });
+}
+/* Route des rangs : les rangs atteints (d'apres les points comptes par le
+   serveur) donnent leurs 2 packs, un rang a la fois. */
+function rangAReclamer(d){
+  for(let r = d.rangDepart + 1; r <= 10; r++) if(!d.pris["rang-" + r] && d.ptsDepart + d.pts >= SEUILS_RANGS[r]) return r;
+  return 0;
+}
+let RANGS_EN_COURS = false;
+function reclamerRangs(){
+  if(RANGS_EN_COURS || !bourseSure() || !rangAReclamer(BOURSE.doc)) return;
+  RANGS_EN_COURS = true;
+  opererBourse(d => {
+    const r = rangAReclamer(d); if(!r) return null;
+    const cles = ["rang-" + r + "-c", "rang-" + r + "-p"], a = copieBourse(d);
+    a.pris["rang-" + r] = true; avecPacks(a, cles, ["c", "p"]);
+    return { op: { k: "rang", r }, apres: a, resultat: r, ecrire: [[["pris", "rang-" + r], true]].concat(ecriturePacks(cles, ["c", "p"])), heures: heuresPacks(cles) };
+  }).then(r => { RANGS_EN_COURS = false; if(r){ reclamerRangs(); if(typeof rendre === "function" && ONGLET === "cartes" && !OUV) rendre(); majBulleCartes(); } },
+    () => { RANGS_EN_COURS = false; });
+}
+/* Prix de saison : rang 1, 2 ou 3 sur le podium (podiums/{n}). */
+function boursePrixSaison(n, rang, choix){
+  return opererBourse(d => {
+    const cle = "saison-" + n;
+    if(d.pris[cle]) return null;
+    const lot = rang === 1 ? (choix === "a" ? [["u"], 0] : [["p", "p"], 200]) : rang === 2 ? (choix === "a" ? [["p"], 0] : [["c", "c"], 100]) : [["p"], 0];
+    const types = lot[0], cles = types.length === 1 ? [cle + "-" + types[0]] : [cle + "-" + types[0] + "1", cle + "-" + types[0] + "2"];
+    const a = copieBourse(d); a.pris[cle] = true; avecPacks(a, cles, types); a.solde += lot[1];
+    return { op: { k: "saison", n: +n, choix: rang === 3 ? "a" : choix }, apres: a, resultat: true,
+      ecrire: [[["pris", cle], true], [["solde"], a.solde]].concat(ecriturePacks(cles, types)), heures: heuresPacks(cles) };
+  });
+}
+/* Le podium de la saison finie depuis 2 jours. Le professeur l'inscrit
+   (d'apres saisons/{n}/scores) s'il manque ; le 3e recoit son Premium tout
+   de suite, le 1er et le 2e choisissent (carteChoixSaison). */
+function verifierPodiumBourse(){
+  const d = bourse(), p = typeof saisonEnCours === "function" ? saisonEnCours() - 1 : 0;
+  if(!d || p < 1 || d.pris["saison-" + p] || typeof qjSaisonNumero !== "function" || aujourdhui() < qjDecaler(qjSaisonNumero(p).fin, 2)) return Promise.resolve(null);
+  const moi = BOURSE.uid;
+  return requeteJeton("GET", urlDocuments("/podiums/" + p)).then(r => r.status === 404 ? null : r.ok ? r.json() : Promise.reject(qjErreur(r))).then(doc => {
+    if(!doc){
+      if(!estProf()) return null;
+      return requeteJeton("POST", urlDocuments("/saisons/" + p) + ":runQuery", { structuredQuery: { from: [{ collectionId: "scores" }],
+        orderBy: [{ field: { fieldPath: "ps" }, direction: "DESCENDING" }], limit: 3 } }).then(r => r.ok ? r.json() : [])
+        .then(l => { const u = (l || []).filter(x => x.document).map(x => decodeURIComponent(x.document.name.split("/").pop()));
+          return qjCommit({ update: { name: qjNomDoc("/podiums/" + p), fields: qjChampsEncodes({ p1: u[0] || "", p2: u[1] || "", p3: u[2] || "" }) },
+            updateTransforms: QJ_HEURE, currentDocument: { exists: false } }); }).then(() => null, () => null);
+    }
+    const f = qjChamps(doc), rang = f.p1 === moi ? 1 : f.p2 === moi ? 2 : f.p3 === moi ? 3 : 0;
+    /* Les points du podium (300, 150, 75) restent comptes sur l'appareil. */
+    if(ETAT.saisons && ETAT.saisons.prix && !(String(p) in ETAT.saisons.prix)){ ETAT.saisons.prix[p] = { rang }; sauverEtat(); }
+    if(!rang) return null;
+    if(rang === 3) return boursePrixSaison(p, 3, "a").then(() => { if(typeof rendre === "function") rendre(); });
+    BOURSE.prix = { n: p, rang };
+    if(typeof rendre === "function" && ONGLET === "cartes" && !OUV) rendre();
+    return null;
+  }).catch(() => null);
+}
 /* =====================================================================
    4. LOGIQUE DE L'APPLICATION
    ---------------------------------------------------------------------
@@ -12456,7 +12983,7 @@ function validerQuiz(){
 function enregistrerResultat(q){
   const jour = aujourdhui();
   const ptsAvant = pointsTotal();
-  const ecusAvant = typeof BETA !== "undefined" && BETA && typeof soldeEcus === "function" ? soldeEcus() : null;
+  const ecusAvant = typeof BETA !== "undefined" && BETA && typeof bourse === "function" && bourse() ? ecusDuJour() : null;
   const rangAvant = rangActuel().i;
 
   /* Statistiques par question, pour remonter les ratees dans les quiz composes. */
@@ -12540,8 +13067,9 @@ function enregistrerResultat(q){
   noterPalier();
   q.gain = { avant: ptsAvant, apres: pointsTotal(), rangAvant, rangApres: rangActuel().i };
   /* Beta Ecus : un QCM refait sans nouveau point rapporte 1 ecu par bonne
-     reponse (30 par jour au plus) ; le solde d'avant sert au bilan. */
-  if(typeof BETA !== "undefined" && BETA && typeof soldeEcus === "function"){
+     reponse (30 par jour au plus) ; les ecus du jour d'avant servent au
+     bilan (ceux gagnes ici partent ensuite a la bourse). */
+  if(typeof BETA !== "undefined" && BETA && ecusAvant !== null){
     q.ecusAvant = ecusAvant;
     if(q.gain.apres <= q.gain.avant) ecusRevision(q.resultat.justes);
   }
@@ -12616,10 +13144,10 @@ function rendreCorrection(){
   }
 
   if(typeof BETA !== "undefined" && BETA && typeof q.ecusAvant === "number"){
-    const ge = soldeEcus() - q.ecusAvant;
+    const ge = ecusDuJour() - q.ecusAvant;
     parts.push(`<div class="carte ecu-bilan">${pieceEcu(40)}<div class="corps">
       <h3>${ge > 0 ? "+" + ge + " écus" : "Pas d’écus de plus"}</h3>
-      <p class="minuscule" style="margin:0">${ge > 0 ? "Solde&#8239;: " + soldeEcus().toLocaleString("fr-FR") + " écus" : ecusDuJour() >= ECU_PLAFOND ? "Plafond du jour atteint (" + ECU_PLAFOND + " écus)." : "Révision&#8239;: 30 écus par jour au plus."}</p></div></div>`);
+      <p class="minuscule" style="margin:0">${ge > 0 ? "Aujourd’hui&#8239;: " + ecusDuJour() + " / " + ECU_PLAFOND + " écus" : ecusDuJour() >= ECU_PLAFOND ? "Plafond du jour atteint (" + ECU_PLAFOND + " écus)." : "Révision&#8239;: 30 écus par jour au plus."}</p></div></div>`);
   }
   if(q.gain && q.type !== "compose"){
     const g = q.gain.apres - q.gain.avant;
