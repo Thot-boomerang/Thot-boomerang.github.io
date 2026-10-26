@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-AIXRYkWXzg8Oan0sOJjNyj7UytCbY+zCsmgQ7WQlr64=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-xJS1V5C8kS2aszpbqwSH18/Un/lJyNyeweST9PHRPCs=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1733,6 +1733,20 @@ table.chances td{font-variant-numeric:tabular-nums}
 .defi-corrige{padding-left:18px;font-size:14px}
 .defi-corrige li{margin:0 0 8px}.defi-corrige li.juste{color:#2e7a45}.defi-corrige li.faux{color:var(--bordeaux)}
 .defi-corrige li b{color:var(--texte);font-weight:600}
+
+/* --- Beta : bandeau du haut (rang a gauche, ecus a droite) et du bas ---- */
+body.beta .entete{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;
+  padding:10px 2px 9px;margin:0 0 6px;border-bottom:1px solid var(--filet,#e2d6bd)}
+body.beta .entete > .filet-double,body.beta .entete h1,body.beta .entete .sous,body.beta .vignette{display:none}
+body.beta .insigne{position:static;transform:none;flex-direction:row;gap:8px;padding:2px 4px}
+body.beta .insigne .rg{font:700 16px var(--police-titre);color:var(--bordeaux);white-space:nowrap}
+body.beta .solde-ecus{position:relative;left:auto;top:auto;transform:none;font-size:14px;padding:4px 12px 4px 5px}
+body.beta .solde-ecus .piece-ecu{width:24px;height:24px}
+body.beta .onglets{background:var(--fond-2);border-top:1px solid var(--filet,#e2d6bd);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+body.beta .onglets button{text-transform:none;letter-spacing:.01em;font-size:11px;gap:2px;padding:7px 2px 9px;color:var(--texte-2)}
+body.beta .onglets button .ico{font-size:21px;line-height:1.15;filter:saturate(.85);transition:transform .15s}
+body.beta .onglets button[aria-current="page"]{color:var(--bordeaux)}
+body.beta .onglets button[aria-current="page"] .ico{transform:translateY(-1px) scale(1.08);filter:none}
 </style>
 
 <!-- Charte et taille du texte appliquees AVANT le premier affichage :
@@ -5256,6 +5270,7 @@ function synchroniser(){
   if(typeof BETA !== "undefined" && BETA){
     if(typeof publierQuotidien === "function") publierQuotidien().catch(() => {});
     if(typeof verifierPrixSaison === "function") verifierPrixSaison();
+    if(typeof assurerJoueur === "function") assurerJoueur();
     return importerPourBeta().then(() => true, () => false);
   }
   if(COMPTE.enCours){ COMPTE.encore = true; return Promise.resolve(false); }
@@ -9731,11 +9746,27 @@ function requeteListe(collection, ou){
 }
 
 /* ---------- La fiche publique : nom, vitrine, Elo ---------- */
+/* Le code ami : les 8 premiers caracteres de l'identifiant, en majuscules
+   (le serveur verifie qu'on ne prend pas celui d'un autre). */
+function monCode(){ const u = COMPTE.user ? COMPTE.user.uid : ""; return (u.length > 8 ? u.slice(0, 8) : u).toUpperCase(); }
+/* Pour la recherche : minuscules, sans accents. */
+function nomRecherche(t){ return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
 function publierJoueur(elo){
   if(!socialPossible()) return Promise.resolve(false);
   const uid = COMPTE.user.uid, e = typeof elo === "number" ? elo : (SOC.moi ? SOC.moi.elo : ELO_DEPART);
-  return qjCommit({ update: { name: qjNomDoc("/joueurs/" + uid), fields: qjChampsEncodes({ nom: monNom(), vitrine: social().vitrine, elo: Math.round(e) }) },
+  return qjCommit({ update: { name: qjNomDoc("/joueurs/" + uid), fields: qjChampsEncodes({ nom: monNom(), nomMin: nomRecherche(monNom()), code: monCode(),
+      vitrine: social().vitrine, elo: Math.round(e) }) },
     updateTransforms: QJ_HEURE }).then(() => { SOC.moi = Object.assign(SOC.moi || {}, { nom: monNom(), vitrine: social().vitrine.slice(), elo: Math.round(e) }); return true; }, () => false);
+}
+/* A la connexion : la fiche existe et porte le nom et le code a jour,
+   pour qu'un ami puisse nous trouver des le premier jour. */
+function assurerJoueur(){
+  if(!socialPossible()) return Promise.resolve(false);
+  return lireJoueur(COMPTE.user.uid).then(j => {
+    SOC.moi = j;
+    if(j && j.nom === monNom() && j.code === monCode() && j.nomMin === nomRecherche(monNom())) return true;
+    return publierJoueur(j && typeof j.elo === "number" ? j.elo : ELO_DEPART);
+  });
 }
 function lireJoueur(uid){
   return requeteJeton("GET", urlDocuments("/joueurs/" + encodeURIComponent(uid)))
@@ -9820,13 +9851,24 @@ function accepterAmi(id){
 function retirerAmi(id){
   return requeteJeton("DELETE", urlDocuments("/amities/" + id)).then(() => chargerSocial(true), () => false);
 }
-function chercherJoueurs(nom){
-  nom = String(nom || "").trim().replace(/\s+/g, " ");
-  if(!nom) return Promise.resolve([]);
-  const moi = COMPTE.user.uid, vus = {};
-  const lire = c => requeteListe(c, egal("nom", nom)).catch(() => []);
-  return Promise.all([lire("classement"), lire("joueurs")]).then(([a, b]) => a.concat(b).filter(x => {
-    if(x.id === moi || vus[x.id]) return false; vus[x.id] = true; return true; }).map(x => ({ uid: x.id, nom: x.nom })));
+/* Par pseudo (le debut suffit, sans souci des majuscules ni des accents)
+   ou par code ami. Les joueurs de la beta (joueurs/), et ceux du
+   classement general. */
+function entre(champ, debut){
+  return { compositeFilter: { op: "AND", filters: [
+    { fieldFilter: { field: { fieldPath: champ }, op: "GREATER_THAN_OR_EQUAL", value: { stringValue: debut } } },
+    { fieldFilter: { field: { fieldPath: champ }, op: "LESS_THAN", value: { stringValue: debut + "\uf8ff" } } }] } };
+}
+function chercherJoueurs(texte){
+  const brut = String(texte || "").trim().replace(/\s+/g, " ");
+  if(!brut) return Promise.resolve([]);
+  const moi = COMPTE.user.uid, vus = {}, min = nomRecherche(brut);
+  const majuscule = brut.charAt(0).toUpperCase() + brut.slice(1);
+  const lire = (c, ou) => requeteListe(c, ou).catch(() => []);
+  const demandes = [lire("joueurs", entre("nomMin", min)), lire("classement", entre("nom", majuscule))];
+  if(/^[a-z0-9]{8}$/i.test(brut)) demandes.unshift(lire("joueurs", egal("code", brut.toUpperCase())));
+  return Promise.all(demandes).then(l => [].concat(...l).filter(x => {
+    if(x.id === moi || vus[x.id]) return false; vus[x.id] = true; return true; }).slice(0, 20).map(x => ({ uid: x.id, nom: x.nom })));
 }
 
 /* ---------- Les defis ---------- */
@@ -9993,9 +10035,9 @@ if(typeof document !== "undefined") document.addEventListener("visibilitychange"
 function carteAmis(){
   if(!(typeof BETA !== "undefined" && BETA)) return "";
   if(!compteConnecte()) return "";
-  if(!monNom()) return filet("Amis") + `<div class="carte"><p class="secondaire" style="margin:0">Indiquez votre prénom et votre nom (Réglages, carte Compte) pour ajouter des amis.</p></div>`;
+  if(!monNom()) return `<div class="carte"><p class="secondaire" style="margin:0">Indiquez votre prénom et votre nom (Réglages, carte Compte) pour ajouter des amis.</p></div>`;
   chargerSocial(false);
-  return filet("Amis") + `<div class="carte" id="zone-amis">${contenuAmis()}</div>`;
+  return `<div class="carte" id="zone-amis">${contenuAmis()}</div>`;
 }
 function contenuAmis(){
   if(SOC.erreur && !SOC.amities) return `<p class="minuscule" style="margin:0">${esc(SOC.erreur)}</p>`;
@@ -10003,6 +10045,12 @@ function contenuAmis(){
   const moi = COMPTE.user.uid, parts = [];
   const elo = SOC.moi && typeof SOC.moi.elo === "number" ? SOC.moi.elo : ELO_DEPART;
   parts.push(`<p class="amis-elo">Votre Elo&#8239;: <strong>${elo}</strong>${aideBouton("defis")}</p>`);
+  /* Ajouter un ami : tout en haut, par pseudo ou par code. */
+  parts.push(`<p class="capitales amis-titre">Ajouter un ami</p>
+    <p class="minuscule" style="margin:0 0 6px">Votre code ami&#8239;: <strong class="code-ami">${esc(monCode())}</strong> (à donner à vos amis)</p>
+    <div class="amis-cherche"><input id="ami-nom" type="search" placeholder="Pseudo ou code ami" autocomplete="off" autocapitalize="off">
+    <button class="bouton petit" data-action="ami-chercher">Chercher</button></div>
+    <div id="ami-resultats">${SOC.recherche ? resultatsRecherche() : ""}</div>`);
   const rel = aRelever();
   if(rel.length) parts.push(`<p class="capitales amis-titre">À relever</p><ul class="amis-liste">${rel.map(d => {
     const h = Math.max(0, Math.ceil((Date.parse(d.cree) + 24 * 3600e3 - Date.now()) / 3600e3));
@@ -10033,15 +10081,11 @@ function contenuAmis(){
   if(hist.length) parts.push(`<p class="capitales amis-titre">Rencontres</p><ul class="amis-histo">${hist.map(d => { const r = resultatDefi(d, moi);
     return `<li class="${r.s === 1 ? "v" : r.s === 0 ? "d" : "n"}"><span>${r.s === 1 ? "Victoire" : r.s === 0 ? "Défaite" : "Égalité"} contre ${esc(r.nomAdv)}</span>
       <span>${r.mj}/${DEFI_NB} (${r.mt} s) – ${r.aj}/${DEFI_NB} (${r.at} s)</span></li>`; }).join("")}</ul>`);
-  parts.push(`<p class="capitales amis-titre">Ajouter un ami</p>
-    <div class="amis-cherche"><input id="ami-nom" type="search" placeholder="Prénom et initiale, ex. Léa M." autocomplete="off">
-    <button class="bouton petit" data-action="ami-chercher">Chercher</button></div>
-    <div id="ami-resultats">${SOC.recherche ? resultatsRecherche() : ""}</div>`);
   return parts.join("");
 }
 function resultatsRecherche(){
   const r = SOC.recherche || [];
-  if(!r.length) return `<p class="minuscule" style="margin:6px 0 0">Personne sous ce nom (écrivez-le comme au classement&#8239;: «&#8239;Léa M.&#8239;»).</p>`;
+  if(!r.length) return `<p class="minuscule" style="margin:6px 0 0">Personne trouvé. Essayez le début du pseudo («&#8239;Léa&#8239;») ou demandez son code ami.</p>`;
   const deja = {}; (SOC.amities || []).forEach(x => { deja[x.a] = x.statut; deja[x.b] = x.statut; });
   return `<ul class="amis-liste">${r.map(x => `<li><span class="t">${lienProfil(x.uid, x.nom)}</span>${deja[x.uid] === "ami" ? `<span class="minuscule">ami</span>`
     : deja[x.uid] ? `<span class="minuscule">demande en cours</span>` : `<button class="bouton-plein petit" data-action="ami-demander" data-uid="${esc(x.uid)}" data-nom="${esc(x.nom)}">Ajouter</button>`}</li>`).join("")}</ul>`;
@@ -10084,6 +10128,10 @@ function actionSocial(a, el){
   }
   return false;
 }
+
+if(typeof document !== "undefined") document.addEventListener("keydown", ev => {
+  if(ev.key === "Enter" && ev.target && ev.target.id === "ami-nom"){ ev.preventDefault(); actionSocial("ami-chercher", ev.target); }
+});
 /* =====================================================================
    4. LOGIQUE DE L'APPLICATION
    ---------------------------------------------------------------------
@@ -10786,7 +10834,9 @@ function majInsigne(){
      ne s'ouvrait qu'au 2e essai). */
   const vu = R.i + "|" + pts;
   if(el.dataset.vu !== vu){
-    el.innerHTML = emblemeRang(R.i, 52) + `<span class="pts">${pts.toLocaleString("fr-FR")} pts</span>`;
+    /* Beta : le bandeau du haut montre le badge et le nom du rang. */
+    el.innerHTML = typeof BETA !== "undefined" && BETA ? emblemeRang(R.i, 34) + `<span class="rg">${esc(R.libelle)}</span>`
+      : emblemeRang(R.i, 52) + `<span class="pts">${pts.toLocaleString("fr-FR")} pts</span>`;
     el.dataset.vu = vu;
   }
   el.setAttribute("aria-label", "Rang " + R.libelle + ", " + pts + " points. Voir le détail du rang");
@@ -12903,7 +12953,7 @@ function rendre(){
   /* Deux lignes courtes : elles tiennent entre la marque et l'insigne,
      centres a cote d'elles. */
   if(sous) sous.innerHTML = modeBrevet() ? "Révisions du brevet<br>histoire-géographie de 3e"
-                                         : "Culture historique<br>une séance par jour";
+                                         : typeof BETA !== "undefined" && BETA ? "Culture historique" : "Culture historique<br>une séance par jour";
   /* Le filet de defilement n'a de sens que pendant la lecture d'une seance. */
   document.body.dataset.lecture =
     (ONGLET === "cours" && ECRAN.nom === "lecture") ? "1" : "0";
@@ -12971,33 +13021,39 @@ const ICONES_ONGLETS = {
   apprendre: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6.4C9.3 4.9 6.4 4.7 3.4 5.7v12.6c3-1 5.9-.8 8.6.7"/><path d="M12 6.4c2.7-1.5 5.6-1.7 8.6-.7v12.6c-3-1-5.9-.8-8.6.7z"/><path d="M12 6.4V19"/></svg>`,
   brevet: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.2c1.6 1.5 3.6 2.3 5.5 2.3s3.9-.8 5.5-2.3v-4.2"/><path d="M21.5 9.5v5"/></svg>`,
   quiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.8"/><path d="M9.4 9.4c.1-1.5 1.3-2.5 2.7-2.5 1.6 0 2.8 1 2.8 2.5 0 1.9-2.3 2.2-2.6 4"/><path d="M12.2 16.6v.1"/></svg>`,
-  classements: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.5 4h9v5.5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.2c0 3 1.4 4.6 3.6 4.9M16.5 6h3.3c0 3-1.4 4.6-3.6 4.9"/><path d="M12 14v3.5M8.5 20h7M9.5 17.5h5"/></svg>`,
+  social: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.2 19.5c.6-3.3 3-5.2 5.8-5.2s5.2 1.9 5.8 5.2"/><circle cx="16.8" cy="9.6" r="2.5"/><path d="M15.6 14.6c2.6-.3 4.6 1.3 5.2 4.4"/></svg>`,
   reglages: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="15.5" cy="12" r="2.1"/><circle cx="7.5" cy="17" r="2.1"/></svg>`
 };
+/* Le bandeau du bas de la beta : des pictogrammes en couleur. */
+const EMOJIS_ONGLETS = { cartes: "&#127183;", apprendre: "&#128214;", brevet: "&#127891;", quiz: "&#9889;", social: "&#128101;", reglages: "&#9881;&#65039;" };
 function majOnglets(){
   if(!(typeof BETA !== "undefined" && BETA)) return;
   const nav = document.querySelector("nav.onglets");
   if(!nav) return;
   const l = modeBrevet()
-    ? [["accueil", "Brevet", "brevet"], ["cartes", "Cartes", "cartes"], ["quiz", "Quiz", "quiz"], ["classements", "Classements", "classements"], ["reglages", "Réglages", "reglages"]]
-    : [["cartes", "Cartes", "cartes"], ["accueil", "Apprendre", "apprendre"], ["quiz", "Quiz", "quiz"], ["classements", "Classements", "classements"], ["reglages", "Réglages", "reglages"]];
+    ? [["accueil", "Brevet", "brevet"], ["cartes", "Cartes", "cartes"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]]
+    : [["cartes", "Cartes", "cartes"], ["accueil", "Apprendre", "apprendre"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]];
   const sig = l.map(x => x[0] + x[1]).join();
   if(nav.dataset.sig === sig) return;
   nav.dataset.sig = sig;
-  nav.innerHTML = l.map(([o, t, i]) => `<button type="button" data-onglet="${o}">${ICONES_ONGLETS[i]}${t}</button>`).join("");
+  nav.innerHTML = l.map(([o, t, i]) => `<button type="button" data-onglet="${o}"><span class="ico" aria-hidden="true">${EMOJIS_ONGLETS[i]}</span>${t}</button>`).join("");
 }
-/* L'onglet Classements : le classement de la saison et le general, celui
-   des collections, et l'acces aux classements du Quiz of the Day. */
+/* L'onglet Social (beta) : deux vues. « Amis » : ajouter un ami (pseudo
+   ou code), les defis, la comparaison entre amis. « Classements » : le
+   rang et ses badges en tete, le classement de la saison et le general,
+   l'acces aux classements du Quiz of the Day, celui des collections. */
+let VUE_SOCIAL = "amis";
 function rendreClassements(){
   const vue = document.getElementById("vue-classements");
   if(!vue) return;
-  /* Le rang et ses badges, en tete (beta : il quitte Apprendre). */
-  const parts = [carteRang()];
+  const b = (v, t) => `<button type="button" data-action="social-vue" data-vue="${v}" aria-pressed="${VUE_SOCIAL === v}">${t}</button>`;
+  const parts = [`<div class="seg classement-vues social-vues" role="group" aria-label="Social">${b("amis", "Amis")}${b("classements", "Classements")}</div>`];
+  if(VUE_SOCIAL === "classements") parts.push(carteRang());
   if(!compteConfigure() || !compteConnecte())
-    parts.push(`<div class="carte"><p class="secondaire" style="margin:0 0 10px">Connectez-vous pour voir les classements.</p>
+    parts.push(`<div class="carte"><p class="secondaire" style="margin:0 0 10px">Connectez-vous pour ${VUE_SOCIAL === "amis" ? "ajouter des amis et les défier" : "voir les classements"}.</p>
       <button class="bouton-plein" data-action="onglet" data-onglet="reglages">Se connecter</button></div>`);
+  else if(VUE_SOCIAL === "amis") parts.push(carteAmis());
   else {
-    parts.push(carteAmis());
     parts.push(carteClassement());
     parts.push(filet("Quiz of the Day"));
     parts.push(`<div class="carte"><p class="secondaire" style="margin:0 0 10px">Jour, semaine, médailles de la saison et historique.</p>
@@ -13173,6 +13229,7 @@ document.addEventListener("click", function(ev){
   if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el))) return;
 
   /* -- Navigation generale -- */
+  if(a === "social-vue"){ VUE_SOCIAL = el.dataset.vue === "classements" ? "classements" : "amis"; rendre(); return; }
   if(a === "catalogue-basculer"){ CATALOGUE_OUVERT = !CATALOGUE_OUVERT; rendre(); if(CATALOGUE_OUVERT){ const z = document.getElementById("catalogue-integre"); if(z) z.scrollIntoView({ block: "start" }); } return; }
   /* Beta : le catalogue vit dans l'onglet Apprendre ; y revenir l'ouvre. */
   if(a === "onglet" && typeof BETA !== "undefined" && BETA && el.dataset.onglet === "cours"){ CATALOGUE_OUVERT = true; aller("accueil", false); const z = document.getElementById("catalogue-integre"); if(z) z.scrollIntoView({ block: "start" }); return; }
