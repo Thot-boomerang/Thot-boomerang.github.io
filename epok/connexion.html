@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-v97BPtDkEmOBPY0SA6X3kMOPflmHcDECJK8/OkM3ATs=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RKAC2AO5Pi28gaJYwhkVa1n7kT8RZ4Hey4NIoa7R3EY=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
@@ -55,7 +55,8 @@ button,a.bouton{display:block;box-sizing:border-box;width:100%;margin-top:18px;p
   fournisseur.setCustomParameters({ prompt: "select_account" });
 
   function renvoyer(jeton) {
-    var lien = (/epok-beta/.test(location.pathname) ? "fr.epok.histoire.beta" : "fr.epok.histoire") + "://auth?id_token=" + encodeURIComponent(jeton);
+    var lien = (/epok-beta/.test(location.pathname) ? "fr.epok.histoire.beta" : /epok-cours/.test(location.pathname) ? "fr.epok.cours" : "fr.epok.histoire")
+      + "://auth?id_token=" + encodeURIComponent(jeton);
     retour.href = lien; retour.hidden = false; go.hidden = true;
     msg.textContent = "Connexion réussie. Revenez dans Epok pour terminer.";
     auth.signOut();

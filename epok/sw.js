@@ -6,8 +6,12 @@
    bibliotheques) est servi depuis le cache, puis mis en cache a la
    premiere lecture. VERSION change a chaque publication (publier_web.sh) :
    le nouveau service worker remplace alors l'ancien et vide son cache. */
-const VERSION = "202610261637-3ad0c56";
-const CACHE = "epok-" + VERSION;
+const VERSION = "202610292252-a9ac572";
+/* Plusieurs applications sur le meme site (epok/, epok-cours/, epok-beta/) :
+   les caches sont communs a tout le site, chacune a donc son prefixe, et
+   ne vide que les siens. */
+const PREFIXE = "epok-" + (new URL(self.registration.scope).pathname.replace(/[^a-z0-9]+/gi, "") || "racine") + "-";
+const CACHE = PREFIXE + VERSION;
 const ESSENTIEL = ["./", "index.html", "config-compte.js", "manifest.webmanifest", "icone-192.png", "icone-512.png"];
 
 self.addEventListener("install", e => {
@@ -16,7 +20,8 @@ self.addEventListener("install", e => {
 
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys()
-    .then(cles => Promise.all(cles.filter(k => k.startsWith("epok-") && k !== CACHE).map(k => caches.delete(k))))
+    /* Les siens, et ceux de l'ancien nom (« epok-<version> », avant octobre 2026). */
+    .then(cles => Promise.all(cles.filter(k => k !== CACHE && (k.startsWith(PREFIXE) || /^epok-\d{12}-/.test(k))).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 

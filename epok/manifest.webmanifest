@@ -1,7 +1,7 @@
 {
-  "name": "Epok — culture historique",
-  "short_name": "Epok",
-  "description": "Mini-cours d’histoire, QCM et révisions du brevet, hors ligne.",
+  "name": "EPOK — le jeu de cartes de l’histoire",
+  "short_name": "EPOK",
+  "description": "Collectionnez les grands personnages de l’histoire : packs, Quiz of the Day, défis entre amis.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

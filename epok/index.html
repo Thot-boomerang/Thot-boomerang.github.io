@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-9zNB/dbE8Zo5lyGE9ZJKh9NWkaj5Qg+R2lRCdiMdTmw=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-RfB4wwhQGNdkQYoNQDFuUrko+3UG7fMMs3M7iSl214s=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1187,6 +1187,10 @@ body[data-choix="1"]{overflow:hidden}
 .compte-ou{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--texte-2);font-size:13px}
 .compte-ou::before,.compte-ou::after{content:"";flex:1;border-top:1px solid var(--laiton)}
 .b-code-ligne{display:flex;gap:8px;align-items:stretch}
+/* Le code du professeur, dans les reglages du jeu : un lien discret. */
+.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:13px;color:var(--texte-2);text-decoration:underline;cursor:pointer}
+/* L'application des cours : ni ecus ni packs. */
+body.app-cours #solde-ecus, body.app-cours .bulle-pack{display:none !important}
 .b-code-ligne input{flex:1;min-width:0;min-height:46px;padding:8px 12px;font:inherit;color:var(--texte);
   background:var(--fond-2);border:1px solid var(--laiton);border-radius:var(--rayon)}
 .compte-info{border:1px solid var(--laiton);background:var(--fond-2);padding:10px 12px;font-size:14.5px;line-height:1.45}
@@ -2086,6 +2090,27 @@ const COURS = [{"id":"france-1920-1930","titre":"La France des années 1920-1930
 const BETA = !(typeof location !== "undefined" && /[?&]beta=0(&|$)/.test(location.search || ""));
 const BETA_ISOLEE = BETA && typeof location !== "undefined"
   && (/\/epok-beta\//.test(location.pathname || "") || /[?&]isolee=1(&|$)/.test(location.search || ""));
+
+/* ======================================================================
+   DEUX APPLICATIONS (octobre 2026)
+
+   Une seule source, deux applications :
+   - APP « jeu » : EPOK, le jeu de cartes (thot-boomerang.github.io/epok/,
+     l'APK fr.epok.histoire). Cartes, Quiz of the Day, Social. Le mode
+     Brevet y est cache : un eleve connecte l'ouvre avec le code de son
+     professeur (Reglages), et le referme quand il a fini (z0p_apps.js) ;
+   - APP « cours » : EPOK Cours, les cours d'approfondissement
+     (thot-boomerang.github.io/epok-cours/, l'APK fr.epok.cours). Les
+     cours, leurs QCM et les rangs ; ni cartes, ni ecus, ni Brevet.
+   L'adresse choisit l'application (/epok-cours/, ou ?app=cours dans les
+   essais et dans l'APK des cours). Sur le web, les deux sont sur le meme
+   site : elles partagent la progression de l'appareil (meme stockage).
+   L'ancienne interface (?beta=0) n'est ni l'une ni l'autre.
+   ====================================================================== */
+const APP = typeof location !== "undefined"
+  && (/[?&]app=cours(&|$)/.test(location.search || "") || /\/epok-cours\//.test(location.pathname || "")) ? "cours" : "jeu";
+function appJeu(){ return BETA && APP === "jeu"; }
+function appCours(){ return BETA && APP === "cours"; }
 
 /* ==========================================================================
    Voile des reponses. Les fichiers publies (cours, Quiz of the Day, fiches
@@ -3834,6 +3859,7 @@ function carteProfesseur(){
     <p class="capitales" style="margin:0 0 6px">Date de l’épreuve d’histoire-géographie</p>
     <div class="b-code-ligne" style="margin:0 0 14px"><input type="date" id="b-prof-date" class="b-date" value="${esc(dateEpreuve() || "")}">
       <button class="bouton" data-action="b-prof-date" style="width:auto;padding:0 16px"${PROF.enCours ? " disabled" : ""}>Enregistrer</button></div>
+    ${typeof blocCodeBrevet === "function" && typeof BETA !== "undefined" && BETA ? blocCodeBrevet() : ""}
     <p class="capitales" style="margin:0 0 6px">Chapitres ouverts aux élèves
       <span class="minuscule">&#8226; ${rediges.filter(c => ouvertAuxEleves(c.id)).length}/${rediges.length}</span></p>
     ${["Histoire", "Géographie"].map(m => {
@@ -3863,7 +3889,8 @@ if(typeof document !== "undefined"){
 
 /* ---------- Acces aux donnees ---------- */
 
-function modeBrevet(){ return ETAT.reglages.mode === "brevet"; }
+/* L'application des cours n'a pas de Brevet (il est dans le jeu, z0p_apps.js). */
+function modeBrevet(){ return ETAT.reglages.mode === "brevet" && !(typeof appCours === "function" && appCours()); }
 /* Un chapitre = son entree dans BREVET (titre, place dans le programme)
    + sa fiche, si elle est redigee (FICHES_BREVET, fichiers z0f1 et z0f2). */
 function tousChapitres(){
@@ -4359,7 +4386,8 @@ function rendreFicheBrevet(vue){
     <div class="saut"></div>
     <button class="bouton" data-action="b-reperes" data-chap="${esc(ch.id)}">QCM des repères</button>
   </div>`);
-  const loin = (ch.plusLoin || []).map(id => coursParId(id)).filter(Boolean);
+  /* Les cours complets sont dans l'autre application (EPOK Cours). */
+  const loin = appJeu() ? [] : (ch.plusLoin || []).map(id => coursParId(id)).filter(Boolean);
   if(loin.length){
     parts.push(filet("Pour aller plus loin"));
     parts.push(`<div class="carte"><p class="secondaire">Les cours complets d’Epok, pour qui veut en savoir plus
@@ -4684,7 +4712,7 @@ function actionBrevet(a, el){
    qui protegent les donnees. */
 const CONFIG_COMPTE = Object.assign({ apiKey: "", authDomain: "", projectId: "", appId: "" },
   (typeof window !== "undefined" && window.EPOK_COMPTE) || {});
-const PAGE_CONNEXION = "https://thot-boomerang.github.io/" + (typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE ? "epok-beta" : "epok") + "/connexion.html";
+const PAGE_CONNEXION = "https://thot-boomerang.github.io/" + (typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE ? "epok-beta" : appCours() ? "epok-cours" : "epok") + "/connexion.html";
 const DELAI_SYNCHRO = 1500;    // ms entre une sauvegarde et l'envoi
 
 const COMPTE = {
@@ -7002,7 +7030,7 @@ function contenuProfil(p, ici){
     <div class="st-tuiles pf-tuiles">${tuile(termines.length, "cours terminé" + (termines.length > 1 ? "s" : ""), commences.length + " en cours")}
       ${tuile(n(p.precision) + "&#8239;%", "précision aux QCM", n(p.qcm) + " QCM passé" + (n(p.qcm) > 1 ? "s" : ""))}
       ${tuile(n(p.qjJoues), "Quiz of the Day joué" + (n(p.qjJoues) > 1 ? "s" : ""), (n(p.qjJoues) ? moy + "/10 en moyenne" : "pas encore joué"))}
-      ${tuile(n(p.cartes) + (typeof CARTES !== "undefined" && CARTES.length ? "/" + CARTES.length : ""), "cartes", n(p.pv).toLocaleString("fr-FR") + " PV &#8226; " + n(p.packs) + " packs")}</div>
+      ${tuile(n(p.cartes) + (typeof CARTES !== "undefined" && CARTES.length ? "/" + cartesDuJeu().length : ""), "cartes", n(p.pv).toLocaleString("fr-FR") + " PV &#8226; " + n(p.packs) + " packs")}</div>
     ${n(p.qjSansFaute) || n(p.qjPodiums) ? `<p class="minuscule" style="margin:0 0 10px">Quiz of the Day&#8239;: ${n(p.qjSansFaute)} sans-faute &#8226; ${n(p.qjPodiums)} podium${n(p.qjPodiums) > 1 ? "s" : ""}</p>` : ""}
     ${n(p.brevet) ? `<p class="minuscule" style="margin:0 0 10px">Mode Brevet&#8239;: ${n(p.brevet)} chapitre${n(p.brevet) > 1 ? "s" : ""} réussi${n(p.brevet) > 1 ? "s" : ""}</p>` : ""}
     ${termines.length ? `<p class="capitales" style="margin:6px 0 4px">Cours terminés</p>${liste(termines, true)}` : ""}
@@ -8060,50 +8088,50 @@ if(typeof window !== "undefined"){
    chaque carte. Les images sont dans source/web/cartes/ (grandes/ et mini/). */
 const CARTES = [
 {"n": 1, "r": "commune", "nom": "Abebe Bikila", "pv": 15},
-{"n": 2, "r": "commune", "nom": "Pierre de Coubertin", "pv": 15},
-{"n": 3, "r": "commune", "nom": "Avery Brundage", "pv": 15},
-{"n": 4, "r": "commune", "nom": "Tupua Tamasese Lealofi III", "pv": 16},
-{"n": 5, "r": "commune", "nom": "Togbe Tsali", "pv": 16},
+{"n": 2, "r": "rare", "nom": "Pierre de Coubertin", "pv": 72},
+{"n": 3, "r": "commune", "nom": "Avery Brundage", "pv": 15, "ret": true},
+{"n": 4, "r": "commune", "nom": "Tupua Tamasese Lealofi III", "pv": 16, "ret": true},
+{"n": 5, "r": "commune", "nom": "Togbe Tsali", "pv": 16, "ret": true},
 {"n": 6, "r": "commune", "nom": "René Lalou", "pv": 16},
 {"n": 7, "r": "commune", "nom": "Violette Morris", "pv": 16},
-{"n": 8, "r": "commune", "nom": "Jacques-Yves Cousteau", "pv": 17},
+{"n": 8, "r": "rare", "nom": "Jacques-Yves Cousteau", "pv": 78},
 {"n": 9, "r": "commune", "nom": "Qin Er Shi", "pv": 17},
 {"n": 10, "r": "commune", "nom": "William Buckland", "pv": 17},
 {"n": 11, "r": "commune", "nom": "Fanny Blankers-Koen", "pv": 17},
 {"n": 12, "r": "commune", "nom": "Hōne Heke", "pv": 18},
 {"n": 13, "r": "commune", "nom": "Tāwhiao", "pv": 18},
-{"n": 14, "r": "commune", "nom": "John Polidori", "pv": 18},
+{"n": 14, "r": "commune", "nom": "John Polidori", "pv": 18, "ret": true},
 {"n": 15, "r": "commune", "nom": "Pōmare II", "pv": 19},
 {"n": 16, "r": "commune", "nom": "Gudit", "pv": 19},
-{"n": 17, "r": "commune", "nom": "Margery Kempe", "pv": 19},
-{"n": 18, "r": "commune", "nom": "Julian de Norwich", "pv": 19},
+{"n": 17, "r": "commune", "nom": "Margery Kempe", "pv": 19, "ret": true},
+{"n": 18, "r": "commune", "nom": "Julian de Norwich", "pv": 19, "ret": true},
 {"n": 19, "r": "commune", "nom": "Robert FitzRoy", "pv": 19},
 {"n": 20, "r": "commune", "nom": "Begum Hazrat Mahal", "pv": 20},
 {"n": 21, "r": "commune", "nom": "Mangal Pandey", "pv": 20},
-{"n": 22, "r": "commune", "nom": "Yuri Gagarine", "pv": 20},
-{"n": 23, "r": "commune", "nom": "Aelred de Rievaulx", "pv": 20},
+{"n": 22, "r": "epique", "nom": "Yuri Gagarine", "pv": 84},
+{"n": 23, "r": "commune", "nom": "Aelred de Rievaulx", "pv": 20, "ret": true},
 {"n": 24, "r": "commune", "nom": "Nicolas Appert", "pv": 20},
 {"n": 25, "r": "commune", "nom": "George Cayley", "pv": 20},
-{"n": 26, "r": "commune", "nom": "William Edmond Logan", "pv": 21},
+{"n": 26, "r": "commune", "nom": "William Edmond Logan", "pv": 21, "ret": true},
 {"n": 27, "r": "commune", "nom": "Tupaia", "pv": 21},
 {"n": 28, "r": "commune", "nom": "Hendrik Witbooi", "pv": 21},
 {"n": 29, "r": "commune", "nom": "Dingane", "pv": 21},
-{"n": 30, "r": "commune", "nom": "Joseph Bramah", "pv": 21},
+{"n": 30, "r": "commune", "nom": "Joseph Bramah", "pv": 21, "ret": true},
 {"n": 31, "r": "commune", "nom": "Marc Seguin", "pv": 22},
-{"n": 32, "r": "commune", "nom": "Charles Manby", "pv": 22},
+{"n": 32, "r": "commune", "nom": "Charles Manby", "pv": 22, "ret": true},
 {"n": 33, "r": "commune", "nom": "Lobengula", "pv": 22},
-{"n": 34, "r": "commune", "nom": "Mswati II", "pv": 22},
+{"n": 34, "r": "commune", "nom": "Mswati II", "pv": 22, "ret": true},
 {"n": 35, "r": "commune", "nom": "Apolinario Mabini", "pv": 22},
 {"n": 36, "r": "commune", "nom": "Étienne Lenoir", "pv": 23},
 {"n": 37, "r": "commune", "nom": "Émile Cohl", "pv": 22},
 {"n": 38, "r": "commune", "nom": "Gabriel Voisin", "pv": 23},
-{"n": 39, "r": "commune", "nom": "U Nu", "pv": 23},
+{"n": 39, "r": "commune", "nom": "U Nu", "pv": 23, "ret": true},
 {"n": 40, "r": "commune", "nom": "Cuitláhuac", "pv": 23},
 {"n": 41, "r": "commune", "nom": "Yennenga", "pv": 24},
-{"n": 42, "r": "commune", "nom": "Bankim Chandra Chatterjee", "pv": 24},
+{"n": 42, "r": "commune", "nom": "Bankim Chandra Chatterjee", "pv": 24, "ret": true},
 {"n": 43, "r": "commune", "nom": "Jean-Baptiste Dumas", "pv": 24},
 {"n": 44, "r": "commune", "nom": "K'inich Kan B'alam II", "pv": 24},
-{"n": 45, "r": "commune", "nom": "Jasaw Chan K'awiil Ier", "pv": 24},
+{"n": 45, "r": "commune", "nom": "Jasaw Chan K'awiil Ier", "pv": 24, "ret": true},
 {"n": 46, "r": "commune", "nom": "Yax K'uk' Mo'", "pv": 25},
 {"n": 47, "r": "commune", "nom": "Ranavalona Ire", "pv": 25},
 {"n": 48, "r": "commune", "nom": "Osman II", "pv": 25},
@@ -8111,8 +8139,8 @@ const CARTES = [
 {"n": 50, "r": "commune", "nom": "Gaspard Monge", "pv": 25},
 {"n": 51, "r": "commune", "nom": "René Réaumur", "pv": 26},
 {"n": 52, "r": "commune", "nom": "Bernard Palissy", "pv": 26},
-{"n": 53, "r": "commune", "nom": "Abbas Mirza", "pv": 26},
-{"n": 54, "r": "commune", "nom": "Fath Ali Shah", "pv": 26},
+{"n": 53, "r": "commune", "nom": "Abbas Mirza", "pv": 26, "ret": true},
+{"n": 54, "r": "commune", "nom": "Fath Ali Shah", "pv": 26, "ret": true},
 {"n": 55, "r": "commune", "nom": "Cassiodore", "pv": 26},
 {"n": 56, "r": "commune", "nom": "Pline le Jeune", "pv": 27},
 {"n": 57, "r": "commune", "nom": "Jean-François Regnard", "pv": 27},
@@ -8146,59 +8174,58 @@ const CARTES = [
 {"n": 85, "r": "commune", "nom": "Reine Makeda", "pv": 32},
 {"n": 86, "r": "commune", "nom": "Naram-Sin", "pv": 32},
 {"n": 87, "r": "commune", "nom": "Abdulhamid II", "pv": 32},
-{"n": 88, "r": "commune", "nom": "Mustafa Reşid Pacha", "pv": 32},
-{"n": 89, "r": "commune", "nom": "Alfred de Musset", "pv": 33},
+{"n": 88, "r": "commune", "nom": "Mustafa Reşid Pacha", "pv": 32, "ret": true},
+{"n": 89, "r": "peu-commune", "nom": "Alfred de Musset", "pv": 44},
 {"n": 90, "r": "commune", "nom": "Stéphane Mallarmé", "pv": 33},
-{"n": 91, "r": "commune", "nom": "Fayçal Ier d'Irak", "pv": 33},
-{"n": 92, "r": "commune", "nom": "Abdallah Ier de Jordanie", "pv": 33},
+{"n": 91, "r": "commune", "nom": "Fayçal Ier d'Irak", "pv": 33, "ret": true},
+{"n": 92, "r": "commune", "nom": "Abdallah Ier de Jordanie", "pv": 33, "ret": true},
 {"n": 93, "r": "commune", "nom": "Lázaro Cárdenas", "pv": 33},
-{"n": 94, "r": "commune", "nom": "Deng Yingchao", "pv": 33},
-{"n": 95, "r": "commune", "nom": "Paul Verlaine", "pv": 34},
+{"n": 94, "r": "commune", "nom": "Deng Yingchao", "pv": 33, "ret": true},
+{"n": 95, "r": "rare", "nom": "Paul Verlaine", "pv": 66},
 {"n": 96, "r": "commune", "nom": "Puyi", "pv": 34},
 {"n": 97, "r": "commune", "nom": "Humayun", "pv": 34},
-{"n": 98, "r": "commune", "nom": "Daniel Fahrenheit", "pv": 34},
-{"n": 99, "r": "commune", "nom": "Anders Celsius", "pv": 34},
+{"n": 98, "r": "peu-commune", "nom": "Daniel Fahrenheit", "pv": 48},
+{"n": 99, "r": "peu-commune", "nom": "Anders Celsius", "pv": 48},
 {"n": 100, "r": "commune", "nom": "René-Robert de La Salle", "pv": 34},
 {"n": 101, "r": "commune", "nom": "John Hanning Speke", "pv": 35},
 {"n": 102, "r": "commune", "nom": "James Bruce", "pv": 35},
 {"n": 103, "r": "commune", "nom": "Mungo Park", "pv": 35},
-{"n": 104, "r": "commune", "nom": "Jules Ferry", "pv": 35},
-{"n": 105, "r": "commune", "nom": "Léon Gambetta", "pv": 35},
+{"n": 104, "r": "rare", "nom": "Jules Ferry", "pv": 70},
+{"n": 105, "r": "peu-commune", "nom": "Léon Gambetta", "pv": 45},
 {"n": 106, "r": "commune", "nom": "Harald Hardrada", "pv": 35},
 {"n": 107, "r": "commune", "nom": "Irène l'Athénienne", "pv": 35},
 {"n": 108, "r": "commune", "nom": "José de Acosta", "pv": 35},
 {"n": 109, "r": "commune", "nom": "José Martí", "pv": 35},
-{"n": 110, "r": "commune", "nom": "Stendhal", "pv": 36},
-{"n": 111, "r": "commune", "nom": "Alphonse de Lamartine", "pv": 36},
-{"n": 112, "r": "commune", "nom": "François-René de Chateaubriand", "pv": 36},
+{"n": 110, "r": "rare", "nom": "Stendhal", "pv": 68},
+{"n": 111, "r": "peu-commune", "nom": "Alphonse de Lamartine", "pv": 45},
+{"n": 112, "r": "peu-commune", "nom": "François-René de Chateaubriand", "pv": 50},
 {"n": 113, "r": "commune", "nom": "Sophie Scholl", "pv": 36},
 {"n": 114, "r": "commune", "nom": "Claus von Stauffenberg", "pv": 36},
 {"n": 115, "r": "commune", "nom": "Käthe Kollwitz", "pv": 36},
 {"n": 116, "r": "commune", "nom": "Fritz Lang", "pv": 36},
 {"n": 117, "r": "commune", "nom": "Clara Zetkin", "pv": 36},
 {"n": 118, "r": "commune", "nom": "François Arago", "pv": 37},
-{"n": 119, "r": "commune", "nom": "Arthur Rimbaud", "pv": 37},
+{"n": 119, "r": "rare", "nom": "Arthur Rimbaud", "pv": 75},
 {"n": 120, "r": "commune", "nom": "Salvador Allende", "pv": 37},
-{"n": 121, "r": "commune", "nom": "Václav Havel", "pv": 37},
+{"n": 121, "r": "peu-commune", "nom": "Václav Havel", "pv": 55},
 {"n": 122, "r": "commune", "nom": "Norodom Sihanouk", "pv": 37},
 {"n": 123, "r": "commune", "nom": "Darius III", "pv": 37},
-{"n": 124, "r": "commune", "nom": "Gustave Flaubert", "pv": 37},
-{"n": 125, "r": "commune", "nom": "Pierre Corneille", "pv": 37},
-{"n": 126, "r": "commune", "nom": "Jean Racine", "pv": 38},
+{"n": 124, "r": "rare", "nom": "Gustave Flaubert", "pv": 74},
+{"n": 125, "r": "rare", "nom": "Pierre Corneille", "pv": 73},
+{"n": 126, "r": "rare", "nom": "Jean Racine", "pv": 72},
 {"n": 127, "r": "commune", "nom": "Assurbanipal", "pv": 37},
-{"n": 128, "r": "commune", "nom": "Nabuchodonosor II", "pv": 38},
+{"n": 128, "r": "peu-commune", "nom": "Nabuchodonosor II", "pv": 52},
 {"n": 129, "r": "commune", "nom": "Séthi Ier", "pv": 38},
 {"n": 130, "r": "commune", "nom": "Ramsès III", "pv": 38},
 {"n": 131, "r": "commune", "nom": "Alfred le Grand", "pv": 38},
-{"n": 132, "r": "commune", "nom": "Ötzi", "pv": 38},
+{"n": 132, "r": "rare", "nom": "Ötzi", "pv": 66},
 {"n": 133, "r": "commune", "nom": "Nicolas Poussin", "pv": 38},
 {"n": 134, "r": "commune", "nom": "Satyendra Nath Bose", "pv": 39},
 {"n": 135, "r": "commune", "nom": "C. V. Raman", "pv": 39},
-{"n": 136, "r": "commune", "nom": "Antonie van Leeuwenhoek", "pv": 39},
-{"n": 137, "r": "commune", "nom": "Honoré de Balzac", "pv": 39},
-{"n": 138, "r": "commune", "nom": "Alexandre Dumas", "pv": 39},
+{"n": 137, "r": "epique", "nom": "Honoré de Balzac", "pv": 81},
+{"n": 138, "r": "epique", "nom": "Alexandre Dumas", "pv": 86},
 {"n": 139, "r": "commune", "nom": "Humphry Davy", "pv": 39},
-{"n": 140, "r": "commune", "nom": "Joseph-Louis Lagrange", "pv": 39},
+{"n": 140, "r": "peu-commune", "nom": "Joseph-Louis Lagrange", "pv": 50},
 {"n": 141, "r": "commune", "nom": "Hugo Grotius", "pv": 39},
 {"n": 142, "r": "commune", "nom": "Jan Hus", "pv": 39},
 {"n": 143, "r": "commune", "nom": "Jayavarman VII", "pv": 39},
@@ -8206,18 +8233,17 @@ const CARTES = [
 {"n": 145, "r": "commune", "nom": "Dušan le Grand", "pv": 39},
 {"n": 146, "r": "commune", "nom": "Paul Cornu", "pv": 39},
 {"n": 147, "r": "commune", "nom": "Henri Potez", "pv": 39},
-{"n": 148, "r": "commune", "nom": "Ibn Khaldoun", "pv": 39},
-{"n": 149, "r": "commune", "nom": "Soliman le Magnifique", "pv": 39},
-{"n": 151, "r": "peu-commune", "nom": "Preston Tucker", "pv": 40},
+{"n": 149, "r": "rare", "nom": "Soliman le Magnifique", "pv": 76},
+{"n": 151, "r": "peu-commune", "nom": "Preston Tucker", "pv": 40, "ret": true},
 {"n": 152, "r": "peu-commune", "nom": "Jean Bertin", "pv": 40},
 {"n": 153, "r": "peu-commune", "nom": "Freydís Eiríksdóttir", "pv": 41},
 {"n": 154, "r": "peu-commune", "nom": "Kittur Rani Chennamma", "pv": 41},
 {"n": 155, "r": "peu-commune", "nom": "Judith Leyster", "pv": 42},
-{"n": 156, "r": "peu-commune", "nom": "Salote Tupou III", "pv": 42},
+{"n": 156, "r": "peu-commune", "nom": "Salote Tupou III", "pv": 42, "ret": true},
 {"n": 157, "r": "peu-commune", "nom": "Sostrate de Cnide", "pv": 43},
 {"n": 158, "r": "peu-commune", "nom": "Philon de Byzance", "pv": 43},
 {"n": 159, "r": "peu-commune", "nom": "Ctésibios", "pv": 43},
-{"n": 160, "r": "peu-commune", "nom": "Al-Karaji", "pv": 44},
+{"n": 160, "r": "peu-commune", "nom": "Al-Karaji", "pv": 44, "ret": true},
 {"n": 161, "r": "peu-commune", "nom": "Hannon le Navigateur", "pv": 44},
 {"n": 162, "r": "peu-commune", "nom": "Wang Zhaojun", "pv": 45},
 {"n": 163, "r": "peu-commune", "nom": "Béhanzin", "pv": 45},
@@ -8225,7 +8251,7 @@ const CARTES = [
 {"n": 165, "r": "peu-commune", "nom": "Thabit ibn Qurra", "pv": 46},
 {"n": 166, "r": "peu-commune", "nom": "Mieszko Ier", "pv": 46},
 {"n": 167, "r": "peu-commune", "nom": "Tomislav de Croatie", "pv": 46},
-{"n": 168, "r": "peu-commune", "nom": "Norbert Elias", "pv": 46},
+{"n": 168, "r": "peu-commune", "nom": "Norbert Elias", "pv": 46, "ret": true},
 {"n": 169, "r": "peu-commune", "nom": "Mihai Viteazul", "pv": 47},
 {"n": 170, "r": "peu-commune", "nom": "Osei Tutu", "pv": 47},
 {"n": 171, "r": "peu-commune", "nom": "Idris Alooma", "pv": 47},
@@ -8233,16 +8259,16 @@ const CARTES = [
 {"n": 173, "r": "peu-commune", "nom": "Boleslas Ier de Pologne", "pv": 48},
 {"n": 174, "r": "peu-commune", "nom": "Étienne le Grand", "pv": 48},
 {"n": 175, "r": "peu-commune", "nom": "Siméon Ier de Bulgarie", "pv": 48},
-{"n": 176, "r": "peu-commune", "nom": "Bahadur Shah Zafar", "pv": 49},
+{"n": 176, "r": "peu-commune", "nom": "Bahadur Shah Zafar", "pv": 49, "ret": true},
 {"n": 177, "r": "peu-commune", "nom": "Fa Hien", "pv": 49},
 {"n": 178, "r": "peu-commune", "nom": "Kanishka Ier", "pv": 49},
 {"n": 179, "r": "peu-commune", "nom": "Ménandre Ier", "pv": 50},
 {"n": 180, "r": "peu-commune", "nom": "Alp Arslan", "pv": 50},
 {"n": 181, "r": "peu-commune", "nom": "Massinissa", "pv": 50},
-{"n": 182, "r": "peu-commune", "nom": "Philippe le Bel", "pv": 50},
+{"n": 182, "r": "rare", "nom": "Philippe le Bel", "pv": 70},
 {"n": 183, "r": "peu-commune", "nom": "Boris Godounov", "pv": 51},
 {"n": 184, "r": "peu-commune", "nom": "Tahmasp Ier", "pv": 51},
-{"n": 185, "r": "peu-commune", "nom": "Verghese Kurien", "pv": 51},
+{"n": 185, "r": "peu-commune", "nom": "Verghese Kurien", "pv": 51, "ret": true},
 {"n": 186, "r": "peu-commune", "nom": "Robert Hooke", "pv": 51},
 {"n": 187, "r": "peu-commune", "nom": "Andreas Vesalius", "pv": 52},
 {"n": 188, "r": "peu-commune", "nom": "Rudolf Diesel", "pv": 52},
@@ -8263,55 +8289,49 @@ const CARTES = [
 {"n": 203, "r": "peu-commune", "nom": "Thémistocle", "pv": 55},
 {"n": 204, "r": "peu-commune", "nom": "José Rizal", "pv": 55},
 {"n": 205, "r": "peu-commune", "nom": "Tycho Brahe", "pv": 55},
-{"n": 206, "r": "peu-commune", "nom": "Émile Zola", "pv": 56},
-{"n": 207, "r": "peu-commune", "nom": "Emmanuel Kant", "pv": 56},
-{"n": 208, "r": "peu-commune", "nom": "Charles Baudelaire", "pv": 57},
-{"n": 209, "r": "peu-commune", "nom": "Molière", "pv": 57},
-{"n": 210, "r": "peu-commune", "nom": "Victor Hugo", "pv": 57},
-{"n": 211, "r": "peu-commune", "nom": "René Descartes", "pv": 58},
-{"n": 212, "r": "peu-commune", "nom": "Blaise Pascal", "pv": 58},
+{"n": 206, "r": "epique", "nom": "Émile Zola", "pv": 85},
+{"n": 207, "r": "epique", "nom": "Emmanuel Kant", "pv": 83},
+{"n": 208, "r": "rare", "nom": "Charles Baudelaire", "pv": 76},
+{"n": 209, "r": "legendaire", "nom": "Molière", "pv": 93},
+{"n": 210, "r": "mythique", "nom": "Victor Hugo", "pv": 96},
+{"n": 212, "r": "epique", "nom": "Blaise Pascal", "pv": 82},
 {"n": 213, "r": "peu-commune", "nom": "Baruch Spinoza", "pv": 58},
 {"n": 214, "r": "peu-commune", "nom": "Gottfried Leibniz", "pv": 59},
-{"n": 215, "r": "peu-commune", "nom": "Jean-Jacques Rousseau", "pv": 59},
+{"n": 215, "r": "epique", "nom": "Jean-Jacques Rousseau", "pv": 84},
 {"n": 216, "r": "peu-commune", "nom": "Gustave II Adolphe", "pv": 59},
-{"n": 217, "r": "peu-commune", "nom": "Léon Tolstoï", "pv": 59},
-{"n": 219, "r": "rare", "nom": "Néron", "pv": 60},
-{"n": 220, "r": "rare", "nom": "Percy Spencer", "pv": 60},
-{"n": 221, "r": "rare", "nom": "Mary Anderson", "pv": 60},
+{"n": 217, "r": "epique", "nom": "Léon Tolstoï", "pv": 82},
+{"n": 219, "r": "rare", "nom": "Néron", "pv": 72},
+{"n": 220, "r": "peu-commune", "nom": "Percy Spencer", "pv": 45},
+{"n": 221, "r": "peu-commune", "nom": "Mary Anderson", "pv": 42},
 {"n": 222, "r": "rare", "nom": "Xerxès Ier", "pv": 60},
 {"n": 223, "r": "rare", "nom": "Samuel Colt", "pv": 60},
-{"n": 224, "r": "rare", "nom": "Chiang Kai-shek", "pv": 61},
-{"n": 225, "r": "rare", "nom": "Henri VIII", "pv": 61},
-{"n": 226, "r": "rare", "nom": "Leo Baekeland", "pv": 61},
-{"n": 227, "r": "rare", "nom": "John Logie Baird", "pv": 61},
-{"n": 228, "r": "rare", "nom": "Nikolaus Otto", "pv": 61},
+{"n": 225, "r": "rare", "nom": "Henri VIII", "pv": 75},
 {"n": 229, "r": "rare", "nom": "Nicolas II", "pv": 62},
 {"n": 230, "r": "rare", "nom": "Corazon Aquino", "pv": 62},
 {"n": 231, "r": "rare", "nom": "Philo Farnsworth", "pv": 62},
 {"n": 232, "r": "rare", "nom": "Walter Brattain", "pv": 62},
 {"n": 233, "r": "rare", "nom": "Eli Whitney", "pv": 62},
 {"n": 234, "r": "rare", "nom": "Bhimrao Ramji Ambedkar", "pv": 63},
-{"n": 235, "r": "rare", "nom": "George Stephenson", "pv": 63},
-{"n": 236, "r": "rare", "nom": "Zhen Wang", "pv": 63},
+{"n": 236, "r": "rare", "nom": "Zhen Wang", "pv": 63, "ret": true},
 {"n": 237, "r": "rare", "nom": "John Bardeen", "pv": 64},
 {"n": 238, "r": "rare", "nom": "James Watson", "pv": 64},
 {"n": 239, "r": "rare", "nom": "Imhotep", "pv": 65},
 {"n": 240, "r": "rare", "nom": "Hérodote", "pv": 65},
 {"n": 241, "r": "rare", "nom": "Thucydide", "pv": 65},
 {"n": 242, "r": "rare", "nom": "Sophocle", "pv": 65},
-{"n": 243, "r": "rare", "nom": "Tomoe Gozen", "pv": 65},
-{"n": 244, "r": "rare", "nom": "Ban Zhao", "pv": 66},
-{"n": 245, "r": "rare", "nom": "Zhang Zhidong", "pv": 66},
+{"n": 243, "r": "peu-commune", "nom": "Tomoe Gozen", "pv": 48},
+{"n": 244, "r": "peu-commune", "nom": "Ban Zhao", "pv": 50},
+{"n": 245, "r": "rare", "nom": "Zhang Zhidong", "pv": 66, "ret": true},
 {"n": 246, "r": "rare", "nom": "Daniel Cordier", "pv": 66},
 {"n": 247, "r": "rare", "nom": "Henri Frenay", "pv": 67},
-{"n": 248, "r": "rare", "nom": "Razia Sultana", "pv": 67},
-{"n": 249, "r": "rare", "nom": "Patrick Juvet", "pv": 67},
+{"n": 248, "r": "peu-commune", "nom": "Razia Sultana", "pv": 52},
+{"n": 249, "r": "commune", "nom": "Patrick Juvet", "pv": 25},
 {"n": 250, "r": "rare", "nom": "Alexandre Kerenski", "pv": 67},
-{"n": 251, "r": "rare", "nom": "R. K. Narayan", "pv": 68},
-{"n": 252, "r": "rare", "nom": "Ezana d'Aksoum", "pv": 68},
-{"n": 253, "r": "rare", "nom": "Max Jacob", "pv": 69},
-{"n": 254, "r": "rare", "nom": "Sei Shōnagon", "pv": 69},
-{"n": 255, "r": "rare", "nom": "Ziryab", "pv": 69},
+{"n": 251, "r": "peu-commune", "nom": "R. K. Narayan", "pv": 45},
+{"n": 252, "r": "peu-commune", "nom": "Ezana d'Aksoum", "pv": 48},
+{"n": 253, "r": "peu-commune", "nom": "Max Jacob", "pv": 50},
+{"n": 254, "r": "peu-commune", "nom": "Sei Shōnagon", "pv": 50},
+{"n": 255, "r": "peu-commune", "nom": "Ziryab", "pv": 45},
 {"n": 256, "r": "rare", "nom": "Agrippine la Jeune", "pv": 70},
 {"n": 257, "r": "rare", "nom": "Askia Mohammed", "pv": 70},
 {"n": 258, "r": "rare", "nom": "Dian Fossey", "pv": 70},
@@ -8323,13 +8343,13 @@ const CARTES = [
 {"n": 264, "r": "rare", "nom": "Samori Touré", "pv": 71},
 {"n": 265, "r": "rare", "nom": "Zhou Enlai", "pv": 71},
 {"n": 266, "r": "rare", "nom": "Al-Idrisi", "pv": 72},
-{"n": 267, "r": "rare", "nom": "Al-Jazari", "pv": 72},
+{"n": 267, "r": "peu-commune", "nom": "Al-Jazari", "pv": 55},
 {"n": 268, "r": "rare", "nom": "Alexandre II de Russie", "pv": 72},
 {"n": 269, "r": "rare", "nom": "François-Joseph Ier", "pv": 72},
 {"n": 270, "r": "rare", "nom": "Mohammad Mossadegh", "pv": 72},
 {"n": 271, "r": "rare", "nom": "Elizabeth Blackwell", "pv": 73},
 {"n": 272, "r": "rare", "nom": "John Logie Baird", "pv": 73},
-{"n": 273, "r": "rare", "nom": "Kalidasa", "pv": 73},
+{"n": 273, "r": "peu-commune", "nom": "Kalidasa", "pv": 50},
 {"n": 274, "r": "rare", "nom": "Leo Baekeland", "pv": 73},
 {"n": 275, "r": "rare", "nom": "Mikhaïl Boulgakov", "pv": 73},
 {"n": 276, "r": "rare", "nom": "Aung San", "pv": 74},
@@ -8338,12 +8358,12 @@ const CARTES = [
 {"n": 279, "r": "rare", "nom": "Hadrien", "pv": 74},
 {"n": 280, "r": "rare", "nom": "Patrice Lumumba", "pv": 74},
 {"n": 281, "r": "rare", "nom": "Philippe Leclerc", "pv": 74},
-{"n": 282, "r": "rare", "nom": "Vercingétorix", "pv": 74},
+{"n": 282, "r": "legendaire", "nom": "Vercingétorix", "pv": 90},
 {"n": 283, "r": "rare", "nom": "Gerolamo Cardano", "pv": 75},
 {"n": 284, "r": "rare", "nom": "Hipparque de Nicée", "pv": 75},
-{"n": 285, "r": "rare", "nom": "Zhang Heng", "pv": 75},
+{"n": 285, "r": "peu-commune", "nom": "Zhang Heng", "pv": 55},
 {"n": 286, "r": "rare", "nom": "Guglielmo Marconi", "pv": 76},
-{"n": 287, "r": "rare", "nom": "Mozi", "pv": 76},
+{"n": 287, "r": "peu-commune", "nom": "Mozi", "pv": 50},
 {"n": 288, "r": "rare", "nom": "Nikolaus Otto", "pv": 76},
 {"n": 289, "r": "rare", "nom": "Ovide", "pv": 76},
 {"n": 290, "r": "rare", "nom": "Phidias", "pv": 76},
@@ -8356,7 +8376,7 @@ const CARTES = [
 {"n": 297, "r": "rare", "nom": "James Clerk Maxwell", "pv": 78},
 {"n": 298, "r": "rare", "nom": "John Napier", "pv": 78},
 {"n": 299, "r": "rare", "nom": "Claude Ptolémée", "pv": 78},
-{"n": 300, "r": "rare", "nom": "Barry White", "pv": 78},
+{"n": 300, "r": "peu-commune", "nom": "Barry White", "pv": 45},
 {"n": 301, "r": "rare", "nom": "Alexander Graham Bell", "pv": 79},
 {"n": 302, "r": "rare", "nom": "Démocrite", "pv": 79},
 {"n": 303, "r": "rare", "nom": "Erwin Schrödinger", "pv": 79},
@@ -8364,36 +8384,35 @@ const CARTES = [
 {"n": 305, "r": "rare", "nom": "Werner Heisenberg", "pv": 79},
 {"n": 307, "r": "epique", "nom": "Ada Lovelace", "pv": 80},
 {"n": 308, "r": "epique", "nom": "Mary Shelley", "pv": 80},
-{"n": 309, "r": "epique", "nom": "Mary Anning", "pv": 80},
+{"n": 309, "r": "rare", "nom": "Mary Anning", "pv": 68},
 {"n": 310, "r": "epique", "nom": "Ibn Battûta", "pv": 80},
 {"n": 311, "r": "epique", "nom": "Émilie du Châtelet", "pv": 80},
 {"n": 312, "r": "epique", "nom": "Hypatie d'Alexandrie", "pv": 80},
 {"n": 313, "r": "epique", "nom": "Olympe de Gouges", "pv": 80},
-{"n": 314, "r": "epique", "nom": "Mary Wollstonecraft", "pv": 80},
-{"n": 315, "r": "epique", "nom": "Alfred Russel Wallace", "pv": 80},
-{"n": 316, "r": "epique", "nom": "Toni Morrison", "pv": 80},
+{"n": 314, "r": "rare", "nom": "Mary Wollstonecraft", "pv": 75},
+{"n": 315, "r": "rare", "nom": "Alfred Russel Wallace", "pv": 72},
+{"n": 316, "r": "rare", "nom": "Toni Morrison", "pv": 76},
 {"n": 317, "r": "epique", "nom": "Ibn Rushd", "pv": 81},
-{"n": 318, "r": "epique", "nom": "Hildegarde de Bingen", "pv": 81},
+{"n": 318, "r": "rare", "nom": "Hildegarde de Bingen", "pv": 75},
 {"n": 319, "r": "epique", "nom": "Hokusai", "pv": 81},
-{"n": 320, "r": "epique", "nom": "William Harvey", "pv": 81},
 {"n": 321, "r": "epique", "nom": "Antonie van Leeuwenhoek", "pv": 81},
-{"n": 322, "r": "epique", "nom": "Bartolomeu Dias", "pv": 81},
-{"n": 323, "r": "epique", "nom": "Pierre l'Ermite", "pv": 81},
+{"n": 322, "r": "rare", "nom": "Bartolomeu Dias", "pv": 76},
+{"n": 323, "r": "peu-commune", "nom": "Pierre l'Ermite", "pv": 55},
 {"n": 324, "r": "epique", "nom": "Christine de Pizan", "pv": 81},
 {"n": 325, "r": "epique", "nom": "James Cook", "pv": 82},
-{"n": 326, "r": "epique", "nom": "Túpac Amaru II", "pv": 82},
+{"n": 326, "r": "rare", "nom": "Túpac Amaru II", "pv": 70},
 {"n": 327, "r": "epique", "nom": "Amelia Earhart", "pv": 82},
 {"n": 328, "r": "epique", "nom": "Toussaint Louverture", "pv": 81},
 {"n": 329, "r": "epique", "nom": "William Wallace", "pv": 82},
-{"n": 330, "r": "epique", "nom": "Boudicca", "pv": 83},
+{"n": 330, "r": "rare", "nom": "Boudicca", "pv": 74},
 {"n": 331, "r": "epique", "nom": "Hannibal Barca", "pv": 83},
 {"n": 332, "r": "epique", "nom": "Scipion l'Africain", "pv": 83},
 {"n": 333, "r": "epique", "nom": "Louis Armstrong", "pv": 83},
 {"n": 334, "r": "epique", "nom": "Sitting Bull", "pv": 83},
 {"n": 335, "r": "epique", "nom": "Harriet Tubman", "pv": 83},
-{"n": 336, "r": "epique", "nom": "Frederick Douglass", "pv": 84},
-{"n": 337, "r": "epique", "nom": "Susan B. Anthony", "pv": 84},
-{"n": 338, "r": "epique", "nom": "Louis Pasteur", "pv": 84},
+{"n": 336, "r": "rare", "nom": "Frederick Douglass", "pv": 77},
+{"n": 337, "r": "rare", "nom": "Susan B. Anthony", "pv": 73},
+{"n": 338, "r": "legendaire", "nom": "Louis Pasteur", "pv": 93},
 {"n": 339, "r": "epique", "nom": "Gregor Mendel", "pv": 84},
 {"n": 340, "r": "epique", "nom": "Emiliano Zapata", "pv": 85},
 {"n": 341, "r": "epique", "nom": "Florence Nightingale", "pv": 85},
@@ -8401,33 +8420,32 @@ const CARTES = [
 {"n": 343, "r": "epique", "nom": "Nikola Tesla", "pv": 85},
 {"n": 344, "r": "epique", "nom": "Thomas Edison", "pv": 85},
 {"n": 345, "r": "epique", "nom": "Rosa Parks", "pv": 85},
-{"n": 346, "r": "epique", "nom": "Rachel Carson", "pv": 85},
-{"n": 347, "r": "epique", "nom": "Wangari Maathai", "pv": 86},
+{"n": 346, "r": "rare", "nom": "Rachel Carson", "pv": 72},
+{"n": 347, "r": "rare", "nom": "Wangari Maathai", "pv": 72},
 {"n": 348, "r": "epique", "nom": "Niels Bohr", "pv": 86},
 {"n": 349, "r": "epique", "nom": "Emmy Noether", "pv": 86},
-{"n": 350, "r": "epique", "nom": "Lise Meitner", "pv": 86},
-{"n": 351, "r": "epique", "nom": "Chien-Shiung Wu", "pv": 87},
-{"n": 352, "r": "epique", "nom": "Katherine Johnson", "pv": 87},
+{"n": 350, "r": "rare", "nom": "Lise Meitner", "pv": 77},
+{"n": 351, "r": "rare", "nom": "Chien-Shiung Wu", "pv": 74},
+{"n": 352, "r": "rare", "nom": "Katherine Johnson", "pv": 76},
 {"n": 353, "r": "epique", "nom": "Alan Turing", "pv": 87},
 {"n": 354, "r": "epique", "nom": "Georges Clemenceau", "pv": 87},
-{"n": 355, "r": "epique", "nom": "Hedy Lamarr", "pv": 88},
+{"n": 355, "r": "rare", "nom": "Hedy Lamarr", "pv": 76},
 {"n": 356, "r": "epique", "nom": "Steve Jobs", "pv": 88},
-{"n": 357, "r": "epique", "nom": "Desmond Tutu", "pv": 88},
-{"n": 358, "r": "epique", "nom": "Kofi Annan", "pv": 89},
-{"n": 359, "r": "epique", "nom": "Václav Havel", "pv": 89},
+{"n": 357, "r": "rare", "nom": "Desmond Tutu", "pv": 76},
+{"n": 358, "r": "rare", "nom": "Kofi Annan", "pv": 75},
 {"n": 360, "r": "epique", "nom": "Avicenne", "pv": 89},
 {"n": 362, "r": "legendaire", "nom": "Aliénor d'Aquitaine", "pv": 90},
-{"n": 363, "r": "legendaire", "nom": "John Locke", "pv": 90},
-{"n": 364, "r": "legendaire", "nom": "Lao Tseu", "pv": 90},
-{"n": 365, "r": "legendaire", "nom": "Ibn Khaldoun", "pv": 91},
-{"n": 366, "r": "legendaire", "nom": "Zhuge Liang", "pv": 91},
+{"n": 363, "r": "epique", "nom": "John Locke", "pv": 82},
+{"n": 364, "r": "epique", "nom": "Lao Tseu", "pv": 84},
+{"n": 365, "r": "epique", "nom": "Ibn Khaldoun", "pv": 81},
+{"n": 366, "r": "rare", "nom": "Zhuge Liang", "pv": 76},
 {"n": 367, "r": "legendaire", "nom": "Élisabeth Ire", "pv": 91},
 {"n": 368, "r": "legendaire", "nom": "Otto von Bismarck", "pv": 91},
-{"n": 369, "r": "legendaire", "nom": "Mansa Moussa", "pv": 92},
-{"n": 370, "r": "legendaire", "nom": "Simón Bolívar", "pv": 92},
-{"n": 371, "r": "legendaire", "nom": "Shaka Zulu", "pv": 92},
-{"n": 372, "r": "legendaire", "nom": "Sun Tzu", "pv": 92},
-{"n": 373, "r": "legendaire", "nom": "Frédéric II de Prusse", "pv": 92},
+{"n": 369, "r": "epique", "nom": "Mansa Moussa", "pv": 84},
+{"n": 370, "r": "epique", "nom": "Simón Bolívar", "pv": 86},
+{"n": 371, "r": "rare", "nom": "Shaka Zulu", "pv": 72},
+{"n": 372, "r": "epique", "nom": "Sun Tzu", "pv": 87},
+{"n": 373, "r": "epique", "nom": "Frédéric II de Prusse", "pv": 83},
 {"n": 374, "r": "legendaire", "nom": "Saladin", "pv": 93},
 {"n": 375, "r": "legendaire", "nom": "Catherine II de Russie", "pv": 93},
 {"n": 376, "r": "legendaire", "nom": "Pierre le Grand", "pv": 93},
@@ -8437,15 +8455,15 @@ const CARTES = [
 {"n": 380, "r": "legendaire", "nom": "Mao Zedong", "pv": 93},
 {"n": 381, "r": "legendaire", "nom": "Franklin D. Roosevelt", "pv": 93},
 {"n": 382, "r": "legendaire", "nom": "Nicolas Copernic", "pv": 93},
-{"n": 383, "r": "legendaire", "nom": "Cyrus le Grand", "pv": 94},
+{"n": 383, "r": "epique", "nom": "Cyrus le Grand", "pv": 85},
 {"n": 384, "r": "legendaire", "nom": "Confucius", "pv": 94},
 {"n": 385, "r": "legendaire", "nom": "Qin Shi Huang", "pv": 94},
-{"n": 386, "r": "legendaire", "nom": "Wu Zetian", "pv": 94},
+{"n": 386, "r": "rare", "nom": "Wu Zetian", "pv": 78},
 {"n": 387, "r": "legendaire", "nom": "Gengis Khan", "pv": 94},
 {"n": 388, "r": "legendaire", "nom": "Jean Moulin", "pv": 94},
 {"n": 389, "r": "legendaire", "nom": "Galilée", "pv": 94},
 {"n": 390, "r": "legendaire", "nom": "Nelson Mandela", "pv": 94},
-{"n": 391, "r": "legendaire", "nom": "Mustafa Kemal Atatürk", "pv": 94},
+{"n": 391, "r": "epique", "nom": "Mustafa Kemal Atatürk", "pv": 88},
 {"n": 392, "r": "legendaire", "nom": "René Descartes", "pv": 94},
 {"n": 394, "r": "mythique", "nom": "Napoléon Bonaparte", "pv": 95},
 {"n": 395, "r": "mythique", "nom": "William Shakespeare", "pv": 95},
@@ -8453,13 +8471,17 @@ const CARTES = [
 {"n": 397, "r": "mythique", "nom": "Mahatma Gandhi", "pv": 96},
 {"n": 398, "r": "mythique", "nom": "Isaac Newton", "pv": 96},
 {"n": 399, "r": "mythique", "nom": "Charles de Gaulle", "pv": 97},
-{"n": 400, "r": "mythique", "nom": "Mahsa Amini", "pv": 97},
+{"n": 400, "r": "rare", "nom": "Mahsa Amini", "pv": 74},
 {"n": 401, "r": "mythique", "nom": "Alexandre le Grand", "pv": 98},
-{"n": 402, "r": "mythique", "nom": "Bob Marley", "pv": 98},
+{"n": 402, "r": "epique", "nom": "Bob Marley", "pv": 86},
 {"n": 403, "r": "mythique", "nom": "Albert Einstein", "pv": 98},
 {"n": 404, "r": "mythique", "nom": "Léonard de Vinci", "pv": 98},
-{"n": 405, "r": "mythique", "nom": "Lucy", "pv": 99}
+{"n": 405, "r": "mythique", "nom": "Lucy", "pv": 95}
 ];
+/* Doublons supprimes (audit d'octobre 2026) : la carte supprimee -> la carte
+   gardee du meme personnage. Une collection qui les a encore les echange
+   (z0o_bourse.js, migration). */
+const CARTES_FUSIONNEES = {136: 321, 148: 365, 211: 392, 224: 262, 226: 274, 227: 272, 228: 288, 235: 293, 320: 296, 359: 121};
 
 /* ==========================================================================
    Cartes EPOK : un pli de 3 cartes de personnages historiques par jour,
@@ -8535,6 +8557,10 @@ function rangRarete(k){ return RARETES.findIndex(r => r.k === k); }
 function carteN(n){ return CARTES_PAR_N[n] || null; }
 const CARTES_PAR_N = {};
 (typeof CARTES !== "undefined" ? CARTES : []).forEach(c => { CARTES_PAR_N[c.n] = c; });
+/* Un doublon supprime (audit d'octobre 2026) se lit comme la carte gardee. */
+if(typeof CARTES_FUSIONNEES !== "undefined") Object.keys(CARTES_FUSIONNEES).forEach(s => { CARTES_PAR_N[s] = CARTES_PAR_N[CARTES_FUSIONNEES[s]]; });
+/* Les cartes du jeu : sans les cartes retirees des packs, sauf celles qu'on a. */
+function cartesDuJeu(m){ return CARTES.filter(c => !c.ret || (m && m[c.n])); }
 function dossierCartes(){
   if(typeof location !== "undefined" && location.protocol === "file:") return CARTES_SITE;
   /* La beta web (epok-beta/) se sert des cartes de la vraie version. */
@@ -8605,8 +8631,8 @@ function cartesPossedees(){
   const m = {};
   /* Beta : les cartes de la bourse, sur le serveur. */
   const b = typeof bourse === "function" ? bourse() : null;
-  if(b){ ["cartes", "importe"].forEach(c => Object.keys(b[c]).forEach(k => b[c][k].forEach(n => { if(carteN(n)) m[n] = (m[n] || 0) + 1; }))); return m; }
-  Object.values(collection().plis).forEach(p => p.forEach(n => { m[n] = (m[n] || 0) + 1; }));
+  if(b){ ["cartes", "importe"].forEach(c => Object.keys(b[c]).forEach(k => b[c][k].forEach(n => { const x = carteN(n); if(x) m[x.n] = (m[x.n] || 0) + 1; }))); return m; }
+  Object.values(collection().plis).forEach(p => p.forEach(n => { const x = carteN(n); if(x) m[x.n] = (m[x.n] || 0) + 1; }));
   /* Les doubles recycles en ecus (z0m_ecus.js) ne comptent plus. */
   const rec = (ETAT.ecus && ETAT.ecus.recycles) || {};
   Object.keys(rec).forEach(n => { if(m[n]){ m[n] = Math.max(1, m[n] - rec[n]); } });
@@ -8651,7 +8677,7 @@ function tirerPli(date){
     const garantie = t === "u" || (t === "p" && i === PLI_NB - 1);
     let r = tirerRarete(alea, garantie ? PLI_CHANCES_3E : PLI_CHANCES);
     let pile = [];
-    for(; r >= 0; r--){ pile = CARTES.filter(c => c.r === RARETES[r].k && pli.indexOf(c.n) < 0); if(pile.length) break; }
+    for(; r >= 0; r--){ pile = CARTES.filter(c => c.r === RARETES[r].k && !c.ret && pli.indexOf(c.n) < 0); if(pile.length) break; }
     if(pile.length) pli.push(pile[Math.floor(alea() * pile.length)].n);
   }
   return pli;
@@ -8819,8 +8845,8 @@ function rendreCartes(){
   }
 
   if(typeof BETA !== "undefined" && BETA && typeof carteVitrine === "function") parts.push(carteVitrine());
-  const total = CARTES.length, nbDiff = Object.keys(m).length;
-  const liste = CARTES.filter(c => (!ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0) && (ALBUM.vue === "toutes" || m[c.n]))
+  const jeu = cartesDuJeu(m), total = jeu.length, nbDiff = Object.keys(m).length;
+  const liste = jeu.filter(c => (!ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0) && (ALBUM.vue === "toutes" || m[c.n]))
     .slice().sort(ordreAlbum);
   parts.push(`<div class="carte">
     <p class="capitales" style="margin:0 0 4px">Album</p>
@@ -8828,7 +8854,7 @@ function rendreCartes(){
     <p class="album-chiffres"><b>${nbDiff}</b>/${total} cartes &#8226; <b>${scoreCollection(m).toLocaleString("fr-FR")}</b> PV</p>
     <div class="st-classes album-filtres" role="group" aria-label="Filtrer par rareté">
       <button class="st-puce${!ALBUM.filtres.length ? " actif" : ""}" data-action="album-filtre" data-r="*" aria-pressed="${!ALBUM.filtres.length}">Toutes</button>
-      ${RARETES.map(r => { const n = CARTES.filter(c => c.r === r.k).length, a = CARTES.filter(c => c.r === r.k && m[c.n]).length;
+      ${RARETES.map(r => { const n = jeu.filter(c => c.r === r.k).length, a = jeu.filter(c => c.r === r.k && m[c.n]).length;
         const on = ALBUM.filtres.indexOf(r.k) >= 0;
         return `<button class="st-puce${on ? " actif" : ""}" data-action="album-filtre" data-r="${r.k}" aria-pressed="${on}" style="--rar:${r.c}">${r.nom} ${a}/${n}</button>`; }).join("")}
     </div>
@@ -8869,7 +8895,7 @@ function logoEpok(x, y, s, e, arc){
     <path d="M59.78,21.3 A36,36 0 0 1 62.66,76.27" fill="none" stroke="${arc}" stroke-width="6.4" stroke-linecap="round"/></g></g>`;
 }
 function dessinBooster(id){
-  const OR = "#e5c46e", OS = "#8c6a22", n = CARTES.length;
+  const OR = "#e5c46e", OS = "#8c6a22", n = CARTES.filter(c => !c.ret).length;
   /* Soudures dentelees : pointes vers le haut en haut, vers le bas en bas. */
   let haut = "M0,0", bas = "M0,274 H200";
   for(let x = 0; x <= 200; x += 5) haut += ` L${x},${x % 10 ? 4 : 0}`;
@@ -9442,6 +9468,8 @@ function missionsDuJour(){
   const d = aujourdhui(), h = (ETAT.historique || []).filter(x => x && x.d === d);
   const qj = ETAT.quotidien && ETAT.quotidien[d];
   const faites = (ecus().missions[d]) || {};
+  /* Le jeu de cartes sans Brevet n'a pas de cours : ses missions (z0p_apps.js). */
+  if(appJeu() && !modeBrevet()){ const lj = missionsJeu(d, qj); lj.forEach(m => { m.creditee = !!faites[m.id]; }); return lj; }
   const l = [
     { id: "qj", titre: "Jouer le Quiz of the Day", faite: !!(qj && qj.fini) },
     { id: "qcm", titre: "Réussir un QCM (7/10 ou plus)", faite: h.some(x => TYPES_QCM.indexOf(x.type) >= 0 && x.total > 0 && x.justes / x.total >= 0.7) },
@@ -9509,7 +9537,10 @@ function doublesARecycler(){
   let n = 0, v = 0;
   if(!b) return { n, v };
   Object.keys(b.cartes).forEach(k => { const vus = {};
-    b.cartes[k].forEach(x => { if(vus[x] || b.importe[k].indexOf(x) >= 0){ const c = carteN(x); if(c){ n++; v += RECYCLAGE[c.r] || 0; } } vus[x] = true; }); });
+    /* La valeur de la case (comme les regles), pas celle de la carte : avant
+       la migration, une carte peut encore etre dans la case de son ancienne rarete. */
+    const val = RECYCLAGE[(RARETES[+k.slice(1)] || {}).k] || 0;
+    b.cartes[k].forEach(x => { if(vus[x] || b.importe[k].indexOf(x) >= 0){ if(carteN(x)){ n++; v += val; } } vus[x] = true; }); });
   return { n, v };
 }
 
@@ -9779,7 +9810,8 @@ const SOC = { moi: null, amities: null, defis: null, joueurs: {}, points: {}, ma
 function nettoyerSocial(x){
   const r = { vitrine: [], appliques: {} };
   if(!x || typeof x !== "object") return r;
-  if(Array.isArray(x.vitrine)) r.vitrine = x.vitrine.filter(n => Number.isInteger(n) && carteN(n)).slice(0, 3);
+  if(Array.isArray(x.vitrine)) r.vitrine = x.vitrine.filter(n => Number.isInteger(n) && carteN(n)).map(n => carteN(n).n)
+    .filter((n, i, l) => l.indexOf(n) === i).slice(0, 3);
   Object.keys(x.appliques || {}).forEach(k => { if(/^[0-9A-Za-z]{6,30}$/.test(k) && x.appliques[k] === true) r.appliques[k] = true; });
   return r;
 }
@@ -10168,7 +10200,7 @@ function profilSocial(uid){
   if(!socialPossible() || uid === COMPTE.user.uid) return Promise.resolve("");
   return Promise.all([lireJoueur(uid), chargerSocial(false)]).then(([j]) => {
     const am = (SOC.amities || []).find(x => x.a === uid || x.b === uid);
-    const v = j && Array.isArray(j.vitrine) ? j.vitrine.filter(n => carteN(n)) : [];
+    const v = j && Array.isArray(j.vitrine) ? j.vitrine.filter(n => carteN(n)).map(n => carteN(n).n) : [];
     const nom = j && j.nom || "";
     return (v.length ? `<p class="capitales" style="margin:12px 0 6px">Vitrine</p><div class="pli-jour vitrine">${v.map(n => miniCarte(n, 1)).join("")}</div>` : "")
       + (j && typeof j.elo === "number" ? `<p class="minuscule" style="margin:8px 0 0">Elo ${j.elo}</p>` : "")
@@ -10274,8 +10306,11 @@ function sha256Hex(texte){
 /* ---------- Le tirage, comme les regles (tirage, troisCartes) ----------
    Chaque carte lit 7 chiffres hexadecimaux de l'empreinte : 3 pour la
    rarete (0 a 4 095, les chances de PLI_CHANCES et PLI_CHANCES_3E en
-   4 096es), 4 pour la carte dans sa rarete. */
-const BOURSE_RARETES = { debut: [1, 151, 219, 307, 362, 394], nb: [149, 67, 87, 54, 31, 12] };
+   4 096es), 4 pour la carte dans sa rarete. Les cartes d'une rarete : ses
+   numeros, dans l'ordre, sans les cartes retirees des packs (comme
+   listeTirage dans les regles, ecrite par source/outils/regles_cartes.js). */
+const BOURSE_LISTES = ["commune", "peu-commune", "rare", "epique", "legendaire", "mythique"]
+  .map(r => (typeof CARTES !== "undefined" ? CARTES : []).filter(c => c.r === r && !c.ret).map(c => c.n).sort((a, b) => a - b));
 const BOURSE_SEUILS = [2253, 3359, 3850, 4035, 4084], BOURSE_SEUILS_3E = [0, 0, 2867, 3727, 4014];
 function rareteTireeBourse(h, i, garantie){
   const x = parseInt(h.slice(i * 7, i * 7 + 3), 16), s = garantie ? BOURSE_SEUILS_3E : BOURSE_SEUILS;
@@ -10283,7 +10318,7 @@ function rareteTireeBourse(h, i, garantie){
   while(r < 5 && x >= s[r]) r++;
   return r;
 }
-function carteBourse(r, y, k){ return BOURSE_RARETES.debut[r] + (y + k) % BOURSE_RARETES.nb[r]; }
+function carteBourse(r, y, k){ const l = BOURSE_LISTES[r]; return l[(y + k) % l.length]; }
 /* Les 3 cartes du pack « cle » (type t), cree par le serveur a ms. */
 function tirageBourse(uid, cle, ms, t){
   const h = sha256Hex(uid + "|" + cle + "|" + ms), g = t !== "c";
@@ -10314,11 +10349,11 @@ const CLE_BOURSE = "epok.beta.bourse";
 const PTS_PLAFOND = 600, CARTES_LANCEMENT = Date.UTC(2026, 9, 23);
 const RARETES_BOURSE = ["r0", "r1", "r2", "r3", "r4", "r5"];
 
-function bourseConnectee(){ return typeof BETA !== "undefined" && BETA && compteConfigure() && compteConnecte(); }
+function bourseConnectee(){ return typeof BETA !== "undefined" && BETA && !appCours() && compteConfigure() && compteConnecte(); }
 /* La bourse du joueur connecte : celle du serveur, ou sa copie hors ligne. */
 function bourse(){
   const u = COMPTE.user ? COMPTE.user.uid : null;
-  if(!u || !(typeof BETA !== "undefined" && BETA)) return null;
+  if(!u || !(typeof BETA !== "undefined" && BETA) || appCours()) return null;   /* pas de cartes dans l'application des cours */
   if(BOURSE.uid === u && BOURSE.doc) return BOURSE.doc;
   try{
     const c = JSON.parse(localStorage.getItem(CLE_BOURSE) || "null");
@@ -10473,7 +10508,8 @@ function collectionAImporter(){
   const plis = ((ETAT.collection || {}).plis) || {};
   let l = [];
   Object.keys(plis).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k) || PACKS_OFFERTS.indexOf(k) >= 0 || /^saison-\d{1,3}$/.test(k))
-    .forEach(k => (plis[k] || []).forEach(n => { if(Number.isInteger(n) && carteN(n)) l.push(n); }));
+    /* Un doublon supprime (audit d'octobre 2026) devient la carte gardee. */
+    .forEach(k => (plis[k] || []).forEach(n => { if(Number.isInteger(n) && carteN(n)) l.push(carteN(n).n); }));
   const rar = n => rangRarete(carteN(n).r);
   const max = 3 * (Math.floor((maintenantServeur() - CARTES_LANCEMENT) / 864e5) + 2);
   /* Les plus rares d'abord : ce sont elles qu'on garde si la borne coupe. */
@@ -10516,10 +10552,38 @@ function creerBourse(){
 /* Apres chaque lecture : les gains en attente partent, les rangs atteints
    donnent leurs packs, le podium de saison se verifie. */
 function apresBourse(){
+  migrerBourse();
   envoyerGains();
   reclamerRangs();
   if(typeof verifierPodiumBourse === "function") verifierPodiumBourse();
   if(typeof publierJoueur === "function" && typeof social === "function" && social().vitrine.length) publierJoueur();
+}
+
+/* ---------- La migration (audit des cartes, octobre 2026) ----------
+   Des cartes ont change de rarete, et 10 doublons ont ete fusionnes : la
+   collection est rangee de nouveau, une fois, chaque carte dans la case de
+   sa rarete, le doublon supprime remplace par la carte gardee. Les doubles
+   sont d'abord recycles (en ecus, comme le bouton « Recycler les doubles ») :
+   le serveur n'accepte une collection rangee que sans double. */
+function bourseAMigrer(d){
+  return !!d && ["cartes", "importe"].some(ch => RARETES_BOURSE.some(k => d[ch][k].some(n => {
+    const c = carteN(n); return !c || c.n !== n || "r" + rangRarete(c.r) !== k; })));
+}
+function rangerCartes(c){
+  const r = {}, vus = {}; RARETES_BOURSE.forEach(k => { r[k] = []; });
+  RARETES_BOURSE.forEach(k => c[k].forEach(n => { const x = carteN(n); if(x && !vus[x.n]){ vus[x.n] = true; r["r" + rangRarete(x.r)].push(x.n); } }));
+  return r;
+}
+let MIGRATION = null;
+function migrerBourse(){
+  if(MIGRATION || !bourseSure() || !bourseAMigrer(BOURSE.doc)) return MIGRATION || Promise.resolve(false);
+  MIGRATION = bourseRecyclerTout().catch(() => 0).then(v => opererBourse(d => {
+    if(!bourseAMigrer(d)) return null;
+    const a = copieBourse(d); a.cartes = rangerCartes(d.cartes); a.importe = rangerCartes(d.importe);
+    return { op: { k: "migration" }, apres: a, resultat: v || 0, ecrire: [[["cartes"], a.cartes], [["importe"], a.importe]] };
+  })).then(v => { if(v && typeof annoncerGain === "function") annoncerGain(v); return true; }, () => false)
+    .finally(() => { MIGRATION = null; if(typeof rendre === "function" && typeof ONGLET !== "undefined" && ONGLET === "cartes" && !OUV) rendre(); });
+  return MIGRATION;
 }
 
 /* ---------- Les gains : de l'appareil a la bourse ---------- */
@@ -10579,7 +10643,10 @@ function bourseAcheter(t){
 }
 /* Ouvre le pack « cle » : rend ses 3 cartes, tirees comme le serveur. */
 function bourseOuvrir(cle){
-  return opererBourse(d => {
+  /* La collection d'abord rangee : sinon une carte qui a change de rarete
+     pourrait se retrouver dans 2 cases. */
+  const avant = bourseAMigrer(BOURSE.doc) ? migrerBourse() : Promise.resolve();
+  return avant.then(() => opererBourse(d => {
     const p = d.packs[cle];
     if(!p || !p.cree || !p.cree.horodatage) return null;
     const pli = tirageBourse(BOURSE.uid, cle, msHorodatage(p.cree.horodatage), p.t), a = copieBourse(d);
@@ -10589,7 +10656,7 @@ function bourseOuvrir(cle){
     a.ouverts += 1;
     return { op: { k: "ouvrir", c: cle }, apres: a, resultat: pli, effacer: [["packs", cle]],
       ecrire: touchees.map(k => [["cartes", k], a.cartes[k]]).concat([[["ouverts"], a.ouverts]]) };
-  });
+  }));
 }
 /* Un double : une carte tiree d'un pack dont un autre exemplaire reste
    (tire aussi, ou dans la collection importee, qui ne se recycle pas). */
@@ -10683,6 +10750,158 @@ function verifierPodiumBourse(){
     if(typeof rendre === "function" && ONGLET === "cartes" && !OUV) rendre();
     return null;
   }).catch(() => null);
+}
+/* ==========================================================================
+   LES DEUX APPLICATIONS (octobre 2026) : ce qui change de l'une a l'autre
+   (APP, appJeu, appCours : z00_beta.js).
+
+   Le jeu de cartes (EPOK) :
+   - onglets Cartes, Quiz, Social, Reglages ; on y entre par les cartes ;
+   - l'onglet Quiz : le Quiz of the Day (les combats et les defis viendront
+     ensuite) ;
+   - des missions du jour qui ne demandent pas de cours ;
+   - le mode Brevet, cache : un eleve connecte entre dans Reglages le code
+     que son professeur lui a donne. Le serveur le compare au code du
+     professeur (config/codeBrevet, que seul le professeur lit) : un code
+     faux est refuse, et il n'est ecrit nulle part dans l'application. Le
+     Brevet passe, l'eleve le referme et garde le jeu seul ; pour le
+     rouvrir, il faut de nouveau le code. Un eleve deja en mode Brevet
+     avant la separation le garde, sans code.
+
+   Les cours (EPOK Cours) : onglets Apprendre, Quiz, Reglages ; ni cartes,
+   ni ecus, ni Brevet (bourse() est nulle, modeBrevet() faux).
+   ========================================================================== */
+
+/* L'onglet demande, ou celui qui en tient lieu dans cette application. */
+function ongletPermis(o){
+  if(appCours()) return o === "cartes" || o === "classements" ? "accueil" : o;
+  if(appJeu() && !modeBrevet()) return o === "accueil" || o === "cours" ? "cartes" : o;
+  return o;
+}
+/* Le premier onglet a l'ouverture. */
+function ongletDepart(){
+  if(appCours()) return "accueil";
+  return ETAT.reglages.mode === "culture" ? "cartes" : "accueil";
+}
+
+/* ---------- L'onglet Quiz du jeu ---------- */
+function rendreMenuQuizJeu(){
+  const vue = document.getElementById("vue-quiz");
+  if(!vue) return;
+  vue.innerHTML = [
+    carteQuizJour(),
+    `<div class="carte"><h3 style="margin:0 0 6px">Bientôt</h3>
+      <p class="secondaire" style="margin:0">Des combats de cartes contre les autres joueurs, des guerres de territoire et des clans.</p></div>`
+  ].join("");
+}
+
+/* ---------- Les missions du jour, dans le jeu ----------
+   Rien qui demande un cours : le Quiz of the Day, un bon score au Quiz of
+   the Day, le pack gratuit du jour. */
+function missionsJeu(d, qj){
+  const b = typeof bourse === "function" ? bourse() : null;
+  return [
+    { id: "qj", titre: "Jouer le Quiz of the Day", faite: !!(qj && qj.fini) },
+    { id: "qj7", titre: "7/10 ou plus au Quiz of the Day", faite: !!(qj && qj.fini && qj.justes >= 7) },
+    { id: "pack", titre: "Ouvrir le pack gratuit du jour", faite: !!(b && b.pris && b.pris["j-" + jourBourse()] && !b.packs["j-" + jourBourse()]) }
+  ];
+}
+
+/* ---------- Le code du mode Brevet ---------- */
+const CODE_BREVET = { ouvert: false, enCours: false, message: null, quitter: false, prof: null, profLu: false };
+const CODE_BREVET_FORME = /^[A-Za-z0-9-]{4,30}$/;
+
+/* Dans les reglages du jeu : le Brevet ouvert (et le bouton pour le
+   refermer), ou un discret « code du professeur ». */
+function champBrevetJeu(){
+  const msg = CODE_BREVET.message ? `<p class="avis${CODE_BREVET.message.ok ? " ok" : ""}" style="margin:8px 0 0">${tx(CODE_BREVET.message.t)}</p>` : "";
+  if(modeBrevet()) return `<div class="champ" style="display:block" id="champ-brevet">
+      <span class="txt"><strong>Révisions du brevet</strong>
+        <small>Le mode Brevet est ouvert. Brevet passé&#8239;? Refermez-le&#8239;: il vous reste le jeu de cartes.
+        Pour le rouvrir, il faudra de nouveau le code de votre professeur.</small></span>
+      <div class="saut"></div>
+      ${CODE_BREVET.quitter
+        ? `<div class="rang-boutons"><button class="bouton" data-action="app-brevet-annuler" style="flex:1">Garder</button>
+           <button class="bouton-plein" data-action="app-brevet-quitter" style="flex:1">Oui, refermer</button></div>`
+        : `<button class="bouton petit" data-action="app-brevet-quitter">Refermer le mode Brevet</button>`}
+      ${msg}
+    </div>`;
+  if(!CODE_BREVET.ouvert) return `<div class="champ" style="display:block" id="champ-brevet">
+      <button type="button" class="lien-discret" data-action="app-brevet-ouvrir">Un code de votre professeur&#8239;?</button>${msg}</div>`;
+  const connecte = typeof compteConnecte === "function" && compteConnecte();
+  return `<div class="champ" style="display:block" id="champ-brevet">
+      <span class="txt"><strong>Code du professeur</strong>
+        <small>Il ouvre les révisions du brevet d’histoire-géographie.${connecte ? "" : " Connectez-vous d’abord (Compte, plus haut)."}</small></span>
+      <div class="saut"></div>
+      <div class="b-code-ligne"><input type="text" id="app-code-brevet" autocomplete="off" autocapitalize="characters" spellcheck="false"
+          maxlength="30" aria-label="Code du professeur"${connecte ? "" : " disabled"}>
+        <button class="bouton" data-action="app-brevet-valider" style="width:auto;padding:0 16px"${connecte && !CODE_BREVET.enCours ? "" : " disabled"}>Valider</button></div>
+      ${CODE_BREVET.enCours ? `<p class="minuscule" style="margin:8px 0 0">Vérification…</p>` : ""}${msg}
+    </div>`;
+}
+function majChampBrevet(){
+  const c = document.getElementById("champ-brevet");
+  if(c) c.outerHTML = champBrevetJeu();
+}
+/* L'eleve ecrit son code dans brevetCodes/{uid} : le serveur n'accepte
+   l'ecriture que si c'est celui du professeur. */
+function validerCodeBrevet(code){
+  code = String(code || "").trim().toUpperCase();
+  if(!CODE_BREVET_FORME.test(code)){ CODE_BREVET.message = { t: "Code incorrect." }; majChampBrevet(); return Promise.resolve(false); }
+  if(!(typeof compteConnecte === "function" && compteConnecte())){ CODE_BREVET.message = { t: "Connectez-vous d’abord." }; majChampBrevet(); return Promise.resolve(false); }
+  CODE_BREVET.enCours = true; CODE_BREVET.message = null; majChampBrevet();
+  return qjCommit({ update: { name: qjNomDoc("/brevetCodes/" + COMPTE.user.uid), fields: qjChampsEncodes({ code }) }, updateTransforms: QJ_HEURE })
+    .then(() => {
+      CODE_BREVET.enCours = false; CODE_BREVET.ouvert = false; CODE_BREVET.message = null;
+      ETAT.reglages.mode = "brevet"; QUIZ = null; BCARTES = null; BFRISE = null; ECRAN = { nom: "catalogue" };
+      sauverEtat(); aller("accueil");
+      return true;
+    }, e => {
+      CODE_BREVET.enCours = false;
+      CODE_BREVET.message = { t: e && e.statut === 403 ? "Code incorrect." : "Pas de réseau : réessayez plus tard." };
+      majChampBrevet();
+      return false;
+    });
+}
+function quitterBrevet(){
+  CODE_BREVET.quitter = false; CODE_BREVET.message = { t: "Mode Brevet refermé. Bon jeu !", ok: true };
+  ETAT.reglages.mode = "culture"; QUIZ = null; BCARTES = null; BFRISE = null; ECRAN = { nom: "catalogue" };
+  sauverEtat(); rendre();
+}
+
+/* Dans l'espace professeur (jeu) : le code a donner aux eleves. */
+function blocCodeBrevet(){
+  if(appCours()) return "";
+  if(!CODE_BREVET.profLu){ CODE_BREVET.profLu = true; lireCodeProf(); }
+  return `<p class="capitales" style="margin:0 0 6px">Code du mode Brevet</p>
+    <p class="minuscule" style="margin:0 0 6px">À donner à vos élèves&#8239;: dans le jeu, Réglages, «&#8239;Un code de votre professeur&#8239;?&#8239;».
+      4 à 30 lettres ou chiffres. Le changer n’enlève pas le Brevet à ceux qui l’ont déjà ouvert.</p>
+    <div class="b-code-ligne" style="margin:0 0 14px"><input type="text" id="app-code-prof" value="${esc(CODE_BREVET.prof || "")}" maxlength="30"
+        autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code du mode Brevet">
+      <button class="bouton" data-action="app-code-prof" style="width:auto;padding:0 16px"${PROF.enCours ? " disabled" : ""}>Enregistrer</button></div>`;
+}
+function lireCodeProf(){
+  if(typeof estProfesseur !== "function" || !estProfesseur()) return Promise.resolve(null);
+  return qjDoc("config/codeBrevet").then(d => { CODE_BREVET.prof = qjChamps(d).code || ""; majCarteProfesseur(); return CODE_BREVET.prof; }, () => null);
+}
+function enregistrerCodeProf(code){
+  code = String(code || "").trim().toUpperCase();
+  if(!CODE_BREVET_FORME.test(code)){ PROF.message = "Échec : le code fait 4 à 30 lettres ou chiffres."; majCarteProfesseur(); return Promise.resolve(false); }
+  PROF.enCours = true; PROF.message = null; majCarteProfesseur();
+  return qjCommit({ update: { name: qjNomDoc("/config/codeBrevet"), fields: qjChampsEncodes({ code }) }, updateTransforms: QJ_HEURE })
+    .then(() => { PROF.enCours = false; CODE_BREVET.prof = code; PROF.message = "Code du mode Brevet enregistré : " + code; majCarteProfesseur(); return true; },
+      () => { PROF.enCours = false; PROF.message = "Échec de l’enregistrement du code (réseau, ou règles à publier)."; majCarteProfesseur(); return false; });
+}
+
+function actionApps(a, el){
+  if(a.slice(0, 4) !== "app-") return false;
+  if(a === "app-brevet-ouvrir"){ CODE_BREVET.ouvert = true; CODE_BREVET.message = null; majChampBrevet(); const i = document.getElementById("app-code-brevet"); if(i) i.focus(); }
+  else if(a === "app-brevet-valider"){ const i = document.getElementById("app-code-brevet"); validerCodeBrevet(i ? i.value : ""); }
+  else if(a === "app-brevet-quitter"){ if(CODE_BREVET.quitter) quitterBrevet(); else { CODE_BREVET.quitter = true; majChampBrevet(); } }
+  else if(a === "app-brevet-annuler"){ CODE_BREVET.quitter = false; majChampBrevet(); }
+  else if(a === "app-code-prof"){ const i = document.getElementById("app-code-prof"); enregistrerCodeProf(i ? i.value : ""); }
+  else return false;
+  return true;
 }
 /* =====================================================================
    4. LOGIQUE DE L'APPLICATION
@@ -12014,7 +12233,7 @@ function rendreReglages(){
   parts.push(carteCompte());
   parts.push(carteProfesseur());
   parts.push(`<div class="carte">
-    <div class="champ" style="display:block">
+    ${appJeu() ? champBrevetJeu() : appCours() ? "" : `<div class="champ" style="display:block">
       <span class="txt"><strong>Mode</strong>
         <small>Culture&#8239;: le catalogue complet, une séance par jour. Brevet&#8239;: les révisions
         d’histoire-géographie de 3e, chapitre par chapitre, avec cartes mémoire et repères.</small></span>
@@ -12023,7 +12242,7 @@ function rendreReglages(){
           `<button type="button" data-action="mode" data-mode="${m[0]}"
             aria-pressed="${ETAT.reglages.mode === m[0] ? "true" : "false"}">${m[1]}</button>`).join("")}
       </div>
-    </div>
+    </div>`}
     <div class="champ" style="display:block">
       <span class="txt"><strong>Aide</strong>
         <small>Le tour guidé de l’application, en 30 secondes.</small></span>
@@ -13337,6 +13556,7 @@ function rendreQuiz(){
 }
 
 function rendreMenuQuiz(){
+  if(appJeu()) return rendreMenuQuizJeu();
   const parts = [];
   const c = coursEnCours();
   /* Le Quiz of the Day en tete de l'onglet aussi, comme a l'accueil. */
@@ -13496,8 +13716,13 @@ function avecLesCours(ids, suite, echec){
 
 function rendre(){
   /* Premier lancement : rien d'autre tant que le mode n'est pas choisi. */
-  if(!ETAT.reglages.mode){ afficherChoixMode(); return; }
+  if(!ETAT.reglages.mode){
+    /* Les deux applications ne posent plus la question (z0p_apps.js). */
+    if(appJeu() || appCours()){ ETAT.reglages.mode = "culture"; sauverEtat(); }
+    else { afficherChoixMode(); return; }
+  }
   cacherChoixMode();
+  ONGLET = ongletPermis(ONGLET);
   /* Juste apres le choix du mode : creer un compte ou se connecter. */
   if(doitProposerCompte()) afficherEcranCompte();
   document.body.dataset.onglet = ONGLET;   /* pilote l'en-tete compact */
@@ -13506,6 +13731,7 @@ function rendre(){
   /* Deux lignes courtes : elles tiennent entre la marque et l'insigne,
      centres a cote d'elles. */
   if(sous) sous.innerHTML = modeBrevet() ? "Révisions du brevet<br>histoire-géographie de 3e"
+                                         : appCours() ? "Cours d’approfondissement" : appJeu() ? "Le jeu de cartes<br>de l’histoire"
                                          : typeof BETA !== "undefined" && BETA ? "Culture historique" : "Culture historique<br>une séance par jour";
   /* Le filet de defilement n'a de sens que pendant la lecture d'une seance. */
   document.body.dataset.lecture =
@@ -13583,8 +13809,12 @@ function majOnglets(){
   if(!(typeof BETA !== "undefined" && BETA)) return;
   const nav = document.querySelector("nav.onglets");
   if(!nav) return;
-  const l = modeBrevet()
+  const l = appCours()
+    ? [["accueil", "Apprendre", "apprendre"], ["quiz", "Quiz", "quiz"], ["reglages", "Réglages", "reglages"]]
+    : modeBrevet()
     ? [["accueil", "Brevet", "brevet"], ["cartes", "Cartes", "cartes"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]]
+    : appJeu()
+    ? [["cartes", "Cartes", "cartes"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]]
     : [["cartes", "Cartes", "cartes"], ["accueil", "Apprendre", "apprendre"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]];
   const sig = l.map(x => x[0] + x[1]).join();
   if(nav.dataset.sig === sig) return;
@@ -13618,7 +13848,7 @@ function rendreClassements(){
 }
 
 function aller(onglet, haut){
-  ONGLET = onglet;
+  ONGLET = ongletPermis(onglet);
   rendre();
   inscrireNav();
   if(haut !== false) window.scrollTo(0,0);
@@ -13779,7 +14009,7 @@ document.addEventListener("click", function(ev){
   const el = ev.target.closest("[data-action]");
   if(!el) return;
   const a = el.dataset.action;
-  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el))) return;
+  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el)) || (typeof actionApps === "function" && actionApps(a, el))) return;
 
   /* -- Navigation generale -- */
   if(a === "social-vue"){ VUE_SOCIAL = el.dataset.vue === "classements" ? "classements" : "amis"; rendre(); return; }
@@ -14214,7 +14444,8 @@ if(typeof document !== "undefined") document.addEventListener("visibilitychange"
 (function(){
   let m = null;
   try{ m = new URLSearchParams(location.search).get("mode"); }catch(e){}
-  if(!ETAT.reglages.mode && (m === "culture" || m === "brevet")){ ETAT.reglages.mode = m; sauverEtat(); }
+  /* Dans le jeu, le Brevet ne s'ouvre qu'avec le code du professeur. */
+  if(!ETAT.reglages.mode && (m === "culture" || (m === "brevet" && !appJeu() && !appCours()))){ ETAT.reglages.mode = m; sauverEtat(); }
 })();
 /* Version web (https) : fonctionnement hors ligne par le service worker,
    et stockage persistant, pour que le navigateur n'efface pas la
@@ -14237,8 +14468,9 @@ if(typeof location !== "undefined" && location.protocol === "https:"){
 }
 /* Beta Ecus : en mode Culture, on entre par les cartes. */
 if(typeof BETA !== "undefined" && BETA){
-  if(document.body && document.body.classList) document.body.classList.add("beta");
-  if(ETAT.reglages.mode === "culture") ONGLET = "cartes";
+  if(document.body && document.body.classList) document.body.classList.add("beta", "app-" + APP);
+  if(appCours()) document.title = "EPOK Cours";
+  ONGLET = ongletDepart();
 }
 appliquerCharte();
 rendre();
