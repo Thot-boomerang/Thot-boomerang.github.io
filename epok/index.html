@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-fkGBLcjL+TIQIvPdEeas6MJnWFA8/54LWKaPJ2io1z0=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-30Ddn6W15qz1C7Qjlt5JvwPI0L0UbJ/nI0/8RgW5ISk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1187,6 +1187,15 @@ body[data-choix="1"]{overflow:hidden}
 .compte-ou{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--texte-2);font-size:13px}
 .compte-ou::before,.compte-ou::after{content:"";flex:1;border-top:1px solid var(--laiton)}
 .b-code-ligne{display:flex;gap:8px;align-items:stretch}
+/* « Comment gagner des ecus ? » : le bareme et le journal du jour. */
+.detail-ecus{margin-top:10px;border-top:1px solid var(--trait, rgba(0,0,0,.12));padding-top:8px}
+.detail-ecus summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--texte-2)}
+.bareme-ecus{width:100%;border-collapse:collapse;margin-top:8px;font-size:13.5px}
+.bareme-ecus th{text-align:left;font-weight:400;padding:4px 8px 4px 0}
+.bareme-ecus td{text-align:right;padding:4px 0;white-space:nowrap}
+.bareme-ecus tr+tr th,.bareme-ecus tr+tr td{border-top:1px dashed var(--trait, rgba(0,0,0,.12))}
+.journal-ecus{list-style:none;margin:0;padding:0;font-size:13.5px}
+.journal-ecus li{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
 /* L'application des cours : ni ecus ni packs. */
 body.app-cours #solde-ecus, body.app-cours .bulle-pack{display:none !important}
 .b-code-ligne input{flex:1;min-width:0;min-height:46px;padding:8px 12px;font:inherit;color:var(--texte);
@@ -6263,8 +6272,8 @@ if(typeof window !== "undefined"){
 
 const AIDES = {
   ecus: { titre: "Les écus", corps: () => `<ul class="aide-liste">
-    <li>Chaque point gagné rapporte 1 écu, ${ECU_PLAFOND} écus par jour au plus.</li>
-    <li>Un QCM refait&#8239;: 1 écu par bonne réponse (${ECU_REVISION} par jour).</li>
+    <li>Quiz of the Day&#8239;: ${ECU_QJ_BONNE} écus par bonne réponse. Missions&#8239;: ${ECU_MISSION} écus chacune.</li>
+    <li>${ECU_PLAFOND} écus par jour au plus. Tout le barème&#8239;: sous les missions.</li>
     <li>Les écus achètent des boosters, gardés sur le serveur&#8239;: impossible d’en créer.</li></ul>` },
   boutique: { titre: "Boutique", corps: () => `<ul class="aide-liste">
     <li><strong>Classique</strong>&#8239;: 3 cartes, toutes raretés.</li>
@@ -6272,7 +6281,7 @@ const AIDES = {
     <li><strong>Ultra premium</strong>&#8239;: 3 cartes rares ou mieux.</li></ul>` },
   defis: { titre: "Défis entre amis", corps: () => `<ul class="aide-liste">
     <li>5 questions d’anciens Quiz of the Day, 30 secondes chacune.</li>
-    <li>Votre ami a 24 heures pour jouer les mêmes&#8239;; le gagnant prend 5 écus.</li>
+    <li>Un défi par jour avec chaque ami&#8239;; 24 heures pour répondre, 5 écus au gagnant.</li>
     <li>L’Elo monte quand vous gagnez, comme aux échecs.</li></ul>` },
   passe: { titre: "Pass de saison", corps: () => `<ul class="aide-liste">
     <li>Chaque tranche de ${PASSE_PALIER} écus gagnés pendant la saison ouvre un palier.</li>
@@ -9393,7 +9402,16 @@ if(typeof document !== "undefined") document.addEventListener("error", ev => {
    saison (d'apres le podium).
    ========================================================================== */
 
-const ECU_PLAFOND = 150, ECU_REVISION = 30, ECU_DEPART = 300, ECU_MISSION = 20;
+/* Le bareme (octobre 2026), montre au joueur (« Gagner des ecus ») :
+   - Quiz of the Day : 2 ecus par bonne reponse ; podium du jour 15 / 10 / 5,
+     de la semaine 30 / 20 / 10 ;
+   - 3 missions du jour : 10 ecus chacune ;
+   - serie : 1 ecu par jour de suite, 10 au plus ;
+   - defi gagne : 5 ecus (z0n_social.js) ;
+   - Brevet (avec le code) : 1 ecu par point ;
+   - 100 ecus par jour au plus (le serveur, lui, refuse au-dela de 150). */
+const ECU_PLAFOND = 100, ECU_REVISION = 30, ECU_DEPART = 300, ECU_MISSION = 10;
+const ECU_QJ_BONNE = 2, ECU_QJ_PODIUM_JOUR = [15, 10, 5], ECU_QJ_PODIUM_SEMAINE = [30, 20, 10], ECU_SERIE_MAX = 10;
 /* Hors ligne, les gains attendent sur l'appareil : 3 jours au plus. */
 const ATTENTE_MAX = 3 * ECU_PLAFOND;
 const PRIX_PACKS = { c: 100, p: 250, u: 600 };
@@ -9415,7 +9433,8 @@ const PASSE = Array.from({ length: 25 }, (_, k) => {
    ete gagne chaque jour, les missions et series deja comptees, et ce qui
    attend d'etre envoye a la bourse (attente : ecus, attentePts : points). */
 function etatEcusVierge(){
-  return { importe: false, uid: null, ref: null, refPts: null, jours: {}, revision: {}, missions: {}, series: {}, attente: 0, attentePts: 0 };
+  return { importe: false, uid: null, ref: null, refPts: null, jours: {}, revision: {}, missions: {}, series: {}, attente: 0, attentePts: 0,
+           qj: null, qjs: null, journal: {} };
 }
 function nettoyerEcus(x){
   const r = etatEcusVierge();
@@ -9431,8 +9450,18 @@ function nettoyerEcus(x){
   dates(x.jours, r.jours, entier);
   dates(x.revision, r.revision, entier);
   dates(x.series, r.series, v => v === true);
+  /* Les identifiants de mission ont des chiffres (« qj7 ») : avant octobre
+     2026, ils etaient effaces ici, et la mission se recreditait a chaque
+     ouverture de l'application. */
   Object.keys(x.missions || {}).forEach(d => { const m = x.missions[d];
-    if(/^\d{4}-\d{2}-\d{2}$/.test(d) && m && typeof m === "object"){ r.missions[d] = {}; Object.keys(m).forEach(id => { if(/^[a-z]{2,12}$/.test(id) && m[id] === true) r.missions[d][id] = true; }); } });
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d) && m && typeof m === "object"){ r.missions[d] = {}; Object.keys(m).forEach(id => { if(/^[a-z0-9]{2,12}$/.test(id) && m[id] === true) r.missions[d][id] = true; }); } });
+  /* Ecus deja comptes pour chaque Quiz of the Day (par jour) et chaque podium de semaine (par lundi). */
+  if(x.qj && typeof x.qj === "object"){ r.qj = {}; dates(x.qj, r.qj, entier); }
+  if(x.qjs && typeof x.qjs === "object"){ r.qjs = {}; dates(x.qjs, r.qjs, entier); }
+  /* Le journal des gains : les 7 derniers jours, 40 lignes par jour au plus. */
+  Object.keys(x.journal || {}).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort().slice(-7).forEach(d => {
+    const l = Array.isArray(x.journal[d]) ? x.journal[d] : [];
+    r.journal[d] = l.filter(g => g && typeof g.r === "string" && entier(g.n)).slice(-40).map(g => ({ r: g.r.slice(0, 60), n: g.n })); });
   return r;
 }
 function ecus(){
@@ -9444,18 +9473,34 @@ function soldeEcus(){ const d = typeof bourse === "function" ? bourse() : null; 
 function ecusDuJour(){ return ecus().jours[aujourdhui()] || 0; }
 /* Gagne n ecus aujourd'hui, dans la limite du plafond : ils partent a la
    bourse (qui revérifie le plafond). Rend ce qui a ete gagne. */
-function crediter(n){
+function crediter(n, raison){
   const e = ecus(), d = aujourdhui(), deja = e.jours[d] || 0;
   const g = Math.max(0, Math.min(Math.round(n), ECU_PLAFOND - deja));
-  if(g){ e.jours[d] = deja + g; e.attente = Math.min(ATTENTE_MAX, (e.attente || 0) + g); }
+  if(g){
+    e.jours[d] = deja + g; e.attente = Math.min(ATTENTE_MAX, (e.attente || 0) + g);
+    /* Le journal du jour, montre au joueur (« Gagner des ecus »). */
+    const j = e.journal || (e.journal = {});
+    (j[d] = j[d] || []).push({ r: String(raison || "Points gagnés").slice(0, 60), n: g });
+    Object.keys(j).sort().slice(0, -7).forEach(k => { delete j[k]; });
+  }
   return g;
 }
+/* Les ecus d'un Quiz of the Day (une fois verifie par le serveur), et ceux
+   d'un podium de semaine. */
+function ecusQuizJour(x){
+  if(!x || x.verifie === false) return 0;
+  return ECU_QJ_BONNE * (x.justes || 0) + (x.rangFinal && x.rang >= 1 && x.rang <= 3 ? ECU_QJ_PODIUM_JOUR[x.rang - 1] : 0);
+}
+function ecusPodiumSemaine(w){ return w && w.final && w.rang >= 1 && w.rang <= 3 ? ECU_QJ_PODIUM_SEMAINE[w.rang - 1] : 0; }
 
 /* Les points qui donnent des ecus : tous, sauf ceux des packs ouverts et
    des podiums de saison (sinon acheter un pack rapporterait des ecus). */
+/* Le Quiz of the Day a son propre bareme d'ecus (ecusQuizJour) : ses points
+   comptent pour le rang, pas pour les ecus. */
 function pointsSources(){
   const p = pointsTotal() - (typeof pointsPrixSaisons === "function" ? pointsPrixSaisons() : 0)
-    - (typeof pointsCartes === "function" ? pointsCartes() : 0);
+    - (typeof pointsCartes === "function" ? pointsCartes() : 0)
+    - (typeof pointsQuotidien === "function" ? pointsQuotidien() : 0);
   return Math.max(0, Math.round(p));
 }
 
@@ -9504,7 +9549,7 @@ function ecusRevision(justes){
   const e = ecus(), d = aujourdhui(), deja = e.revision[d] || 0;
   const n = Math.min(Math.max(0, justes | 0), ECU_REVISION - deja);
   if(n <= 0) return 0;
-  const g = crediter(n);
+  const g = crediter(n, "QCM refait");
   if(g){ e.revision[d] = deja + g; planifierGains(); }
   return g;
 }
@@ -9557,13 +9602,23 @@ function majEcus(){
   let gain = 0;
   const p = pointsSources();
   if(e.ref === null || p < e.ref) e.ref = p;
-  else if(p > e.ref){ gain += crediter(p - e.ref); e.ref = p; }
+  else if(p > e.ref){ gain += crediter(p - e.ref, modeBrevet() ? "Révisions du Brevet" : "Points gagnés"); e.ref = p; }
+  /* Le Quiz of the Day : au premier passage, les quiz deja joues sont
+     notes comme comptes (rien de retroactif) ; ensuite, chaque quiz verifie,
+     et son podium, rapportent la difference. */
+  const q = ETAT.quotidien || {}, s = ETAT.qjSemaines || {};
+  if(!e.qj){ e.qj = {}; Object.keys(q).forEach(k => { e.qj[k] = ecusQuizJour(q[k]); }); }
+  if(!e.qjs){ e.qjs = {}; Object.keys(s).forEach(k => { e.qjs[k] = ecusPodiumSemaine(s[k]); }); }
+  Object.keys(q).forEach(k => { const v = ecusQuizJour(q[k]), deja = e.qj[k] || 0;
+    if(v > deja){ gain += crediter(v - deja, q[k].rangFinal && q[k].rang <= 3 && deja ? "Podium du Quiz of the Day" : "Quiz of the Day"); e.qj[k] = v; } });
+  Object.keys(s).forEach(k => { const v = ecusPodiumSemaine(s[k]), deja = e.qjs[k] || 0;
+    if(v > deja){ gain += crediter(v - deja, "Podium de la semaine"); e.qjs[k] = v; } });
   const pt = Math.round(pointsTotal());
   if(e.refPts === null || pt < e.refPts) e.refPts = pt;
   else if(pt > e.refPts){ e.attentePts = Math.min(3 * PTS_PLAFOND, (e.attentePts || 0) + pt - e.refPts); e.refPts = pt; }
   const m = e.missions[d] = e.missions[d] || {};
-  missionsDuJour().forEach(x => { if(x.faite && !m[x.id]){ m[x.id] = true; gain += crediter(ECU_MISSION); } });
-  if(!e.series[d] && joursVerifies()[d]){ e.series[d] = true; gain += crediter(5 * Math.min(serieVerifiee(), 10)); }
+  missionsDuJour().forEach(x => { if(x.faite && !m[x.id]){ m[x.id] = true; gain += crediter(ECU_MISSION, "Mission : " + x.titre); } });
+  if(!e.series[d] && joursVerifies()[d]){ e.series[d] = true; const n = Math.min(serieVerifiee(), ECU_SERIE_MAX); gain += crediter(n, "Série : " + n + " jour" + (n > 1 ? "s" : "")); }
   if(gain) annoncerGain(gain);
   planifierGains();
   return gain;
@@ -9649,7 +9704,32 @@ function carteMissions(){
     <p class="minuscule" style="margin:0 0 6px">Aujourd’hui&#8239;: ${d} / ${ECU_PLAFOND} écus gagnés${d >= ECU_PLAFOND ? " (plafond atteint)" : ""}</p>
     <ul class="missions">${m.map(x => `<li class="${x.faite ? "faite" : ""}"><span class="coche" aria-hidden="true">${x.faite ? "&#10003;" : ""}</span>
       <span class="t">${esc(x.titre)}</span>${montantEcus(ECU_MISSION, 14)}</li>`).join("")}</ul>
+    ${detailEcus()}
   </div>`;
+}
+/* « Comment gagner des ecus » : le bareme, et ce qui a ete gagne aujourd'hui,
+   ligne par ligne. Rien de cache : chaque ecu a sa raison. */
+function baremeEcus(){
+  const l = [
+    ["Quiz of the Day", ECU_QJ_BONNE + " par bonne réponse"],
+    ["Podium du Quiz of the Day", ECU_QJ_PODIUM_JOUR.join(" / ") + " (1<sup>er</sup> / 2<sup>e</sup> / 3<sup>e</sup>)"],
+    ["Podium de la semaine", ECU_QJ_PODIUM_SEMAINE.join(" / ")],
+    ["Chaque mission du jour", String(ECU_MISSION)],
+    ["Série de jours", "1 par jour de suite, " + ECU_SERIE_MAX + " au plus"],
+    ["Défi gagné contre un ami", String(typeof DEFI_ECUS !== "undefined" ? DEFI_ECUS : 5)]
+  ];
+  if(modeBrevet()) l.push(["Révisions du Brevet", "1 par point"]);
+  return l;
+}
+function detailEcus(){
+  const j = (ecus().journal || {})[aujourdhui()] || [];
+  return `<details class="detail-ecus"><summary>Comment gagner des écus&#8239;?</summary>
+    <table class="bareme-ecus"><tbody>${baremeEcus().map(([a, b]) => `<tr><th scope="row">${a}</th><td>${b}</td></tr>`).join("")}</tbody></table>
+    <p class="minuscule" style="margin:6px 0 0">${ECU_PLAFOND} écus par jour au plus. Ouvrir un pack ne rapporte pas d’écus.</p>
+    <p class="minuscule" style="margin:12px 0 4px"><strong>Gagnés aujourd’hui</strong></p>
+    ${j.length ? `<ul class="journal-ecus">${j.slice().reverse().map(g => `<li><span>${esc(g.r)}</span>${montantEcus(g.n, 13)}</li>`).join("")}</ul>`
+      : `<p class="minuscule" style="margin:0">Rien encore aujourd’hui.</p>`}
+  </details>`;
 }
 /* Chances par carte, en %, de commune a mythique. Le Premium : la moyenne
    de ses 3 cartes (2 au hasard, 1 rare ou mieux). */
@@ -9820,6 +9900,15 @@ function social(){
 function monNom(){ return COMPTE.user ? pseudoClassement(COMPTE.user.displayName) : ""; }
 function socialPossible(){ return typeof BETA !== "undefined" && BETA && compteConfigure() && compteConnecte() && !!monNom(); }
 function idAmitie(x, y){ return x < y ? x + "_" + y : y + "_" + x; }
+/* Un defi par jour avec chaque ami (octobre 2026) : l'identifiant du defi
+   est celui de la paire suivi du jour (« a_b_2026-10-30 ») ; le serveur
+   refuse d'en creer un second, dans un sens comme dans l'autre. */
+function idDefiDuJour(ami){ return idAmitie(COMPTE.user.uid, ami) + "_" + jourBourse(); }
+function defiDuJourFait(ami){ const id = idDefiDuJour(ami); return (SOC.defis || []).some(d => d.id === id); }
+function boutonDefier(uid, nom, plein){
+  return defiDuJourFait(uid) ? `<span class="minuscule defi-fait">Défi du jour joué</span>`
+    : `<button class="bouton${plein ? "-plein" : ""} petit" data-action="defi-lancer" data-uid="${esc(uid)}" data-nom="${esc(nom)}">Défier</button>`;
+}
 function egal(champ, val){ return { fieldFilter: { field: { fieldPath: champ }, op: "EQUAL", value: { stringValue: val } } }; }
 function requeteListe(collection, ou){
   return requeteJeton("POST", urlDocuments(":runQuery"), { structuredQuery: { from: [{ collectionId: collection }], where: ou, limit: 200 } })
@@ -10025,7 +10114,7 @@ function appliquerDefis(){
     return publierJoueur(Math.max(100, monElo() + delta), { id: d.id, fini: d.fini }).then(ok => {
       if(!ok){ delete s.appliques[d.id]; return; }
       /* 5 ecus au gagnant, dans le plafond du jour (la bourse le revérifie). */
-      if(r.s === 1 && typeof crediter === "function" && bourse()){ const g = crediter(DEFI_ECUS); if(g){ annoncerGain(g); planifierGains(); } }
+      if(r.s === 1 && typeof crediter === "function" && bourse()){ const g = crediter(DEFI_ECUS, "Défi gagné"); if(g){ annoncerGain(g); planifierGains(); } }
       sauverEtat();
     });
   }), Promise.resolve()).finally(() => { SOC.application = false; });
@@ -10109,7 +10198,7 @@ function finirDefi(){
   v.innerHTML = `<div class="carte"><p class="minuscule">Envoi…</p></div>`;
   const moi = COMPTE.user.uid;
   const envoi = d.mode === "lancer"
-    ? qjCommit({ update: { name: qjNomDoc("/defis/" + moi.slice(0, 6) + Date.now().toString(36)),
+    ? qjCommit({ update: { name: qjNomDoc("/defis/" + idDefiDuJour(d.x.uid)),
         fields: qjChampsEncodes({ de: moi, a: d.x.uid, nde: monNom(), na: d.x.nom, q: d.q, jde: justes, tde: temps, ede: monElo(), statut: "attente" }) },
         currentDocument: { exists: false }, updateTransforms: [{ fieldPath: "cree", setToServerValue: "REQUEST_TIME" }] })
     : qjCommit({ update: { name: qjNomDoc("/defis/" + d.x.id), fields: qjChampsEncodes({ ja: justes, ta: temps, ea: monElo(), statut: "fini" }) },
@@ -10127,7 +10216,8 @@ function finirDefi(){
       <ol class="defi-corrige">${d.items.map((it, i) => { const ok = (it.q.correctes || []).indexOf(d.choix[i]) >= 0;
         return `<li class="${ok ? "juste" : "faux"}"><b>${tx(it.q.enonce)}</b><br>${ok ? "&#10003; " : "&#10007; "}${tx(it.q.options[(it.q.correctes || [0])[0]])}</li>`; }).join("")}</ol>
       <button class="bouton-plein" data-action="defi-fermer">Fermer</button></div>`;
-  }, () => { if(DEFI) v.innerHTML = `<div class="carte"><p>Envoi impossible (connexion ou délai de 24 h dépassé).</p><button class="bouton-plein" data-action="defi-fermer">Fermer</button></div>`; });
+  }, () => { if(DEFI) v.innerHTML = `<div class="carte"><p>${d.mode === "lancer" ? "Envoi impossible&#8239;: un défi a déjà été joué aujourd’hui avec cet ami, ou la connexion manque."
+    : "Envoi impossible (connexion ou délai de 24 h dépassé)."}</p><button class="bouton-plein" data-action="defi-fermer">Fermer</button></div>`; });
 }
 if(typeof document !== "undefined") document.addEventListener("visibilitychange", () => {
   /* Quitter l'application pendant une question : elle compte fausse. */
@@ -10174,7 +10264,7 @@ function contenuAmis(){
       <span class="st-num">${i + 1}</span>
       <span class="st-nom"><strong>${l.moi ? esc(l.a.nom) : lienProfil(l.a.uid, l.a.nom)}</strong><small>Elo ${l.elo}${l.moi ? "" : " &#8226; vous&#8239;: " + bilan(l.a.uid)}</small></span>
       ${badgeClassement(indicePalier(l.pts))}<span class="st-pts">${l.pts.toLocaleString("fr-FR")} pts</span>
-      ${l.moi ? "" : `<button class="bouton petit" data-action="defi-lancer" data-uid="${esc(l.a.uid)}" data-nom="${esc(l.a.nom)}">Défier</button>`}</li>`).join("")}</ol>`);
+      ${l.moi ? "" : boutonDefier(l.a.uid, l.a.nom, false)}</li>`).join("")}</ol>`);
   } else parts.push(`<p class="secondaire" style="margin:0 0 8px">Pas encore d’ami. Cherchez un joueur ci-dessous, ou touchez un nom dans un classement.</p>`);
   const envoyes = (SOC.amities || []).filter(x => x.statut === "demande" && x.de === moi);
   if(envoyes.length) parts.push(`<p class="minuscule">Demandes envoyées&#8239;: ${envoyes.map(x => esc(x.a === moi ? x.nb : x.na)).join(", ")}</p>`);
@@ -10203,7 +10293,7 @@ function profilSocial(uid){
     return (v.length ? `<p class="capitales" style="margin:12px 0 6px">Vitrine</p><div class="pli-jour vitrine">${v.map(n => miniCarte(n, 1)).join("")}</div>` : "")
       + (j && typeof j.elo === "number" ? `<p class="minuscule" style="margin:8px 0 0">Elo ${j.elo}</p>` : "")
       + `<div class="rang-boutons" style="margin-top:10px">${!am ? `<button class="bouton-plein" data-action="ami-demander" data-uid="${esc(uid)}" data-nom="${esc(nom)}">Ajouter en ami</button>`
-        : am.statut === "ami" ? `<button class="bouton-plein" data-action="defi-lancer" data-uid="${esc(uid)}" data-nom="${esc(am.a === uid ? am.na : am.nb)}">Défier</button>`
+        : am.statut === "ami" ? boutonDefier(uid, am.a === uid ? am.na : am.nb, true)
         : `<span class="minuscule">Demande d’ami en cours</span>`}</div>`;
   });
 }
@@ -10217,7 +10307,10 @@ function actionSocial(a, el){
   if(a === "ami-demander"){ el.disabled = true; demanderAmi(el.dataset.uid, el.dataset.nom).then(ok => { el.outerHTML = `<span class="minuscule">${ok ? "Demande envoyée" : "Impossible pour l’instant"}</span>`; }); return true; }
   if(a === "ami-accepter"){ accepterAmi(el.dataset.id); return true; }
   if(a === "ami-retirer"){ if(confirm("Retirer cette demande ou cet ami ?")) retirerAmi(el.dataset.id); return true; }
-  if(a === "defi-lancer"){ if(typeof fermerBulle === "function") fermerBulle("fenetre-profil", true); ouvrirDefi("lancer", { uid: el.dataset.uid, nom: el.dataset.nom }); return true; }
+  if(a === "defi-lancer"){
+    if(typeof fermerBulle === "function") fermerBulle("fenetre-profil", true);
+    if(defiDuJourFait(el.dataset.uid)){ rendre(); return true; }
+    ouvrirDefi("lancer", { uid: el.dataset.uid, nom: el.dataset.nom }); return true; }
   if(a === "defi-relever"){ const d = (SOC.defis || []).find(x => x.id === el.dataset.id); if(d) ouvrirDefi("relever", d); return true; }
   if(a === "defi-go"){ if(DEFI && DEFI.items){ DEFI.i = 0; questionDefi(); } return true; }
   if(a === "defi-rep"){ repondreDefi(+el.dataset.k); return true; }
