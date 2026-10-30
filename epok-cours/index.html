@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-30Ddn6W15qz1C7Qjlt5JvwPI0L0UbJ/nI0/8RgW5ISk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-dw2KDUaC8u33IfXH1IPGnVG3qsMMKQwyjmoRY3C85no=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1828,7 +1828,7 @@ body.beta .onglets button[aria-current="page"] .ico{transform:translateY(-1px) s
     <div class="filet-double"></div>
     <div class="vignette" aria-hidden="true"><svg viewBox="0 0 100 100" class="marque" aria-hidden="true" focusable="false"><!--marque:entete--><g transform="translate(-4.328,-4.087) scale(1.11732)"><path d="M21.4,22 H43.78 A1.4,1.4 0 0 1 45.18,23.4 V27.11 A1.4,1.4 0 0 1 43.78,28.51 H27 V46.74 H36.65 A1.4,1.4 0 0 1 38.05,48.14 V51.85 A1.4,1.4 0 0 1 36.65,53.25 H27 V71.49 H43.78 A1.4,1.4 0 0 1 45.18,72.89 V76.6 A1.4,1.4 0 0 1 43.78,78 H21.4 A1.4,1.4 0 0 1 20,76.6 V23.4 A1.4,1.4 0 0 1 21.4,22 Z" fill="var(--bordeaux)"/><path d="M38.05,50 L55.57,29.13 M38.05,50 L54.06,65.46" fill="none" stroke="var(--bordeaux)" stroke-width="7" stroke-linecap="round"/><path d="M59.78,21.3 A36,36 0 0 1 62.66,76.27" fill="none" stroke="var(--or-vif)" stroke-width="6.4" stroke-linecap="round"/></g><!--/marque:entete--></svg></div>
     <button type="button" class="insigne" id="insigne" data-action="voir-rang"></button>
-    <button type="button" class="solde-ecus" id="solde-ecus" data-action="onglet-cartes" aria-label="Écus"></button>
+    <button type="button" class="solde-ecus" id="solde-ecus" data-action="app-boutique" aria-label="Écus"></button>
     <h1>EPOK</h1>
     <p class="sous">Culture historique<br>une séance par jour</p>
     <div class="filet-double bas"></div>
@@ -1836,6 +1836,9 @@ body.beta .onglets button[aria-current="page"] .ico{transform:translateY(-1px) s
 
   <!-- ================= ONGLET 1 : ACCUEIL ================= -->
   <main id="vue-accueil" class="vue active" role="tabpanel" aria-label="Accueil"></main>
+
+  <!-- ================= ACCUEIL DU JEU (EPOK) ============= -->
+  <main id="vue-maison" class="vue" role="tabpanel" aria-label="Accueil"></main>
 
   <!-- ================= ONGLET 2 : COURS =================== -->
   <main id="vue-cours" class="vue" role="tabpanel" aria-label="Cours"></main>
@@ -4430,8 +4433,9 @@ function rendreAccueilBrevet(){
     Elle sera perdue en fermant la page.</div>`);
 
   parts.push(rappelCompte());
-  /* Le Quiz of the Day en tete : un encart a part, qu'on ne peut pas manquer. */
-  parts.push(carteQuizJour());
+  /* Le Quiz of the Day en tete : un encart a part, qu'on ne peut pas manquer.
+     Dans le jeu, il est a l'Accueil : l'onglet Brevet ne montre que le Brevet. */
+  if(!appJeu()) parts.push(carteQuizJour());
   if(typeof BETA !== "undefined" && BETA && typeof blocCatalogue === "function") parts.push(blocCatalogue());
   /* Compte a rebours en tete quand la date est connue : c'est ce qui
      donne le rythme. Sinon, la date se demande plus bas, sans insister. */
@@ -4514,16 +4518,21 @@ function rendreAccueilBrevet(){
     parts.push(`<p class="minuscule" style="text-align:center;margin:4px 0 14px">Date de l’épreuve&#8239;: votre professeur l’indiquera ici.</p>`);
   if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteRang());   /* beta : en tete de l'onglet Classements */
   if(!(typeof BETA !== "undefined" && BETA)) parts.push(carteClassement());   /* le meme classement general qu'en mode Culture ; beta : onglet Classements */
+  /* Dans le jeu, pas d'onglet Quiz : les exercices suivent, ici. */
+  if(appJeu()) partiesEntrainementBrevet().forEach(x => parts.push(x));
   document.getElementById("vue-accueil").innerHTML = parts.join("");
   if(typeof BETA !== "undefined" && BETA && typeof remplirCatalogue === "function") remplirCatalogue();
 }
 
 /* Onglet Quiz, en mode Brevet. */
 function rendreMenuBrevet(){
+  document.getElementById("vue-quiz").innerHTML = [carteQuizJour()].concat(partiesEntrainementBrevet()).join("");
+}
+/* Les exercices : QCM de chapitre, reperes, cartes memoire, historique. */
+function partiesEntrainementBrevet(){
   const parts = [];
   const prets = chapitresPrets();
   const dues = cartesDues().length;
-  parts.push(carteQuizJour());
   parts.push(filet("QCM de chapitre", "b-qcm"));
   parts.push(`<div class="carte"><select id="b-sel-chap">${prets.map(c => {
       const e = etatChapitre(c.id);
@@ -4555,7 +4564,7 @@ function rendreMenuBrevet(){
         <span class="minuscule">${x.justes}/${x.total} &#8226; ${dateLisible(x.d)}</span></span></li>`;
     }).join("") + `</ul></div>`);
   }
-  document.getElementById("vue-quiz").innerHTML = parts.join("");
+  return parts;
 }
 
 /* ---------- Choix du mode, au premier lancement ----------
@@ -5468,7 +5477,7 @@ function majVuesCompte(discret){
   const u = COMPTE.user, vu = [compteConnecte(), u && u.uid, u && u.displayName, u && u.emailVerified, prof, COMPTE.erreur].join("|");
   if(discret && typeof ONGLET !== "undefined" && ONGLET === "accueil" && COMPTE.accueilVu === vu) return;
   COMPTE.accueilVu = vu;
-  if(typeof ONGLET !== "undefined" && (ONGLET === "reglages" || ONGLET === "accueil")) rendre();
+  if(typeof ONGLET !== "undefined" && (ONGLET === "reglages" || ONGLET === "accueil" || ONGLET === "maison")) rendre();
 }
 
 function actionCompte(a, el){
@@ -8087,7 +8096,7 @@ if(typeof window !== "undefined"){
   let jourVu = null;
   setInterval(() => {
     const j = aujourdhui();
-    if(jourVu && j !== jourVu && !QJ && typeof ONGLET !== "undefined" && ONGLET === "accueil") rendre();
+    if(jourVu && j !== jourVu && !QJ && typeof ONGLET !== "undefined" && (ONGLET === "accueil" || ONGLET === "maison")) rendre();
     jourVu = j;
   }, 60000);
 }
@@ -8974,7 +8983,10 @@ function packEnAttente(){
 function majBulleCartes(){
   if(typeof document === "undefined" || !document.body) return;
   let b = document.getElementById("bulle-pack");
-  const voulu = packEnAttente() && typeof ONGLET !== "undefined" && ONGLET !== "cartes" && !OUV;
+  /* Jeu : le pack du jour se prend a l'Accueil (sa pastille le signale),
+     qui montre aussi les packs a ouvrir. */
+  const voulu = typeof ONGLET !== "undefined" && ONGLET !== "cartes" && !OUV
+    && (typeof appJeu === "function" && appJeu() ? ONGLET !== "maison" && typeof packsAOuvrir === "function" && packsAOuvrir().length > 0 : packEnAttente());
   if(!voulu){ if(b) b.remove(); return; }
   if(b) return;
   b = document.createElement("button");
@@ -9646,7 +9658,7 @@ function majSolde(){
   if(!b) return;
   const s = soldeEcus(), vu = String(s);
   if(b.dataset.vu !== vu){ b.innerHTML = pieceEcu(22) + `<span>${s.toLocaleString("fr-FR")}</span>`; b.dataset.vu = vu; }
-  b.setAttribute("aria-label", bourse() ? s + " écus. Voir les cartes et la boutique" : "Écus : connectez-vous pour en gagner");
+  b.setAttribute("aria-label", bourse() ? s + " écus. Voir la boutique" : "Écus : connectez-vous pour en gagner");
 }
 /* « +38 écus » qui s'envole vers le solde. */
 let GAIN_EN_ATTENTE = 0, GAIN_MINUTEUR = null;
@@ -9687,7 +9699,8 @@ function lancerDecompte(){
 /* ---------- L'onglet Cartes (beta) ----------
    De haut en bas : les missions du jour, la boutique (le pack gratuit du
    jour en premier), les packs a ouvrir, le pass de saison ; l'album suit
-   (z0l_cartes.js). Le solde est dans l'en-tete. */
+   (z0l_cartes.js). Le solde est dans l'en-tete. Dans le jeu, les missions
+   et la boutique passent a l'Accueil (partiesMaisonBeta). */
 function boosterType(t, petit){
   return `<span class="booster-${t}${petit ? " booster-petit" : ""}">${booster()}</span>`;
 }
@@ -9795,11 +9808,20 @@ function carteErreurBourse(){
     : "Hors ligne&#8239;: la boutique, les packs et les gains reviennent avec le réseau. Vos écus attendent sur l’appareil."}</p>
     <button class="bouton petit" data-action="ecu-recharger">Réessayer</button></div>`;
 }
-function partiesCartesBeta(){
+function partiesBourse(f){
   if(!bourseConnectee()) return [carteSansBourse()];
   chargerBourse();
   if(!bourse()) return [BOURSE.etat === "erreur" ? carteErreurBourse() : `<div class="carte"><p class="secondaire" style="margin:0">Ouverture de votre bourse…</p></div>`];
-  return [BOURSE.etat === "erreur" ? carteErreurBourse() : "", carteChoixSaison(), carteMissions(), carteBoutique(), cartePacksGratuits(), cartePasse()];
+  return [BOURSE.etat === "erreur" ? carteErreurBourse() : ""].concat(f());
+}
+/* Dans le jeu, la boutique et les missions sont a l'Accueil (z0p_apps.js) :
+   l'onglet Cartes garde les packs a ouvrir, le pass et l'album. */
+function partiesCartesBeta(){
+  return partiesBourse(() => appJeu() ? [carteChoixSaison(), cartePacksGratuits(), cartePasse()]
+    : [carteChoixSaison(), carteMissions(), carteBoutique(), cartePacksGratuits(), cartePasse()]);
+}
+function partiesMaisonBeta(){
+  return partiesBourse(() => [cartePacksGratuits(), carteBoutique(), carteMissions()]);
 }
 function boutonRecyclage(){
   const d = doublesARecycler();
@@ -10587,7 +10609,7 @@ function chargerBourse(force){
     })
     .then(d => { BOURSE.lu = Date.now(); if(d) apresBourse(); return d; },
       e => { BOURSE.lu = Date.now(); BOURSE.etat = "erreur"; BOURSE.erreur = e && e.statut === 403 ? "regles" : "reseau"; return null; })
-    .finally(() => { BOURSE.chargement = null; if(typeof rendre === "function" && typeof ONGLET !== "undefined" && ONGLET === "cartes" && !OUV) rendre(); majSolde(); });
+    .finally(() => { BOURSE.chargement = null; if(typeof rendre === "function" && typeof ONGLET !== "undefined" && (ONGLET === "cartes" || ONGLET === "maison") && !OUV) rendre(); majSolde(); });
   return BOURSE.chargement;
 }
 /* La collection deja ouverte avant la bourse (packs du jour, de bienvenue,
@@ -10673,7 +10695,7 @@ function migrerBourse(){
     const a = copieBourse(d); a.cartes = rangerCartes(d.cartes); a.importe = rangerCartes(d.importe);
     return { op: { k: "migration" }, apres: a, resultat: v || 0, ecrire: [[["cartes"], a.cartes], [["importe"], a.importe]] };
   })).then(v => { if(v && typeof annoncerGain === "function") annoncerGain(v); return true; }, () => false)
-    .finally(() => { MIGRATION = null; if(typeof rendre === "function" && typeof ONGLET !== "undefined" && ONGLET === "cartes" && !OUV) rendre(); });
+    .finally(() => { MIGRATION = null; if(typeof rendre === "function" && typeof ONGLET !== "undefined" && (ONGLET === "cartes" || ONGLET === "maison") && !OUV) rendre(); });
   return MIGRATION;
 }
 
@@ -10801,7 +10823,7 @@ function reclamerRangs(){
     const cles = ["rang-" + r + "-c", "rang-" + r + "-p"], a = copieBourse(d);
     a.pris["rang-" + r] = true; avecPacks(a, cles, ["c", "p"]);
     return { op: { k: "rang", r }, apres: a, resultat: r, ecrire: [[["pris", "rang-" + r], true]].concat(ecriturePacks(cles, ["c", "p"])), heures: heuresPacks(cles) };
-  }).then(r => { RANGS_EN_COURS = false; if(r){ reclamerRangs(); if(typeof rendre === "function" && ONGLET === "cartes" && !OUV) rendre(); majBulleCartes(); } },
+  }).then(r => { RANGS_EN_COURS = false; if(r){ reclamerRangs(); if(typeof rendre === "function" && (ONGLET === "cartes" || ONGLET === "maison") && !OUV) rendre(); majBulleCartes(); } },
     () => { RANGS_EN_COURS = false; });
 }
 /* Prix de saison : rang 1, 2 ou 3 sur le podium (podiums/{n}). */
@@ -10838,7 +10860,7 @@ function verifierPodiumBourse(){
     if(!rang) return null;
     if(rang === 3) return boursePrixSaison(p, 3, "a").then(() => { if(typeof rendre === "function") rendre(); });
     BOURSE.prix = { n: p, rang };
-    if(typeof rendre === "function" && ONGLET === "cartes" && !OUV) rendre();
+    if(typeof rendre === "function" && (ONGLET === "cartes" || ONGLET === "maison") && !OUV) rendre();
     return null;
   }).catch(() => null);
 }
@@ -10847,11 +10869,14 @@ function verifierPodiumBourse(){
    (APP, appJeu, appCours : z00_beta.js).
 
    Le jeu de cartes (EPOK) :
-   - onglets Cartes, Quiz, Social, Reglages ; on y entre par les cartes ;
-   - l'onglet Quiz : le Quiz of the Day (les combats et les defis viendront
-     ensuite) ;
-   - des missions du jour qui ne demandent pas de cours ;
+   - onglets Accueil, Cartes, Social, Reglages ; on y entre par l'Accueil ;
+   - l'Accueil (onglet « maison ») : le Quiz of the Day en haut, puis les
+     packs a ouvrir, la boutique, les missions du jour (aucune ne demande
+     de cours). Les cartes : le pass de saison et l'album ;
    - le mode Brevet, cache : rien n'en parle tant qu'il n'est pas ouvert.
+     Ouvert, il ajoute l'onglet Brevet (« accueil »), qui ne contient que
+     le Brevet : le plan du jour, puis les QCM, les reperes et les cartes
+     memoire (ses quiz passent par l'onglet « quiz », sans bouton a lui).
      Reglages n'a qu'un champ « Code », sans dire a quoi il sert (d'autres
      codes pourront servir plus tard). Un eleve connecte y entre le code
      que son professeur lui a donne. Le serveur le compare au code du
@@ -10867,25 +10892,39 @@ function verifierPodiumBourse(){
 
 /* L'onglet demande, ou celui qui en tient lieu dans cette application. */
 function ongletPermis(o){
+  if(appJeu()){
+    if(!modeBrevet()) return o === "accueil" || o === "cours" || o === "quiz" ? "maison" : o;
+    /* L'onglet « quiz » ne sert plus qu'aux exercices du Brevet en cours. */
+    if(o === "quiz" && !QUIZ && !BCARTES && !BFRISE) return "accueil";
+    return o;
+  }
+  if(o === "maison") return "accueil";
   if(appCours()) return o === "cartes" || o === "classements" ? "accueil" : o;
-  if(appJeu() && !modeBrevet()) return o === "accueil" || o === "cours" ? "cartes" : o;
   return o;
 }
 /* Le premier onglet a l'ouverture. */
 function ongletDepart(){
+  if(appJeu()) return "maison";
   if(appCours()) return "accueil";
   return ETAT.reglages.mode === "culture" ? "cartes" : "accueil";
 }
 
-/* ---------- L'onglet Quiz du jeu ---------- */
-function rendreMenuQuizJeu(){
-  const vue = document.getElementById("vue-quiz");
+/* ---------- L'Accueil du jeu ---------- */
+function rendreMaison(){
+  const vue = document.getElementById("vue-maison");
   if(!vue) return;
-  vue.innerHTML = [
-    carteQuizJour(),
-    `<div class="carte"><h3 style="margin:0 0 6px">Bientôt</h3>
-      <p class="secondaire" style="margin:0">Des combats de cartes contre les autres joueurs, des guerres de territoire et des clans.</p></div>`
-  ].join("");
+  const parts = [carteQuizJour()];
+  if(typeof partiesMaisonBeta === "function") partiesMaisonBeta().forEach(x => parts.push(x));
+  parts.push(`<div class="carte"><h3 style="margin:0 0 6px">Bientôt</h3>
+      <p class="secondaire" style="margin:0">Des combats de cartes contre les autres joueurs, des guerres de territoire et des clans.</p></div>`);
+  vue.innerHTML = parts.join("");
+}
+/* Le solde, en haut : la boutique (Accueil du jeu, Cartes ailleurs). */
+function allerBoutique(){
+  if(!appJeu()){ aller("cartes"); return; }
+  aller("maison");
+  const b = document.querySelector("#vue-maison .boutique");
+  if(b && b.scrollIntoView) b.closest(".carte").scrollIntoView({ block: "start" });
 }
 
 /* ---------- Les missions du jour, dans le jeu ----------
@@ -10989,6 +11028,7 @@ function actionApps(a, el){
   if(a === "app-brevet-valider"){ const i = document.getElementById("app-code-brevet"); validerCodeBrevet(i ? i.value : ""); }
   else if(a === "app-brevet-quitter"){ if(CODE_BREVET.quitter) quitterBrevet(); else { CODE_BREVET.quitter = true; majChampBrevet(); } }
   else if(a === "app-brevet-annuler"){ CODE_BREVET.quitter = false; majChampBrevet(); }
+  else if(a === "app-boutique") allerBoutique();
   else if(a === "app-code-prof"){ const i = document.getElementById("app-code-prof"); enregistrerCodeProf(i ? i.value : ""); }
   else return false;
   return true;
@@ -13649,7 +13689,6 @@ function rendreQuiz(){
 }
 
 function rendreMenuQuiz(){
-  if(appJeu()) return rendreMenuQuizJeu();
   const parts = [];
   const c = coursEnCours();
   /* Le Quiz of the Day en tete de l'onglet aussi, comme a l'accueil. */
@@ -13841,6 +13880,7 @@ function rendre(){
 
   majOnglets();
   if(ONGLET === "accueil") rendreAccueil();
+  else if(ONGLET === "maison") rendreMaison();
   else if(ONGLET === "classements") rendreClassements();
   else if(ONGLET === "cours") rendreCours();
   else if(ONGLET === "reglages") rendreReglages();
@@ -13851,14 +13891,18 @@ function rendre(){
   /* En mode Brevet, la pastille dit qu'il reste des cartes a revoir. */
   const rienAujourdhui = modeBrevet() ? cartesDues().length > 0 : dateDerniereSeance() !== aujourdhui();
   /* Beta : l'onglet Apprendre (ou Brevet) couvre aussi les cours. */
-  const ongletAllume = typeof BETA !== "undefined" && BETA && ONGLET === "cours" ? "accueil" : ONGLET;
+  /* Jeu : les exercices du Brevet (onglet « quiz ») allument Brevet. */
+  const ongletAllume = typeof BETA !== "undefined" && BETA && (ONGLET === "cours" || (appJeu() && ONGLET === "quiz")) ? "accueil" : ONGLET;
   document.querySelectorAll(".onglets button").forEach(b => {
     if(b.dataset.onglet === ongletAllume) b.setAttribute("aria-current","page");
     else b.removeAttribute("aria-current");
     const point = b.querySelector(".point");
-    /* Sur Cartes : le pli du jour attend d'etre ouvert. */
+    /* Sur Cartes : le pli du jour attend d'etre ouvert. Dans le jeu, il se
+       prend a l'Accueil, avec le Quiz of the Day ; Cartes : des packs a ouvrir. */
     const voulu = (b.dataset.onglet === "accueil" && rienAujourdhui && ongletAllume !== "accueil")
-      || (b.dataset.onglet === "cartes" && ongletAllume !== "cartes" && typeof pliOuvert === "function" && CARTES.length && (!pliOuvert() || packOffertSuivant()));
+      || (b.dataset.onglet === "maison" && ongletAllume !== "maison" && ((typeof pliOuvert === "function" && CARTES.length && !pliOuvert()) || !qjAujourdhui()))
+      || (b.dataset.onglet === "cartes" && ongletAllume !== "cartes" && typeof pliOuvert === "function" && CARTES.length
+          && (appJeu() ? typeof packsAOuvrir === "function" && packsAOuvrir().length > 0 : (!pliOuvert() || packOffertSuivant())));
     if(voulu && !point){
       const p = document.createElement("span");
       p.className = "point"; p.setAttribute("aria-hidden","true");
@@ -13885,9 +13929,10 @@ function rendre(){
 }
 
 /* ---------- Les onglets de la beta Ecus ----------
-   Culture : Cartes · Apprendre · Quiz · Classements · Reglages.
-   Brevet  : Brevet · Cartes · Quiz · Classements · Reglages (le Brevet
-   reste l'accueil des eleves de 3e). */
+   Jeu          : Accueil · Cartes · Social · Reglages.
+   Jeu + Brevet : Accueil · Brevet · Cartes · Social · Reglages (le Brevet
+   n'existe que pour qui a entre le code).
+   Cours        : Apprendre · Quiz · Reglages. */
 const ICONES_ONGLETS = {
   cartes: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.2" y="5.5" width="10" height="14.5" rx="1.6" transform="rotate(-9 8.2 12.7)"/><rect x="10.4" y="4" width="10" height="14.5" rx="1.6" transform="rotate(8 15.4 11.2)"/><path d="M15.6 9.2l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/></svg>`,
   apprendre: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6.4C9.3 4.9 6.4 4.7 3.4 5.7v12.6c3-1 5.9-.8 8.6.7"/><path d="M12 6.4c2.7-1.5 5.6-1.7 8.6-.7v12.6c-3-1-5.9-.8-8.6.7z"/><path d="M12 6.4V19"/></svg>`,
@@ -13897,17 +13942,18 @@ const ICONES_ONGLETS = {
   reglages: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="15.5" cy="12" r="2.1"/><circle cx="7.5" cy="17" r="2.1"/></svg>`
 };
 /* Le bandeau du bas de la beta : des pictogrammes en couleur. */
-const EMOJIS_ONGLETS = { cartes: "&#127183;", apprendre: "&#128214;", brevet: "&#127891;", quiz: "&#9889;", social: "&#128101;", reglages: "&#9881;&#65039;" };
+const EMOJIS_ONGLETS = { maison: "&#127968;", cartes: "&#127183;", apprendre: "&#128214;", brevet: "&#127891;", quiz: "&#9889;", social: "&#128101;", reglages: "&#9881;&#65039;" };
 function majOnglets(){
   if(!(typeof BETA !== "undefined" && BETA)) return;
   const nav = document.querySelector("nav.onglets");
   if(!nav) return;
   const l = appCours()
     ? [["accueil", "Apprendre", "apprendre"], ["quiz", "Quiz", "quiz"], ["reglages", "Réglages", "reglages"]]
+    : appJeu()
+    ? [["maison", "Accueil", "maison"]].concat(modeBrevet() ? [["accueil", "Brevet", "brevet"]] : [],
+        [["cartes", "Cartes", "cartes"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]])
     : modeBrevet()
     ? [["accueil", "Brevet", "brevet"], ["cartes", "Cartes", "cartes"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]]
-    : appJeu()
-    ? [["cartes", "Cartes", "cartes"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]]
     : [["cartes", "Cartes", "cartes"], ["accueil", "Apprendre", "apprendre"], ["quiz", "Quiz", "quiz"], ["classements", "Social", "social"], ["reglages", "Réglages", "reglages"]];
   const sig = l.map(x => x[0] + x[1]).join();
   if(nav.dataset.sig === sig) return;
@@ -14516,7 +14562,7 @@ function avisAccueil(texte, ok){
      l'effacement sont passes sur l'ecran des reglages : y renvoyer le
      lecteur a l'accueil pour lui lire une confirmation lui ferait perdre
      sa place et la liste de commandes qu'il etait en train d'utiliser. */
-  if(ONGLET !== "accueil" && ONGLET !== "reglages"){ aller("accueil"); }
+  if(ONGLET !== "accueil" && ONGLET !== "reglages" && ONGLET !== "maison"){ aller("accueil"); }
   const vue = document.getElementById("vue-" + ONGLET);
   const d = document.createElement("div");
   d.className = "avis" + (ok ? " ok" : "");
@@ -14559,7 +14605,7 @@ if(typeof location !== "undefined" && location.protocol === "https:"){
   }
   if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 }
-/* Beta Ecus : en mode Culture, on entre par les cartes. */
+/* Beta Ecus : le jeu s'ouvre sur son Accueil (z0p_apps.js). */
 if(typeof BETA !== "undefined" && BETA){
   if(document.body && document.body.classList) document.body.classList.add("beta", "app-" + APP);
   if(appCours()) document.title = "EPOK Cours";
