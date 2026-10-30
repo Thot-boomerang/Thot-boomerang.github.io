@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-RfB4wwhQGNdkQYoNQDFuUrko+3UG7fMMs3M7iSl214s=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-fkGBLcjL+TIQIvPdEeas6MJnWFA8/54LWKaPJ2io1z0=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1187,8 +1187,6 @@ body[data-choix="1"]{overflow:hidden}
 .compte-ou{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--texte-2);font-size:13px}
 .compte-ou::before,.compte-ou::after{content:"";flex:1;border-top:1px solid var(--laiton)}
 .b-code-ligne{display:flex;gap:8px;align-items:stretch}
-/* Le code du professeur, dans les reglages du jeu : un lien discret. */
-.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:13px;color:var(--texte-2);text-decoration:underline;cursor:pointer}
 /* L'application des cours : ni ecus ni packs. */
 body.app-cours #solde-ecus, body.app-cours .bulle-pack{display:none !important}
 .b-code-ligne input{flex:1;min-width:0;min-height:46px;padding:8px 12px;font:inherit;color:var(--texte);
@@ -7032,7 +7030,7 @@ function contenuProfil(p, ici){
       ${tuile(n(p.qjJoues), "Quiz of the Day joué" + (n(p.qjJoues) > 1 ? "s" : ""), (n(p.qjJoues) ? moy + "/10 en moyenne" : "pas encore joué"))}
       ${tuile(n(p.cartes) + (typeof CARTES !== "undefined" && CARTES.length ? "/" + cartesDuJeu().length : ""), "cartes", n(p.pv).toLocaleString("fr-FR") + " PV &#8226; " + n(p.packs) + " packs")}</div>
     ${n(p.qjSansFaute) || n(p.qjPodiums) ? `<p class="minuscule" style="margin:0 0 10px">Quiz of the Day&#8239;: ${n(p.qjSansFaute)} sans-faute &#8226; ${n(p.qjPodiums)} podium${n(p.qjPodiums) > 1 ? "s" : ""}</p>` : ""}
-    ${n(p.brevet) ? `<p class="minuscule" style="margin:0 0 10px">Mode Brevet&#8239;: ${n(p.brevet)} chapitre${n(p.brevet) > 1 ? "s" : ""} réussi${n(p.brevet) > 1 ? "s" : ""}</p>` : ""}
+    ${n(p.brevet) && !(appJeu() && !modeBrevet()) ? `<p class="minuscule" style="margin:0 0 10px">Mode Brevet&#8239;: ${n(p.brevet)} chapitre${n(p.brevet) > 1 ? "s" : ""} réussi${n(p.brevet) > 1 ? "s" : ""}</p>` : ""}
     ${termines.length ? `<p class="capitales" style="margin:6px 0 4px">Cours terminés</p>${liste(termines, true)}` : ""}
     ${commences.length ? `<p class="capitales" style="margin:10px 0 4px">En cours</p>${liste(commences, false)}` : ""}
     ${!termines.length && !commences.length ? `<p class="secondaire" style="margin:6px 0 0">Aucun cours commencé pour l’instant.</p>` : ""}`;
@@ -10760,7 +10758,9 @@ function verifierPodiumBourse(){
    - l'onglet Quiz : le Quiz of the Day (les combats et les defis viendront
      ensuite) ;
    - des missions du jour qui ne demandent pas de cours ;
-   - le mode Brevet, cache : un eleve connecte entre dans Reglages le code
+   - le mode Brevet, cache : rien n'en parle tant qu'il n'est pas ouvert.
+     Reglages n'a qu'un champ « Code », sans dire a quoi il sert (d'autres
+     codes pourront servir plus tard). Un eleve connecte y entre le code
      que son professeur lui a donne. Le serveur le compare au code du
      professeur (config/codeBrevet, que seul le professeur lit) : un code
      faux est refuse, et il n'est ecrit nulle part dans l'application. Le
@@ -10808,11 +10808,11 @@ function missionsJeu(d, qj){
 }
 
 /* ---------- Le code du mode Brevet ---------- */
-const CODE_BREVET = { ouvert: false, enCours: false, message: null, quitter: false, prof: null, profLu: false };
+const CODE_BREVET = { enCours: false, message: null, quitter: false, prof: null, profLu: false };
 const CODE_BREVET_FORME = /^[A-Za-z0-9-]{4,30}$/;
 
 /* Dans les reglages du jeu : le Brevet ouvert (et le bouton pour le
-   refermer), ou un discret « code du professeur ». */
+   refermer), ou un simple champ « Code », qui ne dit pas ce qu'il ouvre. */
 function champBrevetJeu(){
   const msg = CODE_BREVET.message ? `<p class="avis${CODE_BREVET.message.ok ? " ok" : ""}" style="margin:8px 0 0">${tx(CODE_BREVET.message.t)}</p>` : "";
   if(modeBrevet()) return `<div class="champ" style="display:block" id="champ-brevet">
@@ -10826,15 +10826,13 @@ function champBrevetJeu(){
         : `<button class="bouton petit" data-action="app-brevet-quitter">Refermer le mode Brevet</button>`}
       ${msg}
     </div>`;
-  if(!CODE_BREVET.ouvert) return `<div class="champ" style="display:block" id="champ-brevet">
-      <button type="button" class="lien-discret" data-action="app-brevet-ouvrir">Un code de votre professeur&#8239;?</button>${msg}</div>`;
   const connecte = typeof compteConnecte === "function" && compteConnecte();
   return `<div class="champ" style="display:block" id="champ-brevet">
-      <span class="txt"><strong>Code du professeur</strong>
-        <small>Il ouvre les révisions du brevet d’histoire-géographie.${connecte ? "" : " Connectez-vous d’abord (Compte, plus haut)."}</small></span>
+      <span class="txt"><strong>Code</strong>
+        <small>${connecte ? "Vous avez un code&#8239;? Entrez-le ici." : "Vous avez un code&#8239;? Connectez-vous d’abord (Compte, plus haut)."}</small></span>
       <div class="saut"></div>
       <div class="b-code-ligne"><input type="text" id="app-code-brevet" autocomplete="off" autocapitalize="characters" spellcheck="false"
-          maxlength="30" aria-label="Code du professeur"${connecte ? "" : " disabled"}>
+          maxlength="30" placeholder="Votre code" aria-label="Code"${connecte ? "" : " disabled"}>
         <button class="bouton" data-action="app-brevet-valider" style="width:auto;padding:0 16px"${connecte && !CODE_BREVET.enCours ? "" : " disabled"}>Valider</button></div>
       ${CODE_BREVET.enCours ? `<p class="minuscule" style="margin:8px 0 0">Vérification…</p>` : ""}${msg}
     </div>`;
@@ -10847,18 +10845,18 @@ function majChampBrevet(){
    l'ecriture que si c'est celui du professeur. */
 function validerCodeBrevet(code){
   code = String(code || "").trim().toUpperCase();
-  if(!CODE_BREVET_FORME.test(code)){ CODE_BREVET.message = { t: "Code incorrect." }; majChampBrevet(); return Promise.resolve(false); }
+  if(!CODE_BREVET_FORME.test(code)){ CODE_BREVET.message = { t: "Code inconnu." }; majChampBrevet(); return Promise.resolve(false); }
   if(!(typeof compteConnecte === "function" && compteConnecte())){ CODE_BREVET.message = { t: "Connectez-vous d’abord." }; majChampBrevet(); return Promise.resolve(false); }
   CODE_BREVET.enCours = true; CODE_BREVET.message = null; majChampBrevet();
   return qjCommit({ update: { name: qjNomDoc("/brevetCodes/" + COMPTE.user.uid), fields: qjChampsEncodes({ code }) }, updateTransforms: QJ_HEURE })
     .then(() => {
-      CODE_BREVET.enCours = false; CODE_BREVET.ouvert = false; CODE_BREVET.message = null;
+      CODE_BREVET.enCours = false; CODE_BREVET.message = null;
       ETAT.reglages.mode = "brevet"; QUIZ = null; BCARTES = null; BFRISE = null; ECRAN = { nom: "catalogue" };
       sauverEtat(); aller("accueil");
       return true;
     }, e => {
       CODE_BREVET.enCours = false;
-      CODE_BREVET.message = { t: e && e.statut === 403 ? "Code incorrect." : "Pas de réseau : réessayez plus tard." };
+      CODE_BREVET.message = { t: e && e.statut === 403 ? "Code inconnu." : "Pas de réseau : réessayez plus tard." };
       majChampBrevet();
       return false;
     });
@@ -10874,8 +10872,8 @@ function blocCodeBrevet(){
   if(appCours()) return "";
   if(!CODE_BREVET.profLu){ CODE_BREVET.profLu = true; lireCodeProf(); }
   return `<p class="capitales" style="margin:0 0 6px">Code du mode Brevet</p>
-    <p class="minuscule" style="margin:0 0 6px">À donner à vos élèves&#8239;: dans le jeu, Réglages, «&#8239;Un code de votre professeur&#8239;?&#8239;».
-      4 à 30 lettres ou chiffres. Le changer n’enlève pas le Brevet à ceux qui l’ont déjà ouvert.</p>
+    <p class="minuscule" style="margin:0 0 6px">À donner à vos élèves&#8239;: dans le jeu, Réglages, champ «&#8239;Code&#8239;». Rien n’y parle du Brevet&#8239;:
+      seuls ceux qui ont le code le découvrent. 4 à 30 lettres ou chiffres. Le changer n’enlève pas le Brevet à ceux qui l’ont déjà ouvert.</p>
     <div class="b-code-ligne" style="margin:0 0 14px"><input type="text" id="app-code-prof" value="${esc(CODE_BREVET.prof || "")}" maxlength="30"
         autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code du mode Brevet">
       <button class="bouton" data-action="app-code-prof" style="width:auto;padding:0 16px"${PROF.enCours ? " disabled" : ""}>Enregistrer</button></div>`;
@@ -10895,8 +10893,7 @@ function enregistrerCodeProf(code){
 
 function actionApps(a, el){
   if(a.slice(0, 4) !== "app-") return false;
-  if(a === "app-brevet-ouvrir"){ CODE_BREVET.ouvert = true; CODE_BREVET.message = null; majChampBrevet(); const i = document.getElementById("app-code-brevet"); if(i) i.focus(); }
-  else if(a === "app-brevet-valider"){ const i = document.getElementById("app-code-brevet"); validerCodeBrevet(i ? i.value : ""); }
+  if(a === "app-brevet-valider"){ const i = document.getElementById("app-code-brevet"); validerCodeBrevet(i ? i.value : ""); }
   else if(a === "app-brevet-quitter"){ if(CODE_BREVET.quitter) quitterBrevet(); else { CODE_BREVET.quitter = true; majChampBrevet(); } }
   else if(a === "app-brevet-annuler"){ CODE_BREVET.quitter = false; majChampBrevet(); }
   else if(a === "app-code-prof"){ const i = document.getElementById("app-code-prof"); enregistrerCodeProf(i ? i.value : ""); }
@@ -12231,7 +12228,10 @@ function rendreReglages(){
   const parts = [];
   parts.push(filet("Réglages"));
   parts.push(carteCompte());
-  parts.push(carteProfesseur());
+  /* L'espace professeur (chapitres et date du Brevet, code, statistiques,
+     Quiz of the Day, moderation) concerne les eleves : il est dans le jeu,
+     pas dans EPOK Cours. */
+  if(!appCours()) parts.push(carteProfesseur());
   parts.push(`<div class="carte">
     ${appJeu() ? champBrevetJeu() : appCours() ? "" : `<div class="champ" style="display:block">
       <span class="txt"><strong>Mode</strong>
