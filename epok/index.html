@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-dw2KDUaC8u33IfXH1IPGnVG3qsMMKQwyjmoRY3C85no=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-AAxSPqZm7z+j0rsCnD3WQyBPZdx0xoNIJtjjhFFzMC4=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1182,6 +1182,11 @@ body[data-choix="1"]{overflow:hidden}
 .champ-compte input{width:100%;box-sizing:border-box;min-height:46px;padding:8px 12px;font:inherit;color:var(--texte);
   background:var(--fond-2);border:1px solid var(--laiton);border-radius:var(--rayon)}
 .champ-compte input:focus{outline:2px solid var(--bordeaux);outline-offset:1px}
+.champ-compte .mdp-ligne{position:relative;display:block;margin:0;font-size:inherit;color:inherit}
+.mdp-ligne input{padding-right:48px}
+.mdp-oeil{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:44px;height:42px;border:0;background:none;color:var(--texte-2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.mdp-oeil svg{width:22px;height:22px}
+.mdp-oeil[aria-pressed="true"]{color:var(--bordeaux)}
 .form-compte .bouton-plein,.form-compte .bouton{width:100%}
 .form-compte button[disabled]{opacity:.6}
 .compte-ou{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--texte-2);font-size:13px}
@@ -4911,13 +4916,14 @@ function compteInit(){
     const app = (fb.apps || []).find(a => a.name === "epok") || fb.initializeApp(CONFIG_COMPTE, "epok");
     COMPTE.auth = app.auth();
     COMPTE.auth.languageCode = "fr";   /* e-mails de Firebase en francais */
+    gardeSession(COMPTE.auth);
     COMPTE.auth.onAuthStateChanged(u => {
       const avant = compteConnecte();
       COMPTE.user = u || null;
       COMPTE.etatConnu = true;
       if(u) cacherEcranCompte();
       else if(doitProposerCompte()) afficherEcranCompte();
-      if(compteConnecte() && !avant){ synchroniser(); if(typeof verifierProfesseur === "function") verifierProfesseur(); }
+      if(compteConnecte() && !avant){ synchroniser(); if(typeof verifierProfesseur === "function") verifierProfesseur(); if(typeof verifierPseudo === "function" && !COMPTE.creation) verifierPseudo(); }
       if(!compteConnecte()){ COMPTE.derniere = null; COMPTE.prof = undefined; }
       majVuesCompte();
     });
@@ -4938,6 +4944,28 @@ function compteInit(){
     COMPTE.retours.splice(0).forEach(compteRetour);
     majVuesCompte();
   }).catch(e => console.warn("Epok : compte indisponible.", e));
+}
+
+/* Rester connecte (octobre 2026). Firebase garde la session dans
+   IndexedDB ; dans l'application Android (page en file://), cette base
+   peut etre perdue quand le telephone ferme l'application en arriere-plan :
+   une eleve se retrouvait deconnectee au bout de quelques minutes. On en
+   garde donc une copie dans localStorage (qui, lui, garde deja toute la
+   progression), sous la cle que Firebase sait relire : au demarrage, il
+   cherche la session dans IndexedDB, puis dans localStorage, et la remet
+   en place. La copie est rafraichie a chaque nouveau jeton et effacee
+   quand on se deconnecte. On ne quitte donc jamais son compte sur le meme
+   appareil, sauf en appuyant sur « Se deconnecter ». */
+function cleSession(){ return "firebase:authUser:" + CONFIG_COMPTE.apiKey + ":epok"; }
+function gardeSession(auth){
+  if(!auth || typeof auth.onIdTokenChanged !== "function") return;
+  let connecte = false;
+  auth.onIdTokenChanged(u => {
+    try{
+      if(u && u.toJSON){ localStorage.setItem(cleSession(), JSON.stringify(u.toJSON())); connecte = true; }
+      else if(connecte){ localStorage.removeItem(cleSession()); connecte = false; }
+    }catch(e){}
+  });
 }
 
 /* L'application Android rend ici l'adresse de retour de la connexion :
@@ -5058,29 +5086,36 @@ function fermerClavier(){ const a = document.activeElement; if(a && a.blur && /^
 function creerCompteEmail(){
   if(!compteDisponible() || COMPTE.attente) return;
   fermerClavier();
-  const nom = (COMPTE.nom = lireChamp("compte-nom").trim().replace(/\s+/g, " ").slice(0, 60));
+  const nom = (COMPTE.nom = nettoyerPseudo(lireChamp("compte-nom")));
   COMPTE.classe = lireChamp("compte-classe").trim().slice(0, 20);
   const classe = formaterClasse(COMPTE.classe);
   const email = (COMPTE.email = lireChamp("compte-email").trim());
   const mdp = lireChamp("compte-mdp"), mdp2 = lireChamp("compte-mdp2");
   COMPTE.info = null;
   const garder = gardeMdp(mdp, mdp2), refuser = m => { COMPTE.erreur = m; montrerErreurCompte(garder); };
-  if(nom.length < 2) return refuser("Indiquez votre prénom et votre nom.");
-  const refus = nomInapproprie(nom);
+  const refus = pseudoInapproprie(nom);
   if(refus) return refuser(refus);
   if(classe === null) return refuser(MESSAGE_CLASSE);
   if(!email) return refuser("Indiquez votre adresse e-mail.");
   if(mdp.length < MDP_MIN) return refuser("Mot de passe trop court : " + MDP_MIN + " caractères au moins.");
   if(mdp !== mdp2) return refuser("Les 2 mots de passe ne sont pas identiques.");
-  return demandeCompte(COMPTE.auth.createUserWithEmailAndPassword(email, mdp), r => {
-    /* Un e-mail de confirmation prouve que l'adresse est bien la sienne :
-       c'est elle qui servira si le mot de passe est oublie. */
-    if(r && r.user && r.user.sendEmailVerification) r.user.sendEmailVerification().catch(() => {});
-    if(classe){ ETAT.classe = classe; sauverEtat(); }
-    /* Le nom, pour que le professeur reconnaisse l'eleve. */
-    if(r && r.user && r.user.updateProfile) r.user.updateProfile({ displayName: nom })
-      .then(() => planifierSynchro(300), () => {});
-  }, garder);
+  /* Le pseudo est-il libre ? On le verifie avant de creer le compte. */
+  COMPTE.attente = true; majVuesCompte();
+  return proprietairePseudo(nom).then(qui => qui ? "pris" : "libre", () => "libre").then(etat => {
+    COMPTE.attente = false;
+    if(etat === "pris") return refuser("Ce pseudo est déjà pris. Choisissez-en un autre.");
+    COMPTE.creation = nom;
+    return demandeCompte(COMPTE.auth.createUserWithEmailAndPassword(email, mdp), r => {
+      /* Un e-mail de confirmation prouve que l'adresse est bien la sienne :
+         c'est elle qui servira si le mot de passe est oublie. */
+      if(r && r.user && r.user.sendEmailVerification) r.user.sendEmailVerification().catch(() => {});
+      if(classe){ ETAT.classe = classe; sauverEtat(); }
+      /* Le pseudo : reserve, puis nom du compte. */
+      reserverPseudo(nom).then(() => r.user.updateProfile({ displayName: nom })).then(() => { retenirPseudo(nom); apresPseudo(); },
+        () => { PSEUDO.aChoisir = true; PSEUDO.propose = nom; demanderPseudo(); })
+        .then(() => { COMPTE.creation = null; majVuesCompte(); });
+    }, garder).then(x => { if(!compteConnecte()) COMPTE.creation = null; return x; });
+  });
 }
 
 function connexionEmail(){
@@ -5128,6 +5163,24 @@ if(typeof document !== "undefined"){
   });
 }
 
+/* Un champ de mot de passe, avec l'oeil qui le montre en clair (et le
+   recache) : on voit ce qu'on a tape avant de creer son compte. */
+function champMdp(id, auto){
+  return `<span class="mdp-ligne"><input id="${id}" type="password" autocomplete="${auto}">
+    <button type="button" class="mdp-oeil" data-action="compte-oeil" data-cible="${id}" aria-label="Afficher le mot de passe" aria-pressed="false">${OEIL_OUVERT}</button></span>`;
+}
+const OEIL_OUVERT = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
+const OEIL_FERME = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 20L20 4" stroke="currentColor" stroke-width="1.8"/></svg>`;
+function basculerOeil(el){
+  const i = el && document.getElementById(el.dataset.cible);
+  if(!i) return;
+  const voir = i.type === "password";
+  i.type = voir ? "text" : "password";
+  el.innerHTML = voir ? OEIL_FERME : OEIL_OUVERT;
+  el.setAttribute("aria-pressed", String(voir));
+  el.setAttribute("aria-label", voir ? "Masquer le mot de passe" : "Afficher le mot de passe");
+}
+
 /* Formulaire commun a l'ecran d'accueil et aux reglages. */
 function formulaireCompte(){
   const f = COMPTE.forme, off = COMPTE.attente ? " disabled" : "";
@@ -5151,20 +5204,20 @@ function formulaireCompte(){
     ${google ? messages : ""}
     <div class="compte-ou"><span>ou avec une adresse e-mail</span></div>
     <div class="seg compte-onglets">${onglet("creer", "Créer un compte")}${onglet("connexion", "Se connecter")}</div>
-    ${f === "creer" ? `<label class="champ-compte"><span>Votre vrai prénom et votre nom</span>
-      <input id="compte-nom" type="text" autocomplete="name" maxlength="60" placeholder="par exemple Léa Martin" value="${esc(COMPTE.nom)}">
-      <span class="minuscule">Pas de pseudo ni de surnom&#8239;: un nom faux ou déplacé entraîne la suppression du compte.</span></label>
+    ${f === "creer" ? `<label class="champ-compte"><span>Votre pseudo</span>
+      <input id="compte-nom" type="text" autocomplete="nickname" maxlength="${PSEUDO_MAX}" spellcheck="false" placeholder="par exemple Le Grand Loup" value="${esc(COMPTE.nom)}">
+      <span class="minuscule">${PSEUDO_MIN} à ${PSEUDO_MAX} caractères. Chaque pseudo est unique. Un pseudo déplacé entraîne la suppression du compte.</span></label>
       <label class="champ-compte"><span>Classe (facultatif), par exemple 3A&#8239;: l’année scolaire s’ajoute toute seule</span>
       <input id="compte-classe" type="text" autocomplete="off" maxlength="20" placeholder="par exemple 3A" value="${esc(COMPTE.classe)}"></label>` : ""}
     ${email}
     <label class="champ-compte"><span>Mot de passe${f === "creer" ? " (" + MDP_MIN + " caractères au moins)" : ""}</span>
-      <input id="compte-mdp" type="password" autocomplete="${f === "creer" ? "new-password" : "current-password"}"></label>
+      ${champMdp("compte-mdp", f === "creer" ? "new-password" : "current-password")}</label>
     ${f === "creer" ? `<label class="champ-compte"><span>Confirmer le mot de passe</span>
-      <input id="compte-mdp2" type="password" autocomplete="new-password"></label>` : ""}
+      ${champMdp("compte-mdp2", "new-password")}</label>` : ""}
     ${google ? "" : messages}
     <button class="bouton" data-action="${f === "creer" ? "compte-creer" : "compte-entrer"}"${off}>${
       COMPTE.attente ? "Un instant…" : f === "creer" ? "Créer mon compte" : "Se connecter"}</button>
-    ${f === "creer" ? `<p class="minuscule" style="margin:8px 0 0">Votre professeur verra votre nom, votre classe, votre progression et votre rang.</p>` : ""}
+    ${f === "creer" ? `<p class="minuscule" style="margin:8px 0 0">Votre professeur verra votre pseudo, votre adresse, votre classe, votre progression et votre rang.</p>` : ""}
     ${f === "connexion" ? `<p class="minuscule" style="margin:10px 0 0"><button class="lien" data-action="compte-forme" data-forme="oubli">Mot de passe oublié&#8239;?</button></p>` : ""}</div>`;
 }
 
@@ -5315,6 +5368,8 @@ function importerPourBeta(){
    enregistre le resultat dans le telephone puis le renvoie au serveur. */
 function synchroniser(){
   if(!compteConnecte()) return Promise.resolve(false);
+  /* Pseudo pas encore verifie (reseau absent a la connexion) : on reessaie. */
+  if(typeof pseudoCompte === "function" && !pseudoCompte() && !PSEUDO.aChoisir && !PSEUDO.verifie && !COMPTE.creation) verifierPseudo();
   /* Beta a part : la progression reste sur l'appareil ; seul le Quiz of
      the Day, verifie par le serveur, s'y publie. */
   if(typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE){
@@ -5402,20 +5457,13 @@ function carteCompte(){
     ${u ? `<p class="secondaire" style="margin:0 0 4px">Connecté&#8239;: <strong>${esc(adresse)}</strong></p>
       ${adresseAConfirmer() ? `<div style="margin:8px 0 12px">${blocConfirmation()}</div>` : ""}
       ${typeof estProfesseur === "function" && estProfesseur() ? `<p class="minuscule" style="margin:0 0 8px">Compte professeur.</p>
-      <div class="champ-compte" style="margin:8px 0 10px"><span>Votre prénom et votre nom${(u.displayName || "").trim()
-          ? "&#8239;: au classement, « " + esc(pseudoClassement(u.displayName)) + " »" : ", pour apparaître au classement"}</span>
-        <div class="b-code-ligne"><input id="compte-nom-ajout" type="text" autocomplete="name" maxlength="60" placeholder="par exemple Hugo David" value="${esc((u.displayName || "").trim())}">
-        <button class="bouton-plein" data-action="compte-nom" style="width:auto;padding:0 16px">Enregistrer</button></div></div>
+      ${blocPseudo()}
       <p class="minuscule" style="margin:0 0 10px">Vous figurez, comme tout le monde, au classement général et à celui du Quiz of the Day&#8239;: vos élèves peuvent vous dépasser.</p>`
-      : `<div class="champ-compte" style="margin:8px 0 10px"><span>Votre vrai prénom et votre nom${(u.displayName || "").trim()
-          ? "&#8239;: au classement, « " + esc(pseudoClassement(u.displayName)) + " »" : ""}</span>
-          <div class="b-code-ligne"><input id="compte-nom-ajout" type="text" autocomplete="name" maxlength="60" placeholder="par exemple Léa Martin" value="${esc((u.displayName || "").trim())}">
-          <button class="bouton-plein" data-action="compte-nom" style="width:auto;padding:0 16px">Enregistrer</button></div>
-          <span class="minuscule">Pas de pseudo&#8239;: un nom faux ou déplacé entraîne la suppression du compte.</span></div>
+      : `${blocPseudo()}
       <div class="champ-compte" style="margin:4px 0 10px"><span>${ETAT.classe ? "Votre classe&#8239;: " + esc(ETAT.classe) : "Votre classe (facultatif)"}</span>
         <div class="b-code-ligne"><input id="compte-classe-ajout" type="text" maxlength="20" placeholder="par exemple 3A" value="${esc(classeSansAnnee(ETAT.classe))}">
         <button class="bouton" data-action="compte-classe" style="width:auto;padding:0 16px">Enregistrer</button></div></div>
-      <p class="minuscule" style="margin:0 0 8px">Votre professeur voit votre nom, votre adresse, votre classe, votre progression et votre rang. Au classement, tout le monde voit votre prénom, l’initiale de votre nom et vos points.</p>`}
+      <p class="minuscule" style="margin:0 0 8px">Votre professeur voit votre pseudo, votre adresse, votre classe, votre progression et votre rang. Au classement, tout le monde voit votre pseudo et vos points.</p>`}
       <p class="minuscule" style="margin:0 0 12px">${COMPTE.enCours ? "Synchronisation en cours…"
         : COMPTE.derniere ? "Progression synchronisée " + depuis(COMPTE.derniere) + "."
         : "Synchronisation en attente."}</p>
@@ -5489,6 +5537,7 @@ function actionCompte(a, el){
     majVuesCompte(); return true;
   }
   if(a === "compte-creer"){ creerCompteEmail(); return true; }
+  if(a === "compte-oeil"){ basculerOeil(el); return true; }
   if(a === "classement-public"){
     ETAT.reglages.classementPublic = !!(el && el.checked);
     sauverEtat();
@@ -5508,7 +5557,7 @@ function actionCompte(a, el){
   }
   if(a === "compte-nom" && compteConnecte()){
     const nom = lireChamp("compte-nom-ajout").trim().replace(/\s+/g, " ").slice(0, 60);
-    if(nom.length < 2){ COMPTE.erreur = "Indiquez votre prénom et votre nom."; majVuesCompte(); return true; }
+    if(nom.length < 2){ COMPTE.erreur = "Indiquez votre pseudo."; majVuesCompte(); return true; }
     const refus = nomInapproprie(nom);
     if(refus){ COMPTE.erreur = refus; majVuesCompte(); return true; }
     demandeCompte(COMPTE.user.updateProfile({ displayName: nom }), () => {
@@ -5965,16 +6014,16 @@ function contenuComptes(E){
     const fini = x.limite && new Date(x.limite) < new Date();
     return `<span class="st-etiq${fini ? " rouge" : " or"}">${fini ? "délai dépassé" : "averti, jusqu’au " + new Date(x.limite).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>`;
   };
-  const suspect = e => !!nomInapproprie(e.nomBrut) || !e.nomBrut;
+  const suspect = e => !!pseudoInapproprie(e.nomBrut) || !e.nomBrut;
   const tri = E.slice().sort((a, b) => (suspect(b) - suspect(a)) || (!!S[b.uid] - !!S[a.uid]) || a.nom.localeCompare(b.nom, "fr"));
   const supprimes = Object.keys(S).filter(uid => S[uid].etat === "supprime" && !E.some(e => e.uid === uid));
-  return `<div class="carte"><p class="minuscule" style="margin:0 0 10px">Au classement, chacun apparaît sous son prénom et l’initiale de son nom.
+  return `<div class="carte"><p class="minuscule" style="margin:0 0 10px">Au classement, chacun apparaît sous son pseudo (unique).
     Un nom suspect est signalé&#8239;; «&#8239;Avertir&#8239;» laisse 24 heures pour le changer, avec un message à la prochaine ouverture d’EPOK.</p>
     <ul class="st-comptes">${tri.map(e => {
       const x = S[e.uid];
       return `<li${suspect(e) ? ` class="suspect"` : ""}>
         <span class="st-nom"><strong>${esc(e.nomBrut || "(sans nom)")}</strong>${suspect(e) ? ` <span class="st-etiq rouge">nom suspect</span>` : ""} ${etat(e)}
-          <small>${esc(e.email || "adresse inconnue")}${e.classe ? " &#8226; " + esc(e.classe) : ""}${e.nomBrut ? " &#8226; classement&#8239;: " + esc(pseudoClassement(e.nomBrut)) : ""}</small></span>
+          <small>${esc(e.email || "adresse inconnue")}${e.classe ? " &#8226; " + esc(e.classe) : ""}${e.nomBrut ? " &#8226; pseudo&#8239;: " + esc(e.nomBrut) : ""}</small></span>
         <span class="st-actions">${x && x.etat === "avertissement"
           ? `<button class="bouton petit" data-action="b-compte-lever" data-uid="${esc(e.uid)}">Lever</button>`
           : `<button class="bouton petit" data-action="b-compte-avertir" data-uid="${esc(e.uid)}">Avertir (24 h)</button>`}
@@ -6078,7 +6127,7 @@ const ONGLET_CIBLE = o => () => document.querySelector('.onglets button[data-ong
 const ETAPE_QUIZ_JOUR = { onglet: "accueil", cible: () => document.querySelector("#vue-accueil .quiz-jour"), titre: "Le Quiz of the Day",
   get texte(){ return `Chaque jour, un nouveau quiz numéroté&#8239;: 10 questions de culture générale historique, toutes périodes confondues, les mêmes pour tout le monde (1 très facile, 3 faciles, 3 moyennes, 3 difficiles). 30 secondes par question, une seule tentative, ${QJ_PTS}&#8239;points par bonne réponse, un classement du jour et un de la semaine, et l’historique de vos places.`; } };
 const ETAPE_CLASSEMENT = { onglet: "accueil", cible: () => document.getElementById("carte-classement"), titre: "Le classement général",
-  texte: "Tout en bas de l’accueil, quand vous êtes connecté, comparez vos points à ceux des autres joueurs. Tout le monde y figure, sous son prénom et l’initiale de son nom&#8239;: mettez bien votre vrai prénom et votre nom." };
+  texte: "Tout en bas de l’accueil, quand vous êtes connecté, comparez vos points à ceux des autres joueurs. Tout le monde y figure, sous son pseudo." };
 
 /* Les cartes EPOK (z0l_cartes.js) : l'onglet Cartes. */
 const ETAPE_CARTES = { onglet: "accueil", cible: ONGLET_CIBLE("cartes"), titre: "Les cartes EPOK",
@@ -6282,12 +6331,12 @@ if(typeof window !== "undefined"){
 const AIDES = {
   ecus: { titre: "Les écus", corps: () => `<ul class="aide-liste">
     <li>Quiz of the Day&#8239;: ${ECU_QJ_BONNE} écus par bonne réponse. Missions&#8239;: ${ECU_MISSION} écus chacune.</li>
-    <li>${ECU_PLAFOND} écus par jour au plus. Tout le barème&#8239;: sous les missions.</li>
+    <li>Classement du Quiz of the Day&#8239;: jusqu’à 30 écus le jour, 80 la semaine.</li>
     <li>Les écus achètent des boosters, gardés sur le serveur&#8239;: impossible d’en créer.</li></ul>` },
   boutique: { titre: "Boutique", corps: () => `<ul class="aide-liste">
-    <li><strong>Classique</strong>&#8239;: 3 cartes, toutes raretés.</li>
-    <li><strong>Premium</strong>&#8239;: la 3<sup>e</sup> carte rare ou mieux.</li>
-    <li><strong>Ultra premium</strong>&#8239;: 3 cartes rares ou mieux.</li></ul>` },
+    <li><strong>Classique</strong>&#8239;: 3 cartes, toutes raretés, et 0 à 10 écus.</li>
+    <li><strong>Premium</strong>&#8239;: la 3<sup>e</sup> carte rare ou mieux, et 5 à 20 écus.</li>
+    <li><strong>Ultra premium</strong>&#8239;: 3 cartes rares ou mieux, et 10 à 30 écus.</li></ul>` },
   defis: { titre: "Défis entre amis", corps: () => `<ul class="aide-liste">
     <li>5 questions d’anciens Quiz of the Day, 30 secondes chacune.</li>
     <li>Un défi par jour avec chaque ami&#8239;; 24 heures pour répondre, 5 écus au gagnant.</li>
@@ -6518,7 +6567,7 @@ function estProf(){ return typeof estProfesseur === "function" && estProfesseur(
 function publierClassement(){
   if(!compteConnecte() || typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE) return Promise.resolve(false);
   const url = urlDocuments("/classement/" + encodeURIComponent(COMPTE.user.uid));
-  const pseudo = pseudoClassement(COMPTE.user.displayName);
+  const pseudo = pseudoCompte();
   if(!participeClassement() || !pseudo){
     requeteJeton("DELETE", urlDocuments("/saisons/" + saisonEnCours() + "/scores/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
     return requeteJeton("DELETE", url).then(() => true, () => false);
@@ -6626,9 +6675,9 @@ function contenuClassement(){
       <span class="st-num">${i + 1}</span>
       <span class="st-nom"><strong>${lienProfil(e.uid, e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${esc(libellePalier(Math.min(e.palier, NB_PALIERS - 1)))}</small></span>
       ${badgeClassement(e.palier)}<span class="st-pts">${e.points.toLocaleString("fr-FR")} pts</span></li>`).join("")}</ol>`);
-  const pseudo = pseudoClassement(COMPTE.user && COMPTE.user.displayName);
+  const pseudo = pseudoCompte();
   if(!participeClassement()) parts.push(`<p class="minuscule" style="margin:8px 0 0">Vous n’apparaissez pas dans le classement (Réglages, carte Compte).</p>`);
-  else if(!pseudo) parts.push(`<p class="minuscule" style="margin:8px 0 0">Indiquez votre prénom et votre nom dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
+  else if(!pseudo) parts.push(`<p class="minuscule" style="margin:8px 0 0">Choisissez votre pseudo dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
   else if(!E.liste.some(e => e.uid === moi)) parts.push(`<p class="minuscule" style="margin:8px 0 0"><strong>Vous&#8239;: ${
       (E.devant || 0) + 1}<sup>e</sup></strong> sur ${Math.max(E.total || 0, (E.devant || 0) + 1)}
       &#8226; ${src.mien.toLocaleString("fr-FR")} pts</p>`);
@@ -6858,14 +6907,14 @@ function quandLimite(s){
     d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 function texteSanction(s){
-  return `Votre nom «&#8239;${esc(s.nom)}&#8239;» n’est pas accepté. Remplacez-le par votre vrai prénom et votre nom avant
+  return `Votre pseudo «&#8239;${esc(s.nom)}&#8239;» n’est pas accepté. Choisissez-en un autre avant
     ${esc(quandLimite(s))} (Réglages, carte Compte)&#8239;: sans changement, votre compte sera supprimé.`;
 }
 function bandeauSanction(){
   const s = sanctionActive();
   if(!s) return "";
   return `<div class="carte avis-sanction"><p style="margin:0 0 10px"><strong>Message de l’administrateur.</strong> ${texteSanction(s)}</p>
-    <button class="bouton-plein" data-action="onglet-reglages">Changer mon nom</button></div>`;
+    <button class="bouton-plein" data-action="onglet-reglages">Changer de pseudo</button></div>`;
 }
 function ouvrirAvisSanction(contenu){
   fermerAvisSanction();
@@ -6877,7 +6926,7 @@ function ouvrirAvisSanction(contenu){
   v.setAttribute("role", "alertdialog"); v.setAttribute("aria-modal", "true");
   v.innerHTML = `<div class="carte fenetre-boite">${contenu || `<h3 style="margin:0 0 8px">Message de l’administrateur</h3>
     <p>${texteSanction(s)}</p>
-    <div class="rang-boutons"><button class="bouton-plein" data-action="sanction-nom" style="flex:1">Changer mon nom</button>
+    <div class="rang-boutons"><button class="bouton-plein" data-action="sanction-nom" style="flex:1">Changer de pseudo</button>
     <button class="bouton" data-action="sanction-fermer" style="flex:1">Plus tard</button></div>`}</div>`;
   document.body.appendChild(v);
 }
@@ -6887,8 +6936,8 @@ function appliquerSuppression(){
   const u = COMPTE.user;
   COMPTE.sanction = null; COMPTE.sanctionLue = 0;
   ouvrirAvisSanction(`<h3 style="margin:0 0 8px">Compte supprimé</h3>
-    <p>L’administrateur d’EPOK a supprimé ce compte&#8239;: son nom ne respectait pas les règles. Votre progression reste sur cet
-    appareil&#8239;; vous pouvez créer un nouveau compte avec votre vrai prénom et votre nom.</p>
+    <p>L’administrateur d’EPOK a supprimé ce compte&#8239;: son pseudo ne respectait pas les règles. Votre progression reste sur cet
+    appareil&#8239;; vous pouvez créer un nouveau compte avec un autre pseudo.</p>
     <button class="bouton-plein" data-action="sanction-fermer">Compris</button>`);
   Promise.resolve(u && typeof u.delete === "function" ? u.delete().catch(() => {}) : null)
     .then(() => COMPTE.auth && COMPTE.auth.signOut ? COMPTE.auth.signOut().catch(() => {}) : null);
@@ -6965,7 +7014,7 @@ function resumeProfil(){
 }
 function publierProfil(){
   if(!compteConnecte() || typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE) return Promise.resolve(false);
-  const pseudo = pseudoClassement(COMPTE.user.displayName);
+  const pseudo = pseudoCompte();
   const uid = COMPTE.user.uid;
   if(!pseudo) return requeteJeton("DELETE", urlDocuments("/profils/" + encodeURIComponent(uid))).then(() => true, () => false);
   const r = Object.assign({ nom: pseudo }, resumeProfil());
@@ -7021,7 +7070,7 @@ function ouvrirProfil(uid, el){
   ouvrirEnBulle("fenetre-profil", fermer + `<p class="secondaire" style="margin:0">Chargement du profil…</p>`, "carte fenetre-profil", el);
   const ici = COMPTE.user && uid === COMPTE.user.uid;
   /* Son propre profil : tel qu'il est, sans attendre le serveur. */
-  const lu = ici ? Promise.resolve(Object.assign({ nom: pseudoClassement(COMPTE.user.displayName) || "Vous" }, resumeProfil()))
+  const lu = ici ? Promise.resolve(Object.assign({ nom: pseudoCompte() || "Vous" }, resumeProfil()))
     : requeteJeton("GET", urlDocuments("/profils/" + encodeURIComponent(uid))).then(r => r.status === 404 ? null : r.ok ? r.json().then(qjChamps) : Promise.reject(r));
   lu.then(p => {
     const v = document.getElementById("fenetre-profil");
@@ -7056,6 +7105,182 @@ function contenuProfil(p, ici){
 function actionProfil(a, el){
   if(a === "profil-voir"){ if(el && el.dataset.uid) ouvrirProfil(el.dataset.uid, el); return true; }
   if(a === "profil-fermer"){ fermerBulle("fenetre-profil"); return true; }
+  return false;
+}
+/* ==========================================================================
+   PSEUDOS (octobre 2026)
+
+   Plus de « vrai prenom et nom » : chacun choisit un pseudo, et aucun
+   pseudo n'existe deux fois. Le serveur en tient le registre :
+   pseudos/{cle}, ou la cle est le pseudo en minuscules, sans accents ni
+   espaces ni . _ ' - (« Le Grand-Loup » et « legrandloup » sont le meme
+   pseudo, « Léa M. » et « lea m » aussi). On
+   ne cree un document que s'il n'existe pas : le premier arrive le garde.
+   Les regles refusent toute ligne de classement dont le nom n'est pas le
+   pseudo reserve par son auteur.
+
+   Le pseudo devient le nom du compte (displayName). Les comptes d'avant
+   gardent leur nom de classement (« Lea M. ») comme pseudo, s'il est
+   libre ; sinon, l'application leur demande d'en choisir un.
+   ========================================================================== */
+
+const PSEUDO = { valeur: null, uid: null, enCours: false, aChoisir: false, erreur: null, info: null, verifie: null };
+const CLE_PSEUDO = "epok.pseudo";
+const PSEUDO_MIN = 3, PSEUDO_MAX = 20;
+
+function clePseudo(p){ return String(p || "").toLowerCase().replace(/[àáâãäå]/g, "a").replace(/[èéêë]/g, "e").replace(/[ìíîï]/g, "i").replace(/[òóôõöø]/g, "o").replace(/[ùúûü]/g, "u").replace(/ç/g, "c").replace(/ñ/g, "n").replace(/[ýÿ]/g, "y").replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/[ ._'-]/g, ""); }
+function nettoyerPseudo(p){ return String(p || "").trim().replace(/\s+/g, " ").slice(0, PSEUDO_MAX); }
+
+/* Le pseudo du compte connecte, une fois verifie ; « » sinon (et rien
+   n'est alors publie dans les classements). */
+function pseudoCompte(){
+  return compteConnecte() && PSEUDO.uid === COMPTE.user.uid && PSEUDO.valeur ? PSEUDO.valeur : "";
+}
+
+/* Les mots a refuser dans un pseudo : ceux des noms, sauf les mots
+   ordinaires d'un pseudo (king, boss, moi…). Chiffres et symboles
+   ramenes aux lettres (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s). */
+const PSEUDO_PERMIS = new Set(["bg", "boss", "king", "queen", "moi", "toto", "tata", "titi", "lol", "mdr", "xd", "kikoo", "test", "personne", "inconnu", "anonyme", "cretin", "idiot", "idiote", "debile", "abruti", "gogol", "caca", "pipi", "prout", "zizi"]);
+function pseudoInapproprie(p){
+  const brut = nettoyerPseudo(p);
+  if(brut.length < PSEUDO_MIN) return "Votre pseudo : " + PSEUDO_MIN + " caractères au moins.";
+  if(!/^[\p{L}\p{N}][\p{L}\p{N} ._'-]*$/u.test(brut)) return "Votre pseudo : des lettres, des chiffres, des espaces et . _ ' - seulement.";
+  if(clePseudo(brut).length < PSEUDO_MIN) return "Votre pseudo : " + PSEUDO_MIN + " lettres ou chiffres au moins.";
+  const leet = normaliserNom(brut).replace(/4/g, "a").replace(/3/g, "e").replace(/0/g, "o").replace(/[1!]/g, "i").replace(/@/g, "a").replace(/\$/g, "s").replace(/5/g, "s");
+  const mots = leet.split(/[^a-z]+/).filter(Boolean), colle = mots.join("").replace(/(.)\1+/g, "$1");
+  if(mots.some(m => MOTS_INTERDITS.has(m) && !PSEUDO_PERMIS.has(m)) || RACINES_INTERDITES.some(r => colle.indexOf(r.replace(/(.)\1+/g, "$1")) >= 0))
+    return "Ce pseudo n’est pas accepté. Choisissez-en un autre : un pseudo déplacé entraîne la suppression du compte.";
+  return null;
+}
+
+/* L'ancien nom de classement : « Lea Martin » -> « Lea M. ». */
+function ancienPseudo(nom){
+  const mots = String(nom || "").trim().replace(/\s+/g, " ").split(" ").filter(Boolean);
+  if(!mots.length) return "";
+  const prenom = mots[0].slice(0, PSEUDO_MAX - 3);
+  return mots.length > 1 ? prenom + " " + mots[mots.length - 1].charAt(0).toUpperCase() + "." : prenom;
+}
+
+function urlPseudo(p){ return urlDocuments("/pseudos/" + encodeURIComponent(clePseudo(p))); }
+/* Qui a ce pseudo : son uid, null s'il est libre. Lisible sans compte
+   (avant de creer le sien). */
+function proprietairePseudo(p){
+  const lire = compteConnecte() ? requeteJeton("GET", urlPseudo(p)) : fetch(urlPseudo(p));
+  return lire.then(r => r.status === 404 ? null : r.ok ? r.json().then(d => qjChamps(d).uid || null) : Promise.reject(qjErreur(r)));
+}
+/* Reserve le pseudo : refuse (409 ou 403) s'il existe deja. */
+function reserverPseudo(p){
+  return qjCommit({ update: { name: qjNomDoc("/pseudos/" + clePseudo(p)), fields: qjChampsEncodes({ uid: COMPTE.user.uid, pseudo: p }) },
+    updateTransforms: QJ_HEURE, currentDocument: { exists: false } });
+}
+function libererPseudo(p){
+  return requeteJeton("DELETE", urlPseudo(p)).then(() => true, () => false);
+}
+
+function retenirPseudo(p){
+  PSEUDO.valeur = p; PSEUDO.uid = COMPTE.user.uid; PSEUDO.aChoisir = false; PSEUDO.erreur = null;
+  try{ localStorage.setItem(CLE_PSEUDO, JSON.stringify({ uid: PSEUDO.uid, p })); }catch(e){}
+}
+function pseudoEnCache(){
+  try{ const c = JSON.parse(localStorage.getItem(CLE_PSEUDO) || "null"); return c && c.uid === COMPTE.user.uid ? c.p : null; }catch(e){ return null; }
+}
+
+/* A la connexion : retrouve le pseudo du compte, ou le reserve (comptes
+   d'avant), ou demande d'en choisir un. */
+function verifierPseudo(){
+  if(!compteConnecte()) return Promise.resolve(null);
+  const u = COMPTE.user, dn = nettoyerPseudo(u.displayName);
+  if(PSEUDO.uid === u.uid && PSEUDO.valeur && PSEUDO.valeur === dn) return Promise.resolve(PSEUDO.valeur);
+  if(PSEUDO.verifie && PSEUDO.verifie.uid === u.uid) return PSEUDO.verifie.promesse;
+  if(dn && pseudoEnCache() === dn){ retenirPseudo(dn); return Promise.resolve(dn); }
+  const promesse = (dn ? proprietairePseudo(dn) : Promise.resolve(null)).then(qui => {
+    if(dn && qui === u.uid){ retenirPseudo(dn); return dn; }
+    /* Compte d'avant : son nom de classement, s'il est libre. */
+    const p = nettoyerPseudo(ancienPseudo(u.displayName));
+    if(!p || pseudoInapproprie(p)){ PSEUDO.aChoisir = true; return null; }
+    const garder = () => u.updateProfile({ displayName: p }).then(() => { retenirPseudo(p); apresPseudo(); return p; });
+    /* Deja a lui (nom du compte pas encore mis a jour) : il le garde. */
+    return proprietairePseudo(p).then(qui2 => qui2 === u.uid ? garder()
+      : qui2 ? Promise.reject({ pris: true }) : reserverPseudo(p).then(garder))
+      .catch(e => { if(e && e.pris || e && e.statut){ PSEUDO.aChoisir = true; PSEUDO.propose = p; } return null; });
+  }).catch(() => null).then(p => { PSEUDO.verifie = null; if(!p && PSEUDO.aChoisir) demanderPseudo(); majVuesCompte(); return p; });
+  PSEUDO.verifie = { uid: u.uid, promesse };
+  return promesse;
+}
+
+/* Choisir ou changer son pseudo. */
+function changerPseudo(saisie){
+  if(!compteConnecte() || PSEUDO.enCours) return Promise.resolve(false);
+  const p = nettoyerPseudo(saisie), u = COMPTE.user, ancien = pseudoCompte();
+  const refus = pseudoInapproprie(p);
+  PSEUDO.info = null;
+  if(refus){ PSEUDO.erreur = refus; majVuesPseudo(); return Promise.resolve(false); }
+  if(ancien && ancien === p){ PSEUDO.erreur = null; majVuesPseudo(); return Promise.resolve(true); }
+  PSEUDO.enCours = true; PSEUDO.erreur = null; majVuesPseudo();
+  return proprietairePseudo(p).then(qui => {
+    if(qui && qui !== u.uid) return Promise.reject({ pris: true });
+    return (qui ? Promise.resolve() : reserverPseudo(p).catch(() => Promise.reject({ pris: true })))
+      .then(() => u.updateProfile({ displayName: p }))
+      .then(() => {
+        if(ancien && clePseudo(ancien) !== clePseudo(p)) libererPseudo(ancien);
+        retenirPseudo(p); PSEUDO.info = "Pseudo enregistré : " + p;
+        fermerDemandePseudo(); if(typeof fermerAvisSanction === "function") fermerAvisSanction();
+        apresPseudo(true);
+        return true;
+      });
+  }).catch(e => {
+    PSEUDO.erreur = e && e.pris ? "Ce pseudo est déjà pris. Choisissez-en un autre." : "Pas de réseau : réessayez plus tard.";
+    return false;
+  }).then(ok => { PSEUDO.enCours = false; majVuesPseudo(); return ok; });
+}
+/* Les lignes publiques prennent aussitot le nouveau pseudo. */
+function apresPseudo(relire){
+  planifierSynchro(300);
+  if(!relire) return;
+  if(typeof publierClassement === "function") publierClassement().then(() => chargerClassement(true), () => {});
+  if(typeof publierAlbum === "function") publierAlbum().then(() => chargerAlbums(true), () => {});
+  if(typeof publierProfil === "function") publierProfil();
+  if(typeof publierQuotidien === "function") publierQuotidien();
+  if(typeof rendre === "function") rendre();
+}
+
+/* ---------- Affichage ---------- */
+function blocPseudo(){
+  const p = pseudoCompte();
+  return `<div class="champ-compte" id="bloc-pseudo" style="margin:8px 0 10px"><span>${p ? "Votre pseudo&#8239;: <strong>" + esc(p) + "</strong>" : "Choisissez votre pseudo"}</span>
+      <div class="b-code-ligne"><input id="pseudo-saisie" type="text" autocomplete="nickname" maxlength="${PSEUDO_MAX}" spellcheck="false" placeholder="par exemple Le Grand Loup" value="${esc(p || PSEUDO.propose || "")}">
+      <button class="bouton-plein" data-action="pseudo-enregistrer" style="width:auto;padding:0 16px"${PSEUDO.enCours ? " disabled" : ""}>${PSEUDO.enCours ? "…" : "Enregistrer"}</button></div>
+      <span class="minuscule">${PSEUDO_MIN} à ${PSEUDO_MAX} caractères. Chaque pseudo est unique. Un pseudo déplacé entraîne la suppression du compte.</span>
+      ${PSEUDO.erreur ? `<p class="avis" role="alert" style="margin:8px 0 0">${esc(PSEUDO.erreur)}</p>` : ""}${PSEUDO.info ? `<p class="compte-info" role="status" style="margin:8px 0 0">${esc(PSEUDO.info)}</p>` : ""}
+    </div>`;
+}
+function majVuesPseudo(){
+  ["bloc-pseudo", "bloc-pseudo-fenetre"].forEach(id => {
+    const b = document.getElementById(id);
+    if(b){ const n = document.createElement("div"); n.innerHTML = blocPseudo(); const x = n.firstElementChild; x.id = id; b.replaceWith(x); }
+  });
+}
+/* Une fenetre, quand un compte n'a pas encore de pseudo libre. */
+function demanderPseudo(){
+  if(typeof document === "undefined" || document.getElementById("fenetre-pseudo") || !compteConnecte() || pseudoCompte()) return;
+  const v = document.createElement("div");
+  v.id = "fenetre-pseudo"; v.className = "fenetre";
+  v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", "Choisir un pseudo");
+  v.innerHTML = `<div class="carte fenetre-boite"><h3 style="margin:0 0 8px">Choisissez votre pseudo</h3>
+    <p class="secondaire" style="margin:0 0 8px">C’est le nom que les autres joueurs verront dans les classements${PSEUDO.propose ? "&#8239;; «&#8239;" + esc(PSEUDO.propose) + "&#8239;» est déjà pris" : ""}.</p>
+    ${blocPseudo().replace('id="bloc-pseudo"', 'id="bloc-pseudo-fenetre"')}
+    <button class="bouton" data-action="pseudo-plus-tard" style="width:100%">Plus tard</button></div>`;
+  document.body.appendChild(v);
+}
+function fermerDemandePseudo(){ const v = document.getElementById("fenetre-pseudo"); if(v) v.remove(); }
+
+function actionPseudo(a, el){
+  if(a === "pseudo-enregistrer"){
+    const b = el && el.closest(".champ-compte"), i = b && b.querySelector("input");
+    changerPseudo(i ? i.value : "");
+    return true;
+  }
+  if(a === "pseudo-plus-tard"){ fermerDemandePseudo(); return true; }
   return false;
 }
 
@@ -7266,7 +7491,7 @@ function qjPublierScore(date){
     if(p.choix.length < QJ_NB) return false;
     const temps = qjTempsServeur(p), lundi = qjLundi(date), precedent = qjPrecedent(date);
     const pe = precedent ? ETAT.quotidien[precedent] : { cumul: 0, cumulTemps: 0, jours: 0 };
-    const nom = pseudoClassement(COMPTE.user.displayName);
+    const nom = pseudoCompte();
     const ligne = j => ({ nom, justes: j, temps, score: j * 1000 + 999 - temps, cumul: pe.cumul + 3 * j,
                           cumulTemps: pe.cumulTemps + temps, jours: pe.jours + 1, precedent, lundi });
     const essai = j => qjCommit({ update: { name: qjNomDoc("/jour/" + date + "/scores/" + uid), fields: qjChampsEncodes(ligne(j)) },
@@ -7287,7 +7512,7 @@ function qjPublierSemaine(){
   const d = l[l.length - 1], e = ETAT.quotidien[d];
   if(e.semaineEnvoyee) return Promise.resolve(true);
   return qjCommit({ update: { name: qjNomDoc("/semaine/" + lundi + "/scores/" + COMPTE.user.uid), fields: qjChampsEncodes({
-      nom: pseudoClassement(COMPTE.user.displayName), points: e.cumul, jours: e.jours, temps: e.cumulTemps,
+      nom: pseudoCompte(), points: e.cumul, jours: e.jours, temps: e.cumulTemps,
       score: e.cumul * 10000 + 9999 - e.cumulTemps, dernier: d }) }, updateTransforms: QJ_HEURE })
     .then(() => { e.semaineEnvoyee = true; sauverEtat(true); return true; }, () => false);
 }
@@ -7436,7 +7661,7 @@ function qjAvantMinuit(){
 
 function qjPeutPublier(){
   return typeof compteConnecte === "function" && compteConnecte()
-    && participeClassement() && !!pseudoClassement(COMPTE.user && COMPTE.user.displayName);
+    && participeClassement() && !!pseudoCompte();
 }
 /* Les scores des jours finis, un a un dans l'ordre (le cumul de la
    semaine s'enchaine), puis la ligne de la semaine. */
@@ -7563,7 +7788,7 @@ function qjAfficher(){
       ${QJ.raison ? `<p class="avis">${esc(QJ.raison)}</p>` : ""}
       ${qjPeutJouer() ? `<button class="bouton-plein" data-action="qj-commencer"${QJ.prepare ? " disabled" : ""}>${QJ.prepare ? "Préparation…" : "Commencer"}</button>`
         : `<p class="avis">${typeof compteConnecte === "function" && compteConnecte()
-            ? "Indiquez votre prénom et votre nom (Réglages, carte Compte) pour jouer : le score est vérifié et classé par le serveur."
+            ? "Choisissez votre pseudo (Réglages, carte Compte) pour jouer : le score est vérifié et classé par le serveur."
             : "Connectez-vous pour jouer : le Quiz of the Day se joue en ligne, le score est vérifié par le serveur."}</p>
           <button class="bouton-plein" data-action="onglet-reglages">Aller aux Réglages</button>`}
     </div>`;
@@ -8724,7 +8949,7 @@ function publierAlbum(){
   if(typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE) return Promise.resolve(false);
   if(typeof compteConnecte !== "function" || !compteConnecte() || typeof CARTES === "undefined" || !CARTES.length) return Promise.resolve(false);
   const url = urlDocuments("/albums/" + encodeURIComponent(COMPTE.user.uid));
-  const pseudo = pseudoClassement(COMPTE.user.displayName);
+  const pseudo = pseudoCompte();
   if(!pseudo) return requeteJeton("DELETE", url).then(() => true, () => false);
   const m = cartesPossedees();
   return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
@@ -8779,8 +9004,8 @@ function contenuAlbums(){
       <span class="st-num">${i + 1}</span>
       <span class="st-nom"><strong>${lienProfil(e.uid, e.nom)}${e.uid === moi ? " (vous)" : ""}</strong><small>${e.cartes} carte${e.cartes > 1 ? "s" : ""}</small></span>
       <span class="st-pts">${e.pv.toLocaleString("fr-FR")} PV</span></li>`).join("")}</ol>`];
-  if(!pseudoClassement(COMPTE.user && COMPTE.user.displayName))
-    parts.push(`<p class="minuscule" style="margin:8px 0 0">Indiquez votre prénom et votre nom dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
+  if(!pseudoCompte())
+    parts.push(`<p class="minuscule" style="margin:8px 0 0">Choisissez votre pseudo dans Réglages, carte Compte, pour apparaître dans le classement.</p>`);
   else if(!ALBUMS.liste.some(e => e.uid === moi)) parts.push(`<p class="minuscule" style="margin:8px 0 0"><strong>Vous&#8239;: ${
       (ALBUMS.devant || 0) + 1}<sup>e</sup></strong> sur ${Math.max(ALBUMS.total || 0, (ALBUMS.devant || 0) + 1)}
       &#8226; ${scoreCollection().toLocaleString("fr-FR")} PV</p>`);
@@ -9405,8 +9630,9 @@ if(typeof document !== "undefined") document.addEventListener("error", ev => {
    - 1 ecu par point nouveau, et 1 ecu par bonne reponse a un QCM refait
      (30 par jour au plus) ; missions, serie et defis gagnes s'y ajoutent ;
      le tout est plafonne a 150 ecus par jour, par le serveur ;
-   - le recyclage d'un double rend environ 10 % de sa valeur : ouvrir des
-     packs pour les recycler fait toujours perdre des ecus ;
+   - le recyclage d'un double rend 5 a 100 ecus selon sa rarete (octobre
+     2026) : ouvrir des packs pour les recycler fait toujours perdre des
+     ecus ;
    - aucun gain du passe : les points des cartes et des podiums de saison
      ne donnent pas d'ecus.
    Ce qui ne passe pas par le plafond est borne par le serveur : 300 ecus
@@ -9415,20 +9641,38 @@ if(typeof document !== "undefined") document.addEventListener("error", ev => {
    ========================================================================== */
 
 /* Le bareme (octobre 2026), montre au joueur (« Gagner des ecus ») :
-   - Quiz of the Day : 2 ecus par bonne reponse ; podium du jour 15 / 10 / 5,
-     de la semaine 30 / 20 / 10 ;
+   - Quiz of the Day : 3 ecus par bonne reponse ; selon la place, 30 a 1
+     ecu au classement du jour (jusqu'a la 44e place), 80 a 2 a celui de
+     la semaine (ECU_QJ_PLACES_JOUR, ECU_QJ_PLACES_SEMAINE), hors plafond ;
    - 3 missions du jour : 10 ecus chacune ;
    - serie : 1 ecu par jour de suite, 10 au plus ;
    - defi gagne : 5 ecus (z0n_social.js) ;
    - Brevet (avec le code) : 1 ecu par point ;
-   - 100 ecus par jour au plus (le serveur, lui, refuse au-dela de 150). */
+   - 100 ecus par jour au plus, sans le Quiz of the Day (le serveur, lui,
+     refuse au-dela de 250) ;
+   - un pack contient aussi quelques ecus, tires par le serveur. */
 const ECU_PLAFOND = 100, ECU_REVISION = 30, ECU_DEPART = 300, ECU_MISSION = 10;
-const ECU_QJ_BONNE = 2, ECU_QJ_PODIUM_JOUR = [15, 10, 5], ECU_QJ_PODIUM_SEMAINE = [30, 20, 10], ECU_SERIE_MAX = 10;
+const ECU_QJ_BONNE = 3, ECU_SERIE_MAX = 10;
+/* Le Quiz of the Day (octobre 2026) : 3 ecus par bonne reponse, puis selon
+   la place au classement du jour et a celui de la semaine. Chaque ligne :
+   [jusqu'a la place, ecus]. Ces ecus ne comptent pas dans le plafond de
+   100 par jour (ils ont leur propre bareme) ; le serveur plafonne tout a
+   250 par jour. */
+const ECU_QJ_PLACES_JOUR = [[1, 30], [2, 25], [3, 18], [4, 15], [6, 13], [8, 12], [10, 11], [12, 10], [15, 9], [18, 8], [21, 7], [24, 6],
+  [27, 5], [31, 4], [35, 3], [39, 2], [44, 1]];
+const ECU_QJ_PLACES_SEMAINE = [[1, 80], [2, 50], [3, 40], [4, 30], [6, 26], [8, 24], [10, 22], [12, 20], [15, 18], [18, 16], [21, 14], [24, 12],
+  [27, 10], [31, 8], [35, 6], [39, 4], [44, 2]];
+const ECU_JOUR_SERVEUR = 250;
+function ecusPlace(bareme, rang){
+  if(!(rang >= 1)) return 0;
+  const l = bareme.find(x => rang <= x[0]);
+  return l ? l[1] : 0;
+}
 /* Hors ligne, les gains attendent sur l'appareil : 3 jours au plus. */
 const ATTENTE_MAX = 3 * ECU_PLAFOND;
 const PRIX_PACKS = { c: 100, p: 250, u: 600 };
 const NOMS_PACKS = { c: "Classique", p: "Premium", u: "Ultra premium" };
-const RECYCLAGE = { "commune": 1, "peu-commune": 2, "rare": 5, "epique": 15, "legendaire": 40, "mythique": 100 };
+const RECYCLAGE = { "commune": 5, "peu-commune": 10, "rare": 20, "epique": 30, "legendaire": 50, "mythique": 100 };
 /* Passe de saison : un palier tous les 120 ecus gagnes pendant la saison
    (gagnes en jouant, donc plafonnes par jour), 25 paliers. Des ecus
    surtout, des packs aux paliers ronds. */
@@ -9501,9 +9745,23 @@ function crediter(n, raison){
    d'un podium de semaine. */
 function ecusQuizJour(x){
   if(!x || x.verifie === false) return 0;
-  return ECU_QJ_BONNE * (x.justes || 0) + (x.rangFinal && x.rang >= 1 && x.rang <= 3 ? ECU_QJ_PODIUM_JOUR[x.rang - 1] : 0);
+  return ECU_QJ_BONNE * (x.justes || 0) + (x.rangFinal ? ecusPlace(ECU_QJ_PLACES_JOUR, x.rang) : 0);
 }
-function ecusPodiumSemaine(w){ return w && w.final && w.rang >= 1 && w.rang <= 3 ? ECU_QJ_PODIUM_SEMAINE[w.rang - 1] : 0; }
+function ecusPodiumSemaine(w){ return w && w.final ? ecusPlace(ECU_QJ_PLACES_SEMAINE, w.rang) : 0; }
+/* Les ecus du Quiz of the Day : hors du plafond de 100, dans celui du
+   serveur. */
+function crediterQJ(n, raison){
+  const e = ecus(), d = aujourdhui(), g = Math.max(0, Math.round(n));
+  if(g){
+    e.qjJour = e.qjJour && e.qjJour.d === d ? e.qjJour : { d, n: 0 };
+    e.qjJour.n += g;
+    e.attente = Math.min(ATTENTE_MAX + ECU_JOUR_SERVEUR, (e.attente || 0) + g);
+    const j = e.journal || (e.journal = {});
+    (j[d] = j[d] || []).push({ r: String(raison || "Quiz of the Day").slice(0, 60), n: g });
+    Object.keys(j).sort().slice(0, -7).forEach(k => { delete j[k]; });
+  }
+  return g;
+}
 
 /* Les points qui donnent des ecus : tous, sauf ceux des packs ouverts et
    des podiums de saison (sinon acheter un pack rapporterait des ecus). */
@@ -9622,9 +9880,9 @@ function majEcus(){
   if(!e.qj){ e.qj = {}; Object.keys(q).forEach(k => { e.qj[k] = ecusQuizJour(q[k]); }); }
   if(!e.qjs){ e.qjs = {}; Object.keys(s).forEach(k => { e.qjs[k] = ecusPodiumSemaine(s[k]); }); }
   Object.keys(q).forEach(k => { const v = ecusQuizJour(q[k]), deja = e.qj[k] || 0;
-    if(v > deja){ gain += crediter(v - deja, q[k].rangFinal && q[k].rang <= 3 && deja ? "Podium du Quiz of the Day" : "Quiz of the Day"); e.qj[k] = v; } });
+    if(v > deja){ gain += crediterQJ(v - deja, q[k].rangFinal && deja ? "Quiz of the Day : " + q[k].rang + "e du jour" : "Quiz of the Day"); e.qj[k] = v; } });
   Object.keys(s).forEach(k => { const v = ecusPodiumSemaine(s[k]), deja = e.qjs[k] || 0;
-    if(v > deja){ gain += crediter(v - deja, "Podium de la semaine"); e.qjs[k] = v; } });
+    if(v > deja){ gain += crediterQJ(v - deja, "Quiz of the Day : " + s[k].rang + "e de la semaine"); e.qjs[k] = v; } });
   const pt = Math.round(pointsTotal());
   if(e.refPts === null || pt < e.refPts) e.refPts = pt;
   else if(pt > e.refPts){ e.attentePts = Math.min(3 * PTS_PLAFOND, (e.attentePts || 0) + pt - e.refPts); e.refPts = pt; }
@@ -9725,8 +9983,8 @@ function carteMissions(){
 function baremeEcus(){
   const l = [
     ["Quiz of the Day", ECU_QJ_BONNE + " par bonne réponse"],
-    ["Podium du Quiz of the Day", ECU_QJ_PODIUM_JOUR.join(" / ") + " (1<sup>er</sup> / 2<sup>e</sup> / 3<sup>e</sup>)"],
-    ["Podium de la semaine", ECU_QJ_PODIUM_SEMAINE.join(" / ")],
+    ["Classement du jour", "de 30 (1<sup>er</sup>) à 1 (" + ECU_QJ_PLACES_JOUR[ECU_QJ_PLACES_JOUR.length - 1][0] + "<sup>e</sup>)"],
+    ["Classement de la semaine", "de 80 (1<sup>er</sup>) à 2 (" + ECU_QJ_PLACES_SEMAINE[ECU_QJ_PLACES_SEMAINE.length - 1][0] + "<sup>e</sup>)"],
     ["Chaque mission du jour", String(ECU_MISSION)],
     ["Série de jours", "1 par jour de suite, " + ECU_SERIE_MAX + " au plus"],
     ["Défi gagné contre un ami", String(typeof DEFI_ECUS !== "undefined" ? DEFI_ECUS : 5)]
@@ -9734,11 +9992,21 @@ function baremeEcus(){
   if(modeBrevet()) l.push(["Révisions du Brevet", "1 par point"]);
   return l;
 }
+/* Toutes les places qui rapportent, jour et semaine cote a cote. */
+function tablePlacesQJ(){
+  const l = ECU_QJ_PLACES_JOUR.map((x, i) => {
+    const de = i ? ECU_QJ_PLACES_JOUR[i - 1][0] + 1 : 1, a = x[0];
+    return `<tr><th scope="row">${de === a ? de + (de === 1 ? "<sup>er</sup>" : "<sup>e</sup>") : de + "<sup>e</sup> à " + a + "<sup>e</sup>"}</th><td>${x[1]}</td><td>${ECU_QJ_PLACES_SEMAINE[i][1]}</td></tr>`;
+  }).join("");
+  return `<details class="places-qj"><summary>Écus du Quiz of the Day, place par place</summary>
+    <table class="bareme-ecus"><thead><tr><th>Place</th><th>Jour</th><th>Semaine</th></tr></thead><tbody>${l}</tbody></table></details>`;
+}
 function detailEcus(){
   const j = (ecus().journal || {})[aujourdhui()] || [];
   return `<details class="detail-ecus"><summary>Comment gagner des écus&#8239;?</summary>
     <table class="bareme-ecus"><tbody>${baremeEcus().map(([a, b]) => `<tr><th scope="row">${a}</th><td>${b}</td></tr>`).join("")}</tbody></table>
-    <p class="minuscule" style="margin:6px 0 0">${ECU_PLAFOND} écus par jour au plus. Ouvrir un pack ne rapporte pas d’écus.</p>
+    ${tablePlacesQJ()}
+    <p class="minuscule" style="margin:6px 0 0">${ECU_PLAFOND} écus par jour au plus, sans compter le Quiz of the Day. Un pack peut aussi contenir quelques écus.</p>
     <p class="minuscule" style="margin:12px 0 4px"><strong>Gagnés aujourd’hui</strong></p>
     ${j.length ? `<ul class="journal-ecus">${j.slice().reverse().map(g => `<li><span>${esc(g.r)}</span>${montantEcus(g.n, 13)}</li>`).join("")}</ul>`
       : `<p class="minuscule" style="margin:0">Rien encore aujourd’hui.</p>`}
@@ -9846,7 +10114,7 @@ function viaBourse(el, promesse, suite){
    l'animation, avec les cartes qu'il a acceptees. */
 function ouvrirPackBourse(cle, el){
   const avant = cartesPossedees();
-  return viaBourse(el, () => bourseOuvrir(cle), pli => { if(pli && pli.length) ouvrirPli(cle, pli, avant); else if(typeof rendre === "function") rendre(); return pli; });
+  return viaBourse(el, () => bourseOuvrir(cle), pli => { if(pli && pli.length){ ouvrirPli(cle, pli, avant); if(pli.ecus) annoncerGain(pli.ecus); } else if(typeof rendre === "function") rendre(); return pli; });
 }
 function actionEcus(a, el){
   if(a === "ecu-acheter"){
@@ -9919,7 +10187,7 @@ function social(){
   if(!ETAT.social || !Array.isArray(ETAT.social.vitrine)) ETAT.social = nettoyerSocial(ETAT.social);
   return ETAT.social;
 }
-function monNom(){ return COMPTE.user ? pseudoClassement(COMPTE.user.displayName) : ""; }
+function monNom(){ return COMPTE.user ? pseudoCompte() : ""; }
 function socialPossible(){ return typeof BETA !== "undefined" && BETA && compteConfigure() && compteConnecte() && !!monNom(); }
 function idAmitie(x, y){ return x < y ? x + "_" + y : y + "_" + x; }
 /* Un defi par jour avec chaque ami (octobre 2026) : l'identifiant du defi
@@ -10250,7 +10518,7 @@ if(typeof document !== "undefined") document.addEventListener("visibilitychange"
 function carteAmis(){
   if(!(typeof BETA !== "undefined" && BETA)) return "";
   if(!compteConnecte()) return "";
-  if(!monNom()) return `<div class="carte"><p class="secondaire" style="margin:0">Indiquez votre prénom et votre nom (Réglages, carte Compte) pour ajouter des amis.</p></div>`;
+  if(!monNom()) return `<div class="carte"><p class="secondaire" style="margin:0">Choisissez votre pseudo (Réglages, carte Compte) pour ajouter des amis.</p></div>`;
   chargerSocial(false);
   return `<div class="carte" id="zone-amis">${contenuAmis()}</div>`;
 }
@@ -10433,8 +10701,15 @@ function rareteTireeBourse(h, i, garantie){
 }
 function carteBourse(r, y, k){ const l = BOURSE_LISTES[r]; return l[(y + k) % l.length]; }
 /* Les 3 cartes du pack « cle » (type t), cree par le serveur a ms. */
+function empreintePack(uid, cle, ms){ return sha256Hex(uid + "|" + cle + "|" + ms); }
+/* Les ecus du pack, de la meme empreinte (comme ecusPack dans les regles) :
+   Classique 0 a 10 (rien 3 fois sur 10), Premium 5 a 20, Ultra 10 a 30. */
+function ecusPackBourse(uid, cle, ms, t){
+  const h = empreintePack(uid, cle, ms), v = parseInt(h.slice(21, 23), 16);
+  return t === "c" ? (v < 77 ? 0 : 1 + (v - 77) % 10) : t === "p" ? 5 + v % 16 : 10 + v % 21;
+}
 function tirageBourse(uid, cle, ms, t){
-  const h = sha256Hex(uid + "|" + cle + "|" + ms), g = t !== "c";
+  const h = empreintePack(uid, cle, ms), g = t !== "c";
   const r = [rareteTireeBourse(h, 0, t === "u"), rareteTireeBourse(h, 1, t === "u"), rareteTireeBourse(h, 2, g)];
   const y = [3, 10, 17].map(i => parseInt(h.slice(i, i + 4), 16));
   const c0 = carteBourse(r[0], y[0], 0), a = carteBourse(r[1], y[1], 0), c1 = a === c0 ? carteBourse(r[1], y[1], 1) : a;
@@ -10704,7 +10979,7 @@ let ENVOI_GAINS = null;
 function gainsAEnvoyer(d){
   const e = ecus(), j = jourBourse(), meme = j === d.jour;
   if(j < d.jour) return null;   /* horloge de l'appareil en retard */
-  const eg = Math.max(0, Math.min(e.attente || 0, ECU_PLAFOND - (meme ? d.duJour : 0)));
+  const eg = Math.max(0, Math.min(e.attente || 0, ECU_JOUR_SERVEUR - (meme ? d.duJour : 0)));
   const pg = Math.max(0, Math.min(e.attentePts || 0, PTS_PLAFOND - (meme ? d.ptsJour : 0)));
   return eg + pg > 0 ? { j, meme, eg, pg } : null;
 }
@@ -10762,13 +11037,15 @@ function bourseOuvrir(cle){
   return avant.then(() => opererBourse(d => {
     const p = d.packs[cle];
     if(!p || !p.cree || !p.cree.horodatage) return null;
-    const pli = tirageBourse(BOURSE.uid, cle, msHorodatage(p.cree.horodatage), p.t), a = copieBourse(d);
+    const ms = msHorodatage(p.cree.horodatage), pli = tirageBourse(BOURSE.uid, cle, ms, p.t), a = copieBourse(d);
+    const e = ecusPackBourse(BOURSE.uid, cle, ms, p.t);
     delete a.packs[cle];
     const touchees = [];
     pli.forEach(n => { const k = "r" + rangRarete(carteN(n).r); a.cartes[k].push(n); if(touchees.indexOf(k) < 0) touchees.push(k); });
-    a.ouverts += 1;
+    a.ouverts += 1; a.solde += e;
+    pli.ecus = e;
     return { op: { k: "ouvrir", c: cle }, apres: a, resultat: pli, effacer: [["packs", cle]],
-      ecrire: touchees.map(k => [["cartes", k], a.cartes[k]]).concat([[["ouverts"], a.ouverts]]) };
+      ecrire: touchees.map(k => [["cartes", k], a.cartes[k]]).concat([[["ouverts"], a.ouverts], [["solde"], a.solde]]) };
   }));
 }
 /* Un double : une carte tiree d'un pack dont un autre exemplaire reste
@@ -14148,7 +14425,7 @@ document.addEventListener("click", function(ev){
   const el = ev.target.closest("[data-action]");
   if(!el) return;
   const a = el.dataset.action;
-  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el)) || (typeof actionApps === "function" && actionApps(a, el))) return;
+  if(actionAide(a, el) || actionTuto(a) || actionBrevet(a, el) || actionCompte(a, el) || actionQuizJour(a, el) || actionSanction(a) || actionCartes(a, el) || actionProfil(a, el) || actionClassement(a, el) || (typeof actionEcus === "function" && actionEcus(a, el)) || (typeof actionSocial === "function" && actionSocial(a, el)) || (typeof actionApps === "function" && actionApps(a, el)) || (typeof actionPseudo === "function" && actionPseudo(a, el))) return;
 
   /* -- Navigation generale -- */
   if(a === "social-vue"){ VUE_SOCIAL = el.dataset.vue === "classements" ? "classements" : "amis"; rendre(); return; }
