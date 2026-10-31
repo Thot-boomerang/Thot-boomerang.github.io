@@ -6,7 +6,7 @@
    bibliotheques) est servi depuis le cache, puis mis en cache a la
    premiere lecture. VERSION change a chaque publication (publier_web.sh) :
    le nouveau service worker remplace alors l'ancien et vide son cache. */
-const VERSION = "202610311349-298a719";
+const VERSION = "202610311706-732a2e7";
 /* Plusieurs applications sur le meme site (epok/, epok-cours/, epok-beta/) :
    les caches sont communs a tout le site, chacune a donc son prefixe, et
    ne vide que les siens. */
