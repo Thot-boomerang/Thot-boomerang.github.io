@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-uU8uyML7kmtjh0tRH9n7SL5lGNZCm/C5DqhLktsfWvw=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-JCHGnv6hg0+7EV0ejgexKzjaJC2f19Euxy8bg9jMqLI=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -7498,7 +7498,7 @@ function qjPublierScore(date){
       currentDocument: { exists: false }, updateTransforms: QJ_HEURE }).then(() => j, () => null);
     return Promise.all(Array.from({ length: QJ_NB + 1 }, (_, j) => essai(j))).then(r => {
       const j = r.find(x => x !== null);
-      if(j !== undefined){ qjNoterScore(date, ligne(j)); return true; }
+      if(j !== undefined){ qjNoterScore(date, ligne(j)); if(typeof fonctionsActives === "function" && fonctionsActives()) recolterServeur(true); return true; }
       /* Deja publie (depuis un autre appareil) : on relit la ligne. */
       return qjDoc("jour/" + date + "/scores/" + uid).then(d => { qjNoterScore(date, qjChamps(d)); return true; }, () => false);
     });
@@ -9730,6 +9730,8 @@ function ecusDuJour(){ return ecus().jours[aujourdhui()] || 0; }
 /* Gagne n ecus aujourd'hui, dans la limite du plafond : ils partent a la
    bourse (qui revérifie le plafond). Rend ce qui a ete gagne. */
 function crediter(n, raison){
+  /* Le back-end actif : seul le serveur credite (recolterServeur). */
+  if(typeof fonctionsActives === "function" && fonctionsActives()) return 0;
   const e = ecus(), d = aujourdhui(), deja = e.jours[d] || 0;
   const g = Math.max(0, Math.min(Math.round(n), ECU_PLAFOND - deja));
   if(g){
@@ -9751,6 +9753,7 @@ function ecusPodiumSemaine(w){ return w && w.final ? ecusPlace(ECU_QJ_PLACES_SEM
 /* Les ecus du Quiz of the Day : hors du plafond de 100, dans celui du
    serveur. */
 function crediterQJ(n, raison){
+  if(typeof fonctionsActives === "function" && fonctionsActives()) return 0;
   const e = ecus(), d = aujourdhui(), g = Math.max(0, Math.round(n));
   if(g){
     e.qjJour = e.qjJour && e.qjJour.d === d ? e.qjJour : { d, n: 0 };
@@ -9867,6 +9870,8 @@ function majEcus(){
   if(typeof COURS === "undefined" || typeof pointsTotal !== "function" || typeof bourse !== "function") return 0;
   const b = bourse();
   if(!b) return 0;
+  /* Le back-end actif : rien ne se compte ici, le serveur recolte. */
+  if(typeof fonctionsActives === "function" && fonctionsActives()){ planifierGains(); return 0; }
   const e = ecus(), d = aujourdhui();
   if(e.uid !== BOURSE.uid){ e.uid = BOURSE.uid; e.ref = null; e.refPts = null; e.attente = 0; e.attentePts = 0; }
   let gain = 0;
@@ -10871,7 +10876,7 @@ function chargerBourse(force){
   if(!force && BOURSE.uid === uid && BOURSE.lu && Date.now() - BOURSE.lu < 60 * 1000) return Promise.resolve(BOURSE.doc);
   if(BOURSE.uid !== uid){ BOURSE.uid = uid; BOURSE.doc = null; BOURSE.maj = null; BOURSE.etat = "inconnu"; bourse(); }
   if(BOURSE.etat !== "ok") BOURSE.etat = "chargement";
-  BOURSE.chargement = requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(uid)))
+  BOURSE.chargement = lireConfigServeur().then(() => requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(uid))))
     .then(r => r.status === 404 ? null : r.ok ? r.json() : Promise.reject(qjErreur(r)))
     .then(doc => {
       if(!COMPTE.user || COMPTE.user.uid !== uid) return null;
@@ -10915,7 +10920,18 @@ function collectionAImporter(){
   RARETES_BOURSE.forEach(k => c[k].sort((a, b) => a - b));
   return c;
 }
+function relireBourseCreee(){
+  return requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(BOURSE.uid)))
+    .then(r => r.ok ? r.json() : Promise.reject(qjErreur(r))).then(doc => {
+      BOURSE.doc = nettoyerBourse(bvValeur({ mapValue: { fields: doc.fields || {} } })); BOURSE.maj = doc.updateTime; BOURSE.etat = "ok"; sauverCacheBourse(); return BOURSE.doc; });
+}
 function creerBourse(){
+  if(fonctionsActives()) return appelerFonction("creerBourse").then(() => relireBourseCreee()).then(d => {
+    const e = ecus();
+    e.uid = BOURSE.uid; e.ref = null; e.refPts = null; e.attente = 0; e.attentePts = 0;
+    sauverEtat();
+    return d;
+  });
   const pts = Math.max(0, Math.min(200000, Math.round(pointsTotal())));
   const doc = { solde: ECU_DEPART, jour: "", duJour: 0, ptsJour: 0, pts: 0, gagne: 0, saison: saisonActuelle(null), gagneSaison: 0,
     pris: {}, packs: { "bienvenue-c": { t: "c" }, "bienvenue-p": { t: "p" } }, cartes: { r0: [], r1: [], r2: [], r3: [], r4: [], r5: [] },
@@ -10931,9 +10947,7 @@ function creerBourse(){
     return d;
   }, e => {
     /* Deja creee par un autre appareil : on la relit. */
-    if(e && (e.statut === 409 || e.statut === 400)) return requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(BOURSE.uid)))
-      .then(r => r.ok ? r.json() : Promise.reject(qjErreur(r))).then(doc => {
-        BOURSE.doc = nettoyerBourse(bvValeur({ mapValue: { fields: doc.fields || {} } })); BOURSE.maj = doc.updateTime; BOURSE.etat = "ok"; sauverCacheBourse(); return BOURSE.doc; });
+    if(e && (e.statut === 409 || e.statut === 400)) return relireBourseCreee();
     throw e;
   });
 }
@@ -10974,6 +10988,58 @@ function migrerBourse(){
   return MIGRATION;
 }
 
+/* ---------- Le back-end (Cloud Functions, novembre 2026) ----------
+   Le serveur fait foi : une fois les fonctions deployees (forfait Blaze)
+   et CONFIG_COMPTE.fonctions mis a true dans config-compte.js, le serveur
+   cree la bourse et credite seul les gains (serveur/functions). L'application
+   ne declare plus rien : elle demande la recolte, puis relit sa bourse.
+   ?fonctions=1 l'essaie sans changer la configuration (essais, emulateur :
+   CONFIG_COMPTE.urlFonctions). */
+/* L'interrupteur, lu une fois par session dans config/serveur (le meme
+   document que lisent les regles) : basculer ce seul document change le
+   serveur et l'application ensemble, sans republier le site. */
+let CONFIG_SERVEUR_LU = false;
+function lireConfigServeur(){
+  if(CONFIG_SERVEUR_LU) return Promise.resolve();
+  return requeteJeton("GET", urlDocuments("/config/serveur")).then(r => r.ok ? r.json() : null).then(doc => {
+    CONFIG_SERVEUR_LU = true;
+    const f = doc && doc.fields && doc.fields.fonctions;
+    if(f && "booleanValue" in f) CONFIG_COMPTE.fonctions = f.booleanValue === true;
+  }, () => {});
+}
+function fonctionsActives(){
+  return !!(typeof CONFIG_COMPTE !== "undefined" && CONFIG_COMPTE.fonctions)
+    || (typeof location !== "undefined" && /[?&]fonctions=1(&|$)/.test(location.search || ""));
+}
+function urlFonction(nom){
+  return (CONFIG_COMPTE.urlFonctions || "https://europe-west1-" + CONFIG_COMPTE.projectId + ".cloudfunctions.net") + "/" + nom;
+}
+function appelerFonction(nom, data){
+  return requeteJeton("POST", urlFonction(nom), { data: data || {} }).then(r => r.json().catch(() => ({})).then(j =>
+    r.ok && j && "result" in j ? j.result
+      : Promise.reject(Object.assign(new Error((j && j.error && j.error.message) || "réponse " + r.status), { statut: r.status }))));
+}
+/* La recolte : au plus une toutes les 20 secondes (force : tout de suite,
+   apres un Quiz of the Day publie ou un pack ouvert). */
+const RECOLTE = { enCours: null, derniere: 0, minuteur: null };
+function recolterServeur(force){
+  if(!bourseConnectee() || !bourse()) return Promise.resolve(null);
+  if(RECOLTE.enCours) return RECOLTE.enCours.then(() => force ? recolterServeur(true) : null);
+  if(!force && Date.now() - RECOLTE.derniere < 20000) return Promise.resolve(null);
+  RECOLTE.derniere = Date.now();
+  RECOLTE.enCours = appelerFonction("recolter").then(r => {
+    if(!r || !(r.ecus || r.pts)) return r;
+    /* Le journal du jour (« Gagner des ecus ») : les raisons donnees par le serveur. */
+    const e = ecus(), d = aujourdhui(), j = e.journal || (e.journal = {});
+    (r.lignes || []).forEach(l => { (j[d] = j[d] || []).push({ r: String(l.r).slice(0, 60), n: l.n | 0 }); });
+    j[d] = (j[d] || []).slice(-40);
+    sauverEtat(true);
+    if(r.ecus && typeof annoncerGain === "function") annoncerGain(r.ecus);
+    return chargerBourse(true).then(() => { reclamerRangs(); return r; });
+  }, () => null).finally(() => { RECOLTE.enCours = null; });
+  return RECOLTE.enCours;
+}
+
 /* ---------- Les gains : de l'appareil a la bourse ---------- */
 let ENVOI_GAINS = null;
 function gainsAEnvoyer(d){
@@ -10984,10 +11050,16 @@ function gainsAEnvoyer(d){
   return eg + pg > 0 ? { j, meme, eg, pg } : null;
 }
 function planifierGains(){
+  if(fonctionsActives()){
+    clearTimeout(RECOLTE.minuteur);
+    RECOLTE.minuteur = setTimeout(() => recolterServeur(), 1500);
+    return;
+  }
   if(ENVOI_GAINS || !bourseSure() || !gainsAEnvoyer(BOURSE.doc)) return;
   ENVOI_GAINS = setTimeout(() => { ENVOI_GAINS = null; envoyerGains(); }, 700);
 }
 function envoyerGains(){
+  if(fonctionsActives()) return recolterServeur();
   if(!bourseSure()) return Promise.resolve(false);
   return opererBourse(d => {
     const g = gainsAEnvoyer(d);
@@ -11046,7 +11118,7 @@ function bourseOuvrir(cle){
     pli.ecus = e;
     return { op: { k: "ouvrir", c: cle }, apres: a, resultat: pli, effacer: [["packs", cle]],
       ecrire: touchees.map(k => [["cartes", k], a.cartes[k]]).concat([[["ouverts"], a.ouverts], [["solde"], a.solde]]) };
-  }));
+  })).then(pli => { if(pli && fonctionsActives()) setTimeout(() => recolterServeur(true), 400); return pli; });
 }
 /* Un double : une carte tiree d'un pack dont un autre exemplaire reste
    (tire aussi, ou dans la collection importee, qui ne se recycle pas). */
