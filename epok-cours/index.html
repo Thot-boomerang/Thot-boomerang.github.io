@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-JCHGnv6hg0+7EV0ejgexKzjaJC2f19Euxy8bg9jMqLI=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-lIqwQ6cDq4rQ1v4NLhud+uO58/QBwT2fZf5Oe47+ylk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -1247,7 +1247,7 @@ body.app-cours #solde-ecus, body.app-cours .bulle-pack{display:none !important}
 .st-classes{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
 .st-puce,.st-saison{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--laiton);
   background:var(--fond-2);color:var(--texte);cursor:pointer}
-.st-puce.actif,.st-saison.actif{background:var(--bordeaux);border-color:var(--bordeaux);color:#fff}
+.st-puce.actif,.st-saison.actif{background:var(--bordeaux);border-color:var(--bordeaux);color:var(--fond-2)}
 .st-tuiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
 .st-tuile{border:1px solid var(--laiton);background:var(--fond-2);padding:10px 12px}
 .st-tuile b{display:block;font-family:var(--police-titre);font-size:28px;line-height:1.1;color:var(--texte)}
@@ -1576,7 +1576,7 @@ select{width:100%}
 .album-vues{display:flex;gap:0;margin:2px 0 8px;border:1.5px solid var(--bordeaux);border-radius:999px;overflow:hidden}
 .album-vues button{flex:1;padding:8px 6px;border:0;background:transparent;color:var(--bordeaux);font:700 12.5px var(--police-titre);
   letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
-.album-vues button[aria-pressed="true"]{background:var(--bordeaux);color:#fff}
+.album-vues button[aria-pressed="true"]{background:var(--bordeaux);color:var(--fond-2)}
 /* Tampon « Deja tiree » : en plein milieu de la carte, a l'ouverture. */
 .c-tampon{position:absolute;left:50%;top:46%;z-index:3;padding:6px 14px;transform:translate(-50%,-50%) rotate(-14deg);
   border:4px double #c21f2b;border-radius:8px;color:#c21f2b;background:rgba(255,250,240,.82);
@@ -1586,6 +1586,78 @@ select{width:100%}
 .album{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:9px}
 .album-chiffres{margin:0 0 6px}
 .album-filtres .st-puce{border-color:var(--rar,var(--laiton))}
+/* L'explorateur des cartes (novembre 2026) : frise des epoques, carte du monde, tri, rangement. */
+.ex{margin:4px 0 10px}
+.ex-frise{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;position:relative;padding-bottom:2px}
+.ex-frise::before{content:"";position:absolute;left:6%;right:6%;top:23px;height:2px;background:linear-gradient(90deg,#b07a2a,#7b4f9e,#2c7a8c,#b0442f);opacity:.55;z-index:0}
+.ex-ep{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 3px 8px;border-radius:12px;
+  border:1.5px solid color-mix(in srgb,var(--ep) 55%,transparent);background:var(--fond-2);color:var(--texte);font:inherit;cursor:pointer;
+  transition:transform .15s,background .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+.ex-ep .ex-ico{width:26px;height:26px;color:var(--ep);background:var(--fond-2);border-radius:50%;padding:3px;box-sizing:content-box;--ex-trou:var(--fond-2)}
+.ex-ep-nom{font:700 11.5px var(--police-titre);letter-spacing:.02em;line-height:1.1;text-align:center}
+.ex-ep-n{font-size:11px;color:var(--texte-2)}
+.ex-ep-n b{color:var(--texte)}
+.ex-ep:active{transform:scale(.96)}
+.ex-ep.actif{background:var(--ep);border-color:var(--ep);color:#fff;box-shadow:0 3px 12px -4px var(--ep)}
+.ex-ep.actif .ex-ico{color:var(--ep);background:#fff;--ex-trou:#fff}
+.ex-ep.actif .ex-ep-n,.ex-ep.actif .ex-ep-n b{color:#fff}
+.ex-ep.vide{opacity:.45}
+.ex-jauge{display:block;width:78%;height:4px;border-radius:2px;background:color-mix(in srgb,var(--ep,var(--or-vif)) 22%,transparent);overflow:hidden;margin-top:3px}
+.ex-jauge i{display:block;height:100%;background:var(--ep,var(--or-vif));border-radius:2px;transition:width .4s}
+.ex-ep.actif .ex-jauge{background:rgba(255,255,255,.35)}
+.ex-ep.actif .ex-jauge i{background:#fff}
+.ex-jauge.large{width:100%;height:5px;margin:4px 0 9px}
+.ex-bornes{position:relative;height:14px;font-size:10.5px;color:var(--texte-2);margin:2px 0 8px;font-variant-numeric:tabular-nums}
+.ex-bornes span{position:absolute;top:0;transform:translateX(-50%)}
+.ex-bornes span:nth-child(1){left:25%}.ex-bornes span:nth-child(2){left:50%}.ex-bornes span:nth-child(3){left:75%}
+.ex-regions{border:1px solid var(--laiton);border-radius:12px;background:var(--fond-2);margin:0 0 8px;overflow:hidden}
+.ex-deplier{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:0;background:transparent;color:var(--texte);font:inherit;font-size:13.5px;text-align:left;cursor:pointer}
+.ex-deplier .ex-ico{width:20px;height:20px;color:var(--bordeaux);flex:none}
+.ex-deplier span:nth-of-type(1){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ex-chevron{color:var(--texte-2)}
+.ex-conts{display:flex;gap:6px;overflow-x:auto;padding:0 10px 8px;scrollbar-width:none}
+.ex-conts::-webkit-scrollbar{display:none}
+.ex-puce{flex:none;display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;
+  border:1px solid var(--laiton);background:var(--fond);color:var(--texte);cursor:pointer;white-space:nowrap}
+.ex-puce small{color:var(--texte-2);font-size:11px}
+.ex-puce.actif{background:var(--bordeaux);border-color:var(--bordeaux);color:var(--fond-2)}
+.ex-puce.actif small{color:inherit;opacity:.8}
+.ex-pastille{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pc);flex:none}
+.ex-monde-cadre{background:color-mix(in srgb,var(--fond) 60%,#c9d8dc);margin:0 10px;border-radius:10px;overflow:hidden}
+.ex-monde{display:block;width:100%;height:auto;aspect-ratio:1000/446;touch-action:manipulation}
+.ex-sphere{fill:color-mix(in srgb,var(--fond) 70%,#a9c3cb);stroke:none;pointer-events:none}
+.ex-t{stroke:var(--fond-2);stroke-width:1;stroke-linejoin:round;cursor:pointer;transition:fill-opacity .25s,opacity .25s;vector-effect:non-scaling-stroke}
+.ex-t.vide{fill:var(--laiton)!important}
+.ex-t.grise{opacity:.35}
+.ex-t.sel{stroke:var(--or-vif);stroke-width:2.6;opacity:1}
+.ex-legende{font-size:12.5px;margin:7px 12px 2px;color:var(--texte-2)}
+.ex-legende b{color:var(--texte)}
+.ex-echelle{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--texte-2);margin:2px 12px 10px}
+.ex-echelle i{flex:1;max-width:120px;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(201,132,108,.38),rgba(201,132,108,1))}
+.ex-ligne{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.ex-lib{flex:none;width:52px;font:700 11px var(--police-titre);letter-spacing:.08em;text-transform:uppercase;color:var(--texte-2)}
+.ex-puces{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:1px 0}
+.ex-puces::-webkit-scrollbar{display:none}
+.ex-sens{font-size:9px;vertical-align:1px}
+.ex-actifs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px;padding-top:8px;border-top:1px dashed var(--laiton)}
+.ex-nb{font:700 12.5px var(--police-titre);color:var(--texte);margin-right:2px}
+.ex-actif{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12px;padding:4px 9px 4px 7px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--pc);background:color-mix(in srgb,var(--pc) 16%,var(--fond-2));color:var(--texte)}
+.ex-actif span{font-size:10px;opacity:.7}
+.ex-actif.statique{cursor:default}
+.ex-ico-p{width:14px;height:14px;color:var(--pc);--ex-trou:var(--fond-2)}
+.ex-effacer{font:inherit;font-size:12px;border:0;background:none;color:var(--bordeaux);text-decoration:underline;cursor:pointer;padding:4px}
+.ex-groupe{margin:12px 0 4px}
+.ex-g-titre{display:flex;align-items:center;gap:8px;margin:0;font-weight:400}
+.ex-g-titre .ex-ico{width:22px;height:22px;color:var(--ep);flex:none;--ex-trou:var(--fond-2)}
+.ex-g-titre span:first-of-type{flex:1;display:flex;flex-direction:column;line-height:1.15}
+.ex-g-titre b{font:700 14px var(--police-titre);color:var(--texte)}
+.ex-g-titre small{font-size:11px;color:var(--texte-2)}
+.ex-g-n{font-size:12.5px;color:var(--texte-2);font-variant-numeric:tabular-nums}
+.ex-g-n b{color:var(--texte)}
+.ex-g-vide{margin:0 0 6px}
+.ex-origine{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0 0}
+@media (prefers-reduced-motion:reduce){.ex-ep,.ex-t,.ex-jauge i{transition:none}}
 .fenetre-carte{text-align:center}
 .c-grande{display:block;width:min(74vw,330px);aspect-ratio:9/20;max-height:72vh;margin:6px auto 0;border-radius:14px;overflow:hidden;
   box-shadow:0 0 0 2px var(--rar),0 0 26px color-mix(in srgb,var(--rar) 60%,transparent)}
@@ -8328,401 +8400,672 @@ if(typeof window !== "undefined"){
 /* Cartes EPOK : numero (celui de l'image), rarete, nom et PV, relus sur
    chaque carte. Les images sont dans source/web/cartes/ (grandes/ et mini/). */
 const CARTES = [
-{"n": 1, "r": "commune", "nom": "Abebe Bikila", "pv": 15},
-{"n": 2, "r": "rare", "nom": "Pierre de Coubertin", "pv": 72},
-{"n": 3, "r": "commune", "nom": "Avery Brundage", "pv": 15, "ret": true},
-{"n": 4, "r": "commune", "nom": "Tupua Tamasese Lealofi III", "pv": 16, "ret": true},
-{"n": 5, "r": "commune", "nom": "Togbe Tsali", "pv": 16, "ret": true},
-{"n": 6, "r": "commune", "nom": "René Lalou", "pv": 16},
-{"n": 7, "r": "commune", "nom": "Violette Morris", "pv": 16},
-{"n": 8, "r": "rare", "nom": "Jacques-Yves Cousteau", "pv": 78},
-{"n": 9, "r": "commune", "nom": "Qin Er Shi", "pv": 17},
-{"n": 10, "r": "commune", "nom": "William Buckland", "pv": 17},
-{"n": 11, "r": "commune", "nom": "Fanny Blankers-Koen", "pv": 17},
-{"n": 12, "r": "commune", "nom": "Hōne Heke", "pv": 18},
-{"n": 13, "r": "commune", "nom": "Tāwhiao", "pv": 18},
-{"n": 14, "r": "commune", "nom": "John Polidori", "pv": 18, "ret": true},
-{"n": 15, "r": "commune", "nom": "Pōmare II", "pv": 19},
-{"n": 16, "r": "commune", "nom": "Gudit", "pv": 19},
-{"n": 17, "r": "commune", "nom": "Margery Kempe", "pv": 19, "ret": true},
-{"n": 18, "r": "commune", "nom": "Julian de Norwich", "pv": 19, "ret": true},
-{"n": 19, "r": "commune", "nom": "Robert FitzRoy", "pv": 19},
-{"n": 20, "r": "commune", "nom": "Begum Hazrat Mahal", "pv": 20},
-{"n": 21, "r": "commune", "nom": "Mangal Pandey", "pv": 20},
-{"n": 22, "r": "epique", "nom": "Yuri Gagarine", "pv": 84},
-{"n": 23, "r": "commune", "nom": "Aelred de Rievaulx", "pv": 20, "ret": true},
-{"n": 24, "r": "commune", "nom": "Nicolas Appert", "pv": 20},
-{"n": 25, "r": "commune", "nom": "George Cayley", "pv": 20},
-{"n": 26, "r": "commune", "nom": "William Edmond Logan", "pv": 21, "ret": true},
-{"n": 27, "r": "commune", "nom": "Tupaia", "pv": 21},
-{"n": 28, "r": "commune", "nom": "Hendrik Witbooi", "pv": 21},
-{"n": 29, "r": "commune", "nom": "Dingane", "pv": 21},
-{"n": 30, "r": "commune", "nom": "Joseph Bramah", "pv": 21, "ret": true},
-{"n": 31, "r": "commune", "nom": "Marc Seguin", "pv": 22},
-{"n": 32, "r": "commune", "nom": "Charles Manby", "pv": 22, "ret": true},
-{"n": 33, "r": "commune", "nom": "Lobengula", "pv": 22},
-{"n": 34, "r": "commune", "nom": "Mswati II", "pv": 22, "ret": true},
-{"n": 35, "r": "commune", "nom": "Apolinario Mabini", "pv": 22},
-{"n": 36, "r": "commune", "nom": "Étienne Lenoir", "pv": 23},
-{"n": 37, "r": "commune", "nom": "Émile Cohl", "pv": 22},
-{"n": 38, "r": "commune", "nom": "Gabriel Voisin", "pv": 23},
-{"n": 39, "r": "commune", "nom": "U Nu", "pv": 23, "ret": true},
-{"n": 40, "r": "commune", "nom": "Cuitláhuac", "pv": 23},
-{"n": 41, "r": "commune", "nom": "Yennenga", "pv": 24},
-{"n": 42, "r": "commune", "nom": "Bankim Chandra Chatterjee", "pv": 24, "ret": true},
-{"n": 43, "r": "commune", "nom": "Jean-Baptiste Dumas", "pv": 24},
-{"n": 44, "r": "commune", "nom": "K'inich Kan B'alam II", "pv": 24},
-{"n": 45, "r": "commune", "nom": "Jasaw Chan K'awiil Ier", "pv": 24, "ret": true},
-{"n": 46, "r": "commune", "nom": "Yax K'uk' Mo'", "pv": 25},
-{"n": 47, "r": "commune", "nom": "Ranavalona Ire", "pv": 25},
-{"n": 48, "r": "commune", "nom": "Osman II", "pv": 25},
-{"n": 49, "r": "commune", "nom": "Lazare Carnot", "pv": 25},
-{"n": 50, "r": "commune", "nom": "Gaspard Monge", "pv": 25},
-{"n": 51, "r": "commune", "nom": "René Réaumur", "pv": 26},
-{"n": 52, "r": "commune", "nom": "Bernard Palissy", "pv": 26},
-{"n": 53, "r": "commune", "nom": "Abbas Mirza", "pv": 26, "ret": true},
-{"n": 54, "r": "commune", "nom": "Fath Ali Shah", "pv": 26, "ret": true},
-{"n": 55, "r": "commune", "nom": "Cassiodore", "pv": 26},
-{"n": 56, "r": "commune", "nom": "Pline le Jeune", "pv": 27},
-{"n": 57, "r": "commune", "nom": "Jean-François Regnard", "pv": 27},
-{"n": 58, "r": "commune", "nom": "Georges de La Tour", "pv": 27},
-{"n": 59, "r": "commune", "nom": "Antoine Coypel", "pv": 27},
-{"n": 60, "r": "commune", "nom": "Ahuitzotl", "pv": 27},
-{"n": 61, "r": "commune", "nom": "Lapu-Lapu", "pv": 27},
-{"n": 62, "r": "commune", "nom": "Saadia Gaon", "pv": 28},
-{"n": 63, "r": "commune", "nom": "Henri Rousseau", "pv": 28},
-{"n": 64, "r": "commune", "nom": "Étienne Geoffroy Saint-Hilaire", "pv": 28},
-{"n": 65, "r": "commune", "nom": "Pierre-Simon Girard", "pv": 28},
-{"n": 66, "r": "commune", "nom": "Jean-Baptiste Chardin", "pv": 28},
-{"n": 67, "r": "commune", "nom": "Miltiade le Jeune", "pv": 29},
-{"n": 68, "r": "commune", "nom": "Blaise de Vigenère", "pv": 29},
-{"n": 69, "r": "commune", "nom": "Ai Qing", "pv": 29},
-{"n": 70, "r": "commune", "nom": "Adolphe Thiers", "pv": 29},
-{"n": 71, "r": "commune", "nom": "François Guizot", "pv": 29},
-{"n": 72, "r": "commune", "nom": "Eirik Bloodaxe", "pv": 30},
-{"n": 73, "r": "commune", "nom": "Miloš Obilić", "pv": 30},
-{"n": 74, "r": "commune", "nom": "Lazar Hrebeljanović", "pv": 30},
-{"n": 75, "r": "commune", "nom": "Sándor Petőfi", "pv": 30},
-{"n": 76, "r": "commune", "nom": "Benjamin Constant", "pv": 30},
-{"n": 77, "r": "commune", "nom": "Madame de Staël", "pv": 31},
-{"n": 78, "r": "commune", "nom": "Lajos Kossuth", "pv": 31},
-{"n": 79, "r": "commune", "nom": "Sviatoslav Ier", "pv": 31},
-{"n": 80, "r": "commune", "nom": "Æthelflæd", "pv": 31},
-{"n": 81, "r": "commune", "nom": "Tewodros II", "pv": 31},
-{"n": 82, "r": "commune", "nom": "Prosper Mérimée", "pv": 32},
-{"n": 83, "r": "commune", "nom": "Théophile Gautier", "pv": 32},
-{"n": 84, "r": "commune", "nom": "Yekuno Amlak", "pv": 32},
-{"n": 85, "r": "commune", "nom": "Reine Makeda", "pv": 32},
-{"n": 86, "r": "commune", "nom": "Naram-Sin", "pv": 32},
-{"n": 87, "r": "commune", "nom": "Abdulhamid II", "pv": 32},
-{"n": 88, "r": "commune", "nom": "Mustafa Reşid Pacha", "pv": 32, "ret": true},
-{"n": 89, "r": "peu-commune", "nom": "Alfred de Musset", "pv": 44},
-{"n": 90, "r": "commune", "nom": "Stéphane Mallarmé", "pv": 33},
-{"n": 91, "r": "commune", "nom": "Fayçal Ier d'Irak", "pv": 33, "ret": true},
-{"n": 92, "r": "commune", "nom": "Abdallah Ier de Jordanie", "pv": 33, "ret": true},
-{"n": 93, "r": "commune", "nom": "Lázaro Cárdenas", "pv": 33},
-{"n": 94, "r": "commune", "nom": "Deng Yingchao", "pv": 33, "ret": true},
-{"n": 95, "r": "rare", "nom": "Paul Verlaine", "pv": 66},
-{"n": 96, "r": "commune", "nom": "Puyi", "pv": 34},
-{"n": 97, "r": "commune", "nom": "Humayun", "pv": 34},
-{"n": 98, "r": "peu-commune", "nom": "Daniel Fahrenheit", "pv": 48},
-{"n": 99, "r": "peu-commune", "nom": "Anders Celsius", "pv": 48},
-{"n": 100, "r": "commune", "nom": "René-Robert de La Salle", "pv": 34},
-{"n": 101, "r": "commune", "nom": "John Hanning Speke", "pv": 35},
-{"n": 102, "r": "commune", "nom": "James Bruce", "pv": 35},
-{"n": 103, "r": "commune", "nom": "Mungo Park", "pv": 35},
-{"n": 104, "r": "rare", "nom": "Jules Ferry", "pv": 70},
-{"n": 105, "r": "peu-commune", "nom": "Léon Gambetta", "pv": 45},
-{"n": 106, "r": "commune", "nom": "Harald Hardrada", "pv": 35},
-{"n": 107, "r": "commune", "nom": "Irène l'Athénienne", "pv": 35},
-{"n": 108, "r": "commune", "nom": "José de Acosta", "pv": 35},
-{"n": 109, "r": "commune", "nom": "José Martí", "pv": 35},
-{"n": 110, "r": "rare", "nom": "Stendhal", "pv": 68},
-{"n": 111, "r": "peu-commune", "nom": "Alphonse de Lamartine", "pv": 45},
-{"n": 112, "r": "peu-commune", "nom": "François-René de Chateaubriand", "pv": 50},
-{"n": 113, "r": "commune", "nom": "Sophie Scholl", "pv": 36},
-{"n": 114, "r": "commune", "nom": "Claus von Stauffenberg", "pv": 36},
-{"n": 115, "r": "commune", "nom": "Käthe Kollwitz", "pv": 36},
-{"n": 116, "r": "commune", "nom": "Fritz Lang", "pv": 36},
-{"n": 117, "r": "commune", "nom": "Clara Zetkin", "pv": 36},
-{"n": 118, "r": "commune", "nom": "François Arago", "pv": 37},
-{"n": 119, "r": "rare", "nom": "Arthur Rimbaud", "pv": 75},
-{"n": 120, "r": "commune", "nom": "Salvador Allende", "pv": 37},
-{"n": 121, "r": "peu-commune", "nom": "Václav Havel", "pv": 55},
-{"n": 122, "r": "commune", "nom": "Norodom Sihanouk", "pv": 37},
-{"n": 123, "r": "commune", "nom": "Darius III", "pv": 37},
-{"n": 124, "r": "rare", "nom": "Gustave Flaubert", "pv": 74},
-{"n": 125, "r": "rare", "nom": "Pierre Corneille", "pv": 73},
-{"n": 126, "r": "rare", "nom": "Jean Racine", "pv": 72},
-{"n": 127, "r": "commune", "nom": "Assurbanipal", "pv": 37},
-{"n": 128, "r": "peu-commune", "nom": "Nabuchodonosor II", "pv": 52},
-{"n": 129, "r": "commune", "nom": "Séthi Ier", "pv": 38},
-{"n": 130, "r": "commune", "nom": "Ramsès III", "pv": 38},
-{"n": 131, "r": "commune", "nom": "Alfred le Grand", "pv": 38},
-{"n": 132, "r": "rare", "nom": "Ötzi", "pv": 66},
-{"n": 133, "r": "commune", "nom": "Nicolas Poussin", "pv": 38},
-{"n": 134, "r": "commune", "nom": "Satyendra Nath Bose", "pv": 39},
-{"n": 135, "r": "commune", "nom": "C. V. Raman", "pv": 39},
-{"n": 137, "r": "epique", "nom": "Honoré de Balzac", "pv": 81},
-{"n": 138, "r": "epique", "nom": "Alexandre Dumas", "pv": 86},
-{"n": 139, "r": "commune", "nom": "Humphry Davy", "pv": 39},
-{"n": 140, "r": "peu-commune", "nom": "Joseph-Louis Lagrange", "pv": 50},
-{"n": 141, "r": "commune", "nom": "Hugo Grotius", "pv": 39},
-{"n": 142, "r": "commune", "nom": "Jan Hus", "pv": 39},
-{"n": 143, "r": "commune", "nom": "Jayavarman VII", "pv": 39},
-{"n": 144, "r": "commune", "nom": "Zénon de Kition", "pv": 39},
-{"n": 145, "r": "commune", "nom": "Dušan le Grand", "pv": 39},
-{"n": 146, "r": "commune", "nom": "Paul Cornu", "pv": 39},
-{"n": 147, "r": "commune", "nom": "Henri Potez", "pv": 39},
-{"n": 149, "r": "rare", "nom": "Soliman le Magnifique", "pv": 76},
-{"n": 151, "r": "peu-commune", "nom": "Preston Tucker", "pv": 40, "ret": true},
-{"n": 152, "r": "peu-commune", "nom": "Jean Bertin", "pv": 40},
-{"n": 153, "r": "peu-commune", "nom": "Freydís Eiríksdóttir", "pv": 41},
-{"n": 154, "r": "peu-commune", "nom": "Kittur Rani Chennamma", "pv": 41},
-{"n": 155, "r": "peu-commune", "nom": "Judith Leyster", "pv": 42},
-{"n": 156, "r": "peu-commune", "nom": "Salote Tupou III", "pv": 42, "ret": true},
-{"n": 157, "r": "peu-commune", "nom": "Sostrate de Cnide", "pv": 43},
-{"n": 158, "r": "peu-commune", "nom": "Philon de Byzance", "pv": 43},
-{"n": 159, "r": "peu-commune", "nom": "Ctésibios", "pv": 43},
-{"n": 160, "r": "peu-commune", "nom": "Al-Karaji", "pv": 44, "ret": true},
-{"n": 161, "r": "peu-commune", "nom": "Hannon le Navigateur", "pv": 44},
-{"n": 162, "r": "peu-commune", "nom": "Wang Zhaojun", "pv": 45},
-{"n": 163, "r": "peu-commune", "nom": "Béhanzin", "pv": 45},
-{"n": 164, "r": "peu-commune", "nom": "Saigō Takamori", "pv": 45},
-{"n": 165, "r": "peu-commune", "nom": "Thabit ibn Qurra", "pv": 46},
-{"n": 166, "r": "peu-commune", "nom": "Mieszko Ier", "pv": 46},
-{"n": 167, "r": "peu-commune", "nom": "Tomislav de Croatie", "pv": 46},
-{"n": 168, "r": "peu-commune", "nom": "Norbert Elias", "pv": 46, "ret": true},
-{"n": 169, "r": "peu-commune", "nom": "Mihai Viteazul", "pv": 47},
-{"n": 170, "r": "peu-commune", "nom": "Osei Tutu", "pv": 47},
-{"n": 171, "r": "peu-commune", "nom": "Idris Alooma", "pv": 47},
-{"n": 172, "r": "peu-commune", "nom": "Afonso Ier de Kongo", "pv": 47},
-{"n": 173, "r": "peu-commune", "nom": "Boleslas Ier de Pologne", "pv": 48},
-{"n": 174, "r": "peu-commune", "nom": "Étienne le Grand", "pv": 48},
-{"n": 175, "r": "peu-commune", "nom": "Siméon Ier de Bulgarie", "pv": 48},
-{"n": 176, "r": "peu-commune", "nom": "Bahadur Shah Zafar", "pv": 49, "ret": true},
-{"n": 177, "r": "peu-commune", "nom": "Fa Hien", "pv": 49},
-{"n": 178, "r": "peu-commune", "nom": "Kanishka Ier", "pv": 49},
-{"n": 179, "r": "peu-commune", "nom": "Ménandre Ier", "pv": 50},
-{"n": 180, "r": "peu-commune", "nom": "Alp Arslan", "pv": 50},
-{"n": 181, "r": "peu-commune", "nom": "Massinissa", "pv": 50},
-{"n": 182, "r": "rare", "nom": "Philippe le Bel", "pv": 70},
-{"n": 183, "r": "peu-commune", "nom": "Boris Godounov", "pv": 51},
-{"n": 184, "r": "peu-commune", "nom": "Tahmasp Ier", "pv": 51},
-{"n": 185, "r": "peu-commune", "nom": "Verghese Kurien", "pv": 51, "ret": true},
-{"n": 186, "r": "peu-commune", "nom": "Robert Hooke", "pv": 51},
-{"n": 187, "r": "peu-commune", "nom": "Andreas Vesalius", "pv": 52},
-{"n": 188, "r": "peu-commune", "nom": "Rudolf Diesel", "pv": 52},
-{"n": 189, "r": "peu-commune", "nom": "Jules Hardouin-Mansart", "pv": 52},
-{"n": 190, "r": "peu-commune", "nom": "Paul Painlevé", "pv": 52},
-{"n": 191, "r": "peu-commune", "nom": "Olaf Tryggvason", "pv": 53},
-{"n": 192, "r": "peu-commune", "nom": "Harald Bluetooth", "pv": 53},
-{"n": 193, "r": "peu-commune", "nom": "Stefan Batory", "pv": 53},
-{"n": 194, "r": "peu-commune", "nom": "Casimir III", "pv": 53},
-{"n": 195, "r": "peu-commune", "nom": "Abdülmecid Ier", "pv": 53},
-{"n": 196, "r": "peu-commune", "nom": "Aspasie de Milet", "pv": 54},
-{"n": 197, "r": "peu-commune", "nom": "Percy Bysshe Shelley", "pv": 54},
-{"n": 198, "r": "peu-commune", "nom": "Rainer Maria Rilke", "pv": 54},
-{"n": 199, "r": "peu-commune", "nom": "Victor-Emmanuel II", "pv": 54},
-{"n": 200, "r": "peu-commune", "nom": "Pierre Mendès France", "pv": 54},
-{"n": 201, "r": "peu-commune", "nom": "Baudouin", "pv": 54},
-{"n": 202, "r": "peu-commune", "nom": "A. P. J. Abdul Kalam", "pv": 54},
-{"n": 203, "r": "peu-commune", "nom": "Thémistocle", "pv": 55},
-{"n": 204, "r": "peu-commune", "nom": "José Rizal", "pv": 55},
-{"n": 205, "r": "peu-commune", "nom": "Tycho Brahe", "pv": 55},
-{"n": 206, "r": "epique", "nom": "Émile Zola", "pv": 85},
-{"n": 207, "r": "epique", "nom": "Emmanuel Kant", "pv": 83},
-{"n": 208, "r": "rare", "nom": "Charles Baudelaire", "pv": 76},
-{"n": 209, "r": "legendaire", "nom": "Molière", "pv": 93},
-{"n": 210, "r": "mythique", "nom": "Victor Hugo", "pv": 96},
-{"n": 212, "r": "epique", "nom": "Blaise Pascal", "pv": 82},
-{"n": 213, "r": "peu-commune", "nom": "Baruch Spinoza", "pv": 58},
-{"n": 214, "r": "peu-commune", "nom": "Gottfried Leibniz", "pv": 59},
-{"n": 215, "r": "epique", "nom": "Jean-Jacques Rousseau", "pv": 84},
-{"n": 216, "r": "peu-commune", "nom": "Gustave II Adolphe", "pv": 59},
-{"n": 217, "r": "epique", "nom": "Léon Tolstoï", "pv": 82},
-{"n": 219, "r": "rare", "nom": "Néron", "pv": 72},
-{"n": 220, "r": "peu-commune", "nom": "Percy Spencer", "pv": 45},
-{"n": 221, "r": "peu-commune", "nom": "Mary Anderson", "pv": 42},
-{"n": 222, "r": "rare", "nom": "Xerxès Ier", "pv": 60},
-{"n": 223, "r": "rare", "nom": "Samuel Colt", "pv": 60},
-{"n": 225, "r": "rare", "nom": "Henri VIII", "pv": 75},
-{"n": 229, "r": "rare", "nom": "Nicolas II", "pv": 62},
-{"n": 230, "r": "rare", "nom": "Corazon Aquino", "pv": 62},
-{"n": 231, "r": "rare", "nom": "Philo Farnsworth", "pv": 62},
-{"n": 232, "r": "rare", "nom": "Walter Brattain", "pv": 62},
-{"n": 233, "r": "rare", "nom": "Eli Whitney", "pv": 62},
-{"n": 234, "r": "rare", "nom": "Bhimrao Ramji Ambedkar", "pv": 63},
-{"n": 236, "r": "rare", "nom": "Zhen Wang", "pv": 63, "ret": true},
-{"n": 237, "r": "rare", "nom": "John Bardeen", "pv": 64},
-{"n": 238, "r": "rare", "nom": "James Watson", "pv": 64},
-{"n": 239, "r": "rare", "nom": "Imhotep", "pv": 65},
-{"n": 240, "r": "rare", "nom": "Hérodote", "pv": 65},
-{"n": 241, "r": "rare", "nom": "Thucydide", "pv": 65},
-{"n": 242, "r": "rare", "nom": "Sophocle", "pv": 65},
-{"n": 243, "r": "peu-commune", "nom": "Tomoe Gozen", "pv": 48},
-{"n": 244, "r": "peu-commune", "nom": "Ban Zhao", "pv": 50},
-{"n": 245, "r": "rare", "nom": "Zhang Zhidong", "pv": 66, "ret": true},
-{"n": 246, "r": "rare", "nom": "Daniel Cordier", "pv": 66},
-{"n": 247, "r": "rare", "nom": "Henri Frenay", "pv": 67},
-{"n": 248, "r": "peu-commune", "nom": "Razia Sultana", "pv": 52},
-{"n": 249, "r": "commune", "nom": "Patrick Juvet", "pv": 25},
-{"n": 250, "r": "rare", "nom": "Alexandre Kerenski", "pv": 67},
-{"n": 251, "r": "peu-commune", "nom": "R. K. Narayan", "pv": 45},
-{"n": 252, "r": "peu-commune", "nom": "Ezana d'Aksoum", "pv": 48},
-{"n": 253, "r": "peu-commune", "nom": "Max Jacob", "pv": 50},
-{"n": 254, "r": "peu-commune", "nom": "Sei Shōnagon", "pv": 50},
-{"n": 255, "r": "peu-commune", "nom": "Ziryab", "pv": 45},
-{"n": 256, "r": "rare", "nom": "Agrippine la Jeune", "pv": 70},
-{"n": 257, "r": "rare", "nom": "Askia Mohammed", "pv": 70},
-{"n": 258, "r": "rare", "nom": "Dian Fossey", "pv": 70},
-{"n": 259, "r": "rare", "nom": "Jugurtha", "pv": 70},
-{"n": 260, "r": "rare", "nom": "Reza Shah", "pv": 70},
-{"n": 261, "r": "rare", "nom": "Fatima al-Fihri", "pv": 70},
-{"n": 262, "r": "rare", "nom": "Chiang Kai-shek", "pv": 71},
-{"n": 263, "r": "rare", "nom": "Marie Stuart", "pv": 71},
-{"n": 264, "r": "rare", "nom": "Samori Touré", "pv": 71},
-{"n": 265, "r": "rare", "nom": "Zhou Enlai", "pv": 71},
-{"n": 266, "r": "rare", "nom": "Al-Idrisi", "pv": 72},
-{"n": 267, "r": "peu-commune", "nom": "Al-Jazari", "pv": 55},
-{"n": 268, "r": "rare", "nom": "Alexandre II de Russie", "pv": 72},
-{"n": 269, "r": "rare", "nom": "François-Joseph Ier", "pv": 72},
-{"n": 270, "r": "rare", "nom": "Mohammad Mossadegh", "pv": 72},
-{"n": 271, "r": "rare", "nom": "Elizabeth Blackwell", "pv": 73},
-{"n": 272, "r": "rare", "nom": "John Logie Baird", "pv": 73},
-{"n": 273, "r": "peu-commune", "nom": "Kalidasa", "pv": 50},
-{"n": 274, "r": "rare", "nom": "Leo Baekeland", "pv": 73},
-{"n": 275, "r": "rare", "nom": "Mikhaïl Boulgakov", "pv": 73},
-{"n": 276, "r": "rare", "nom": "Aung San", "pv": 74},
-{"n": 277, "r": "rare", "nom": "Frédéric Barberousse", "pv": 74},
-{"n": 278, "r": "rare", "nom": "Golda Meir", "pv": 74},
-{"n": 279, "r": "rare", "nom": "Hadrien", "pv": 74},
-{"n": 280, "r": "rare", "nom": "Patrice Lumumba", "pv": 74},
-{"n": 281, "r": "rare", "nom": "Philippe Leclerc", "pv": 74},
-{"n": 282, "r": "legendaire", "nom": "Vercingétorix", "pv": 90},
-{"n": 283, "r": "rare", "nom": "Gerolamo Cardano", "pv": 75},
-{"n": 284, "r": "rare", "nom": "Hipparque de Nicée", "pv": 75},
-{"n": 285, "r": "peu-commune", "nom": "Zhang Heng", "pv": 55},
-{"n": 286, "r": "rare", "nom": "Guglielmo Marconi", "pv": 76},
-{"n": 287, "r": "peu-commune", "nom": "Mozi", "pv": 50},
-{"n": 288, "r": "rare", "nom": "Nikolaus Otto", "pv": 76},
-{"n": 289, "r": "rare", "nom": "Ovide", "pv": 76},
-{"n": 290, "r": "rare", "nom": "Phidias", "pv": 76},
-{"n": 291, "r": "rare", "nom": "Pline l'Ancien", "pv": 76},
-{"n": 292, "r": "rare", "nom": "Euripide", "pv": 77},
-{"n": 293, "r": "rare", "nom": "George Stephenson", "pv": 77},
-{"n": 294, "r": "rare", "nom": "Richard Feynman", "pv": 77},
-{"n": 295, "r": "rare", "nom": "Vitruve", "pv": 77},
-{"n": 296, "r": "rare", "nom": "William Harvey", "pv": 77},
-{"n": 297, "r": "rare", "nom": "James Clerk Maxwell", "pv": 78},
-{"n": 298, "r": "rare", "nom": "John Napier", "pv": 78},
-{"n": 299, "r": "rare", "nom": "Claude Ptolémée", "pv": 78},
-{"n": 300, "r": "peu-commune", "nom": "Barry White", "pv": 45},
-{"n": 301, "r": "rare", "nom": "Alexander Graham Bell", "pv": 79},
-{"n": 302, "r": "rare", "nom": "Démocrite", "pv": 79},
-{"n": 303, "r": "rare", "nom": "Erwin Schrödinger", "pv": 79},
-{"n": 304, "r": "rare", "nom": "Ératosthène", "pv": 79},
-{"n": 305, "r": "rare", "nom": "Werner Heisenberg", "pv": 79},
-{"n": 307, "r": "epique", "nom": "Ada Lovelace", "pv": 80},
-{"n": 308, "r": "epique", "nom": "Mary Shelley", "pv": 80},
-{"n": 309, "r": "rare", "nom": "Mary Anning", "pv": 68},
-{"n": 310, "r": "epique", "nom": "Ibn Battûta", "pv": 80},
-{"n": 311, "r": "epique", "nom": "Émilie du Châtelet", "pv": 80},
-{"n": 312, "r": "epique", "nom": "Hypatie d'Alexandrie", "pv": 80},
-{"n": 313, "r": "epique", "nom": "Olympe de Gouges", "pv": 80},
-{"n": 314, "r": "rare", "nom": "Mary Wollstonecraft", "pv": 75},
-{"n": 315, "r": "rare", "nom": "Alfred Russel Wallace", "pv": 72},
-{"n": 316, "r": "rare", "nom": "Toni Morrison", "pv": 76},
-{"n": 317, "r": "epique", "nom": "Ibn Rushd", "pv": 81},
-{"n": 318, "r": "rare", "nom": "Hildegarde de Bingen", "pv": 75},
-{"n": 319, "r": "epique", "nom": "Hokusai", "pv": 81},
-{"n": 321, "r": "epique", "nom": "Antonie van Leeuwenhoek", "pv": 81},
-{"n": 322, "r": "rare", "nom": "Bartolomeu Dias", "pv": 76},
-{"n": 323, "r": "peu-commune", "nom": "Pierre l'Ermite", "pv": 55},
-{"n": 324, "r": "epique", "nom": "Christine de Pizan", "pv": 81},
-{"n": 325, "r": "epique", "nom": "James Cook", "pv": 82},
-{"n": 326, "r": "rare", "nom": "Túpac Amaru II", "pv": 70},
-{"n": 327, "r": "epique", "nom": "Amelia Earhart", "pv": 82},
-{"n": 328, "r": "epique", "nom": "Toussaint Louverture", "pv": 81},
-{"n": 329, "r": "epique", "nom": "William Wallace", "pv": 82},
-{"n": 330, "r": "rare", "nom": "Boudicca", "pv": 74},
-{"n": 331, "r": "epique", "nom": "Hannibal Barca", "pv": 83},
-{"n": 332, "r": "epique", "nom": "Scipion l'Africain", "pv": 83},
-{"n": 333, "r": "epique", "nom": "Louis Armstrong", "pv": 83},
-{"n": 334, "r": "epique", "nom": "Sitting Bull", "pv": 83},
-{"n": 335, "r": "epique", "nom": "Harriet Tubman", "pv": 83},
-{"n": 336, "r": "rare", "nom": "Frederick Douglass", "pv": 77},
-{"n": 337, "r": "rare", "nom": "Susan B. Anthony", "pv": 73},
-{"n": 338, "r": "legendaire", "nom": "Louis Pasteur", "pv": 93},
-{"n": 339, "r": "epique", "nom": "Gregor Mendel", "pv": 84},
-{"n": 340, "r": "epique", "nom": "Emiliano Zapata", "pv": 85},
-{"n": 341, "r": "epique", "nom": "Florence Nightingale", "pv": 85},
-{"n": 342, "r": "epique", "nom": "Frida Kahlo", "pv": 85},
-{"n": 343, "r": "epique", "nom": "Nikola Tesla", "pv": 85},
-{"n": 344, "r": "epique", "nom": "Thomas Edison", "pv": 85},
-{"n": 345, "r": "epique", "nom": "Rosa Parks", "pv": 85},
-{"n": 346, "r": "rare", "nom": "Rachel Carson", "pv": 72},
-{"n": 347, "r": "rare", "nom": "Wangari Maathai", "pv": 72},
-{"n": 348, "r": "epique", "nom": "Niels Bohr", "pv": 86},
-{"n": 349, "r": "epique", "nom": "Emmy Noether", "pv": 86},
-{"n": 350, "r": "rare", "nom": "Lise Meitner", "pv": 77},
-{"n": 351, "r": "rare", "nom": "Chien-Shiung Wu", "pv": 74},
-{"n": 352, "r": "rare", "nom": "Katherine Johnson", "pv": 76},
-{"n": 353, "r": "epique", "nom": "Alan Turing", "pv": 87},
-{"n": 354, "r": "epique", "nom": "Georges Clemenceau", "pv": 87},
-{"n": 355, "r": "rare", "nom": "Hedy Lamarr", "pv": 76},
-{"n": 356, "r": "epique", "nom": "Steve Jobs", "pv": 88},
-{"n": 357, "r": "rare", "nom": "Desmond Tutu", "pv": 76},
-{"n": 358, "r": "rare", "nom": "Kofi Annan", "pv": 75},
-{"n": 360, "r": "epique", "nom": "Avicenne", "pv": 89},
-{"n": 362, "r": "legendaire", "nom": "Aliénor d'Aquitaine", "pv": 90},
-{"n": 363, "r": "epique", "nom": "John Locke", "pv": 82},
-{"n": 364, "r": "epique", "nom": "Lao Tseu", "pv": 84},
-{"n": 365, "r": "epique", "nom": "Ibn Khaldoun", "pv": 81},
-{"n": 366, "r": "rare", "nom": "Zhuge Liang", "pv": 76},
-{"n": 367, "r": "legendaire", "nom": "Élisabeth Ire", "pv": 91},
-{"n": 368, "r": "legendaire", "nom": "Otto von Bismarck", "pv": 91},
-{"n": 369, "r": "epique", "nom": "Mansa Moussa", "pv": 84},
-{"n": 370, "r": "epique", "nom": "Simón Bolívar", "pv": 86},
-{"n": 371, "r": "rare", "nom": "Shaka Zulu", "pv": 72},
-{"n": 372, "r": "epique", "nom": "Sun Tzu", "pv": 87},
-{"n": 373, "r": "epique", "nom": "Frédéric II de Prusse", "pv": 83},
-{"n": 374, "r": "legendaire", "nom": "Saladin", "pv": 93},
-{"n": 375, "r": "legendaire", "nom": "Catherine II de Russie", "pv": 93},
-{"n": 376, "r": "legendaire", "nom": "Pierre le Grand", "pv": 93},
-{"n": 377, "r": "mythique", "nom": "Charlemagne", "pv": 96},
-{"n": 378, "r": "legendaire", "nom": "Ramsès II", "pv": 93},
-{"n": 379, "r": "legendaire", "nom": "Cléopâtre VII", "pv": 93},
-{"n": 380, "r": "legendaire", "nom": "Mao Zedong", "pv": 93},
-{"n": 381, "r": "legendaire", "nom": "Franklin D. Roosevelt", "pv": 93},
-{"n": 382, "r": "legendaire", "nom": "Nicolas Copernic", "pv": 93},
-{"n": 383, "r": "epique", "nom": "Cyrus le Grand", "pv": 85},
-{"n": 384, "r": "legendaire", "nom": "Confucius", "pv": 94},
-{"n": 385, "r": "legendaire", "nom": "Qin Shi Huang", "pv": 94},
-{"n": 386, "r": "rare", "nom": "Wu Zetian", "pv": 78},
-{"n": 387, "r": "mythique", "nom": "Gengis Khan", "pv": 97},
-{"n": 388, "r": "legendaire", "nom": "Jean Moulin", "pv": 94},
-{"n": 389, "r": "legendaire", "nom": "Galilée", "pv": 94},
-{"n": 390, "r": "legendaire", "nom": "Nelson Mandela", "pv": 94},
-{"n": 391, "r": "epique", "nom": "Mustafa Kemal Atatürk", "pv": 88},
-{"n": 392, "r": "legendaire", "nom": "René Descartes", "pv": 94},
-{"n": 394, "r": "mythique", "nom": "Napoléon Bonaparte", "pv": 95},
-{"n": 395, "r": "mythique", "nom": "William Shakespeare", "pv": 95},
-{"n": 396, "r": "mythique", "nom": "Jeanne d'Arc", "pv": 95},
-{"n": 397, "r": "mythique", "nom": "Mahatma Gandhi", "pv": 96},
-{"n": 398, "r": "mythique", "nom": "Isaac Newton", "pv": 96},
-{"n": 399, "r": "mythique", "nom": "Charles de Gaulle", "pv": 97},
-{"n": 400, "r": "rare", "nom": "Mahsa Amini", "pv": 74},
-{"n": 401, "r": "mythique", "nom": "Alexandre le Grand", "pv": 98},
-{"n": 402, "r": "epique", "nom": "Bob Marley", "pv": 86},
-{"n": 403, "r": "mythique", "nom": "Albert Einstein", "pv": 98},
-{"n": 404, "r": "mythique", "nom": "Léonard de Vinci", "pv": 98},
-{"n": 405, "r": "mythique", "nom": "Lucy", "pv": 95}
+{"n": 1, "r": "commune", "nom": "Abebe Bikila", "pv": 15, "t": "corne", "e": 3, "a": 1970},
+{"n": 2, "r": "rare", "nom": "Pierre de Coubertin", "pv": 72, "t": "ouest", "e": 3, "a": 1918},
+{"n": 3, "r": "commune", "nom": "Avery Brundage", "pv": 15, "ret": true, "t": "usa", "e": 3, "a": 1948},
+{"n": 4, "r": "commune", "nom": "Tupua Tamasese Lealofi III", "pv": 16, "ret": true, "t": "pacifique", "e": 3, "a": 1929},
+{"n": 5, "r": "commune", "nom": "Togbe Tsali", "pv": 16, "ret": true, "t": "afouest", "e": 2, "a": 1650},
+{"n": 6, "r": "commune", "nom": "René Lalou", "pv": 16, "t": "ouest", "e": 3, "a": 1942},
+{"n": 7, "r": "commune", "nom": "Violette Morris", "pv": 16, "t": "ouest", "e": 3, "a": 1936},
+{"n": 8, "r": "rare", "nom": "Jacques-Yves Cousteau", "pv": 78, "t": "ouest", "e": 3, "a": 1971},
+{"n": 9, "r": "commune", "nom": "Qin Er Shi", "pv": 17, "t": "chine", "e": 0, "a": -207},
+{"n": 10, "r": "commune", "nom": "William Buckland", "pv": 17, "t": "britanniques", "e": 3, "a": 1838},
+{"n": 11, "r": "commune", "nom": "Fanny Blankers-Koen", "pv": 17, "t": "ouest", "e": 3, "a": 1978},
+{"n": 12, "r": "commune", "nom": "Hōne Heke", "pv": 18, "t": "pacifique", "e": 3, "a": 1846},
+{"n": 13, "r": "commune", "nom": "Tāwhiao", "pv": 18, "t": "pacifique", "e": 3, "a": 1876},
+{"n": 14, "r": "commune", "nom": "John Polidori", "pv": 18, "ret": true, "t": "britanniques", "e": 3, "a": 1821},
+{"n": 15, "r": "commune", "nom": "Pōmare II", "pv": 19, "t": "pacifique", "e": 3, "a": 1819},
+{"n": 16, "r": "commune", "nom": "Gudit", "pv": 19, "t": "corne", "e": 1, "a": 950},
+{"n": 17, "r": "commune", "nom": "Margery Kempe", "pv": 19, "ret": true, "t": "britanniques", "e": 1, "a": 1423},
+{"n": 18, "r": "commune", "nom": "Julian de Norwich", "pv": 19, "ret": true, "t": "britanniques", "e": 1, "a": 1397},
+{"n": 19, "r": "commune", "nom": "Robert FitzRoy", "pv": 19, "t": "britanniques", "e": 3, "a": 1852},
+{"n": 20, "r": "commune", "nom": "Begum Hazrat Mahal", "pv": 20, "t": "inde", "e": 3, "a": 1867},
+{"n": 21, "r": "commune", "nom": "Mangal Pandey", "pv": 20, "t": "inde", "e": 3, "a": 1857},
+{"n": 22, "r": "epique", "nom": "Yuri Gagarine", "pv": 84, "t": "russie", "e": 3, "a": 1968},
+{"n": 23, "r": "commune", "nom": "Aelred de Rievaulx", "pv": 20, "ret": true, "t": "britanniques", "e": 1, "a": 1156},
+{"n": 24, "r": "commune", "nom": "Nicolas Appert", "pv": 20, "t": "ouest", "e": 3, "a": 1812},
+{"n": 25, "r": "commune", "nom": "George Cayley", "pv": 20, "t": "britanniques", "e": 3, "a": 1832},
+{"n": 26, "r": "commune", "nom": "William Edmond Logan", "pv": 21, "ret": true, "t": "canada", "e": 3, "a": 1854},
+{"n": 27, "r": "commune", "nom": "Tupaia", "pv": 21, "t": "pacifique", "e": 2, "a": 1765},
+{"n": 28, "r": "commune", "nom": "Hendrik Witbooi", "pv": 21, "t": "australe", "e": 3, "a": 1885},
+{"n": 29, "r": "commune", "nom": "Dingane", "pv": 21, "t": "australe", "e": 3, "a": 1835},
+{"n": 30, "r": "commune", "nom": "Joseph Bramah", "pv": 21, "ret": true, "t": "britanniques", "e": 2, "a": 1798},
+{"n": 31, "r": "commune", "nom": "Marc Seguin", "pv": 22, "t": "ouest", "e": 3, "a": 1848},
+{"n": 32, "r": "commune", "nom": "Charles Manby", "pv": 22, "ret": true, "t": "britanniques", "e": 3, "a": 1862},
+{"n": 33, "r": "commune", "nom": "Lobengula", "pv": 22, "t": "australe", "e": 3, "a": 1887},
+{"n": 34, "r": "commune", "nom": "Mswati II", "pv": 22, "ret": true, "t": "australe", "e": 3, "a": 1864},
+{"n": 35, "r": "commune", "nom": "Apolinario Mabini", "pv": 22, "t": "insulinde", "e": 3, "a": 1901},
+{"n": 36, "r": "commune", "nom": "Étienne Lenoir", "pv": 23, "t": "ouest", "e": 3, "a": 1878},
+{"n": 37, "r": "commune", "nom": "Émile Cohl", "pv": 22, "t": "ouest", "e": 3, "a": 1915},
+{"n": 38, "r": "commune", "nom": "Gabriel Voisin", "pv": 23, "t": "ouest", "e": 3, "a": 1944},
+{"n": 39, "r": "commune", "nom": "U Nu", "pv": 23, "ret": true, "t": "sudest", "e": 3, "a": 1968},
+{"n": 40, "r": "commune", "nom": "Cuitláhuac", "pv": 23, "t": "mexique", "e": 2, "a": 1516},
+{"n": 41, "r": "commune", "nom": "Yennenga", "pv": 24, "t": "afouest", "e": 1, "a": 1050},
+{"n": 42, "r": "commune", "nom": "Bankim Chandra Chatterjee", "pv": 24, "ret": true, "t": "inde", "e": 3, "a": 1884},
+{"n": 43, "r": "commune", "nom": "Jean-Baptiste Dumas", "pv": 24, "t": "ouest", "e": 3, "a": 1860},
+{"n": 44, "r": "commune", "nom": "K'inich Kan B'alam II", "pv": 24, "t": "mexique", "e": 1, "a": 686},
+{"n": 45, "r": "commune", "nom": "Jasaw Chan K'awiil Ier", "pv": 24, "ret": true, "t": "mexique", "e": 1, "a": 726},
+{"n": 46, "r": "commune", "nom": "Yax K'uk' Mo'", "pv": 25, "t": "mexique", "e": 0, "a": 450},
+{"n": 47, "r": "commune", "nom": "Ranavalona Ire", "pv": 25, "t": "australe", "e": 3, "a": 1837},
+{"n": 48, "r": "commune", "nom": "Osman II", "pv": 25, "t": "procheorient", "e": 2, "a": 1622},
+{"n": 49, "r": "commune", "nom": "Lazare Carnot", "pv": 25, "t": "ouest", "e": 3, "a": 1806},
+{"n": 50, "r": "commune", "nom": "Gaspard Monge", "pv": 25, "t": "ouest", "e": 2, "a": 1800},
+{"n": 51, "r": "commune", "nom": "René Réaumur", "pv": 26, "t": "ouest", "e": 2, "a": 1738},
+{"n": 52, "r": "commune", "nom": "Bernard Palissy", "pv": 26, "t": "ouest", "e": 2, "a": 1567},
+{"n": 53, "r": "commune", "nom": "Abbas Mirza", "pv": 26, "ret": true, "t": "asiecentrale", "e": 3, "a": 1828},
+{"n": 54, "r": "commune", "nom": "Fath Ali Shah", "pv": 26, "ret": true, "t": "asiecentrale", "e": 3, "a": 1820},
+{"n": 55, "r": "commune", "nom": "Cassiodore", "pv": 26, "t": "mediterranee", "e": 1, "a": 552},
+{"n": 56, "r": "commune", "nom": "Pline le Jeune", "pv": 27, "t": "mediterranee", "e": 0, "a": 104},
+{"n": 57, "r": "commune", "nom": "Jean-François Regnard", "pv": 27, "t": "ouest", "e": 2, "a": 1700},
+{"n": 58, "r": "commune", "nom": "Georges de La Tour", "pv": 27, "t": "ouest", "e": 2, "a": 1640},
+{"n": 59, "r": "commune", "nom": "Antoine Coypel", "pv": 27, "t": "ouest", "e": 2, "a": 1709},
+{"n": 60, "r": "commune", "nom": "Ahuitzotl", "pv": 27, "t": "mexique", "e": 1, "a": 1494},
+{"n": 61, "r": "commune", "nom": "Lapu-Lapu", "pv": 27, "t": "insulinde", "e": 2, "a": 1550},
+{"n": 62, "r": "commune", "nom": "Saadia Gaon", "pv": 28, "t": "procheorient", "e": 1, "a": 930},
+{"n": 63, "r": "commune", "nom": "Henri Rousseau", "pv": 28, "t": "ouest", "e": 3, "a": 1894},
+{"n": 64, "r": "commune", "nom": "Étienne Geoffroy Saint-Hilaire", "pv": 28, "t": "ouest", "e": 3, "a": 1826},
+{"n": 65, "r": "commune", "nom": "Pierre-Simon Girard", "pv": 28, "t": "ouest", "e": 3, "a": 1818},
+{"n": 66, "r": "commune", "nom": "Jean-Baptiste Chardin", "pv": 28, "t": "ouest", "e": 2, "a": 1756},
+{"n": 67, "r": "commune", "nom": "Miltiade le Jeune", "pv": 29, "t": "mediterranee", "e": 0, "a": -502},
+{"n": 68, "r": "commune", "nom": "Blaise de Vigenère", "pv": 29, "t": "ouest", "e": 2, "a": 1577},
+{"n": 69, "r": "commune", "nom": "Ai Qing", "pv": 29, "t": "chine", "e": 3, "a": 1970},
+{"n": 70, "r": "commune", "nom": "Adolphe Thiers", "pv": 29, "t": "ouest", "e": 3, "a": 1854},
+{"n": 71, "r": "commune", "nom": "François Guizot", "pv": 29, "t": "ouest", "e": 3, "a": 1848},
+{"n": 72, "r": "commune", "nom": "Eirik Bloodaxe", "pv": 30, "t": "scandinavie", "e": 1, "a": 937},
+{"n": 73, "r": "commune", "nom": "Miloš Obilić", "pv": 30, "t": "mediterranee", "e": 1, "a": 1350},
+{"n": 74, "r": "commune", "nom": "Lazar Hrebeljanović", "pv": 30, "t": "mediterranee", "e": 1, "a": 1376},
+{"n": 75, "r": "commune", "nom": "Sándor Petőfi", "pv": 30, "t": "centrale", "e": 3, "a": 1849},
+{"n": 76, "r": "commune", "nom": "Benjamin Constant", "pv": 30, "t": "centrale", "e": 3, "a": 1816},
+{"n": 77, "r": "commune", "nom": "Madame de Staël", "pv": 31, "t": "ouest", "e": 3, "a": 1809},
+{"n": 78, "r": "commune", "nom": "Lajos Kossuth", "pv": 31, "t": "centrale", "e": 3, "a": 1866},
+{"n": 79, "r": "commune", "nom": "Sviatoslav Ier", "pv": 31, "t": "est", "e": 1, "a": 972},
+{"n": 80, "r": "commune", "nom": "Æthelflæd", "pv": 31, "t": "britanniques", "e": 1, "a": 912},
+{"n": 81, "r": "commune", "nom": "Tewodros II", "pv": 31, "t": "corne", "e": 3, "a": 1860},
+{"n": 82, "r": "commune", "nom": "Prosper Mérimée", "pv": 32, "t": "ouest", "e": 3, "a": 1854},
+{"n": 83, "r": "commune", "nom": "Théophile Gautier", "pv": 32, "t": "ouest", "e": 3, "a": 1859},
+{"n": 84, "r": "commune", "nom": "Yekuno Amlak", "pv": 32, "t": "corne", "e": 1, "a": 1285},
+{"n": 85, "r": "commune", "nom": "Reine Makeda", "pv": 32, "t": "corne", "e": 0, "a": -950},
+{"n": 86, "r": "commune", "nom": "Naram-Sin", "pv": 32, "t": "procheorient", "e": 0, "a": -2218},
+{"n": 87, "r": "commune", "nom": "Abdulhamid II", "pv": 32, "t": "procheorient", "e": 3, "a": 1898},
+{"n": 88, "r": "commune", "nom": "Mustafa Reşid Pacha", "pv": 32, "ret": true, "t": "procheorient", "e": 3, "a": 1846},
+{"n": 89, "r": "peu-commune", "nom": "Alfred de Musset", "pv": 44, "t": "ouest", "e": 3, "a": 1851},
+{"n": 90, "r": "commune", "nom": "Stéphane Mallarmé", "pv": 33, "t": "ouest", "e": 3, "a": 1888},
+{"n": 91, "r": "commune", "nom": "Fayçal Ier d'Irak", "pv": 33, "ret": true, "t": "procheorient", "e": 3, "a": 1926},
+{"n": 92, "r": "commune", "nom": "Abdallah Ier de Jordanie", "pv": 33, "ret": true, "t": "procheorient", "e": 3, "a": 1934},
+{"n": 93, "r": "commune", "nom": "Lázaro Cárdenas", "pv": 33, "t": "mexique", "e": 3, "a": 1950},
+{"n": 94, "r": "commune", "nom": "Deng Yingchao", "pv": 33, "ret": true, "t": "chine", "e": 3, "a": 1966},
+{"n": 95, "r": "rare", "nom": "Paul Verlaine", "pv": 66, "t": "ouest", "e": 3, "a": 1888},
+{"n": 96, "r": "commune", "nom": "Puyi", "pv": 34, "t": "chine", "e": 3, "a": 1954},
+{"n": 97, "r": "commune", "nom": "Humayun", "pv": 34, "t": "inde", "e": 2, "a": 1550},
+{"n": 98, "r": "peu-commune", "nom": "Daniel Fahrenheit", "pv": 48, "t": "centrale", "e": 2, "a": 1728},
+{"n": 99, "r": "peu-commune", "nom": "Anders Celsius", "pv": 48, "t": "scandinavie", "e": 2, "a": 1740},
+{"n": 100, "r": "commune", "nom": "René-Robert de La Salle", "pv": 34, "t": "ouest", "e": 2, "a": 1682},
+{"n": 101, "r": "commune", "nom": "John Hanning Speke", "pv": 35, "t": "britanniques", "e": 3, "a": 1863},
+{"n": 102, "r": "commune", "nom": "James Bruce", "pv": 35, "t": "britanniques", "e": 2, "a": 1780},
+{"n": 103, "r": "commune", "nom": "Mungo Park", "pv": 35, "t": "britanniques", "e": 3, "a": 1806},
+{"n": 104, "r": "rare", "nom": "Jules Ferry", "pv": 70, "t": "ouest", "e": 3, "a": 1880},
+{"n": 105, "r": "peu-commune", "nom": "Léon Gambetta", "pv": 45, "t": "ouest", "e": 3, "a": 1878},
+{"n": 106, "r": "commune", "nom": "Harald Hardrada", "pv": 35, "t": "scandinavie", "e": 1, "a": 1058},
+{"n": 107, "r": "commune", "nom": "Irène l'Athénienne", "pv": 35, "t": "mediterranee", "e": 1, "a": 795},
+{"n": 108, "r": "commune", "nom": "José de Acosta", "pv": 35, "t": "ouest", "e": 2, "a": 1588},
+{"n": 109, "r": "commune", "nom": "José Martí", "pv": 35, "t": "mexique", "e": 3, "a": 1892},
+{"n": 110, "r": "rare", "nom": "Stendhal", "pv": 68, "t": "ouest", "e": 3, "a": 1830},
+{"n": 111, "r": "peu-commune", "nom": "Alphonse de Lamartine", "pv": 45, "t": "ouest", "e": 3, "a": 1847},
+{"n": 112, "r": "peu-commune", "nom": "François-René de Chateaubriand", "pv": 50, "t": "ouest", "e": 3, "a": 1826},
+{"n": 113, "r": "commune", "nom": "Sophie Scholl", "pv": 36, "t": "centrale", "e": 3, "a": 1943},
+{"n": 114, "r": "commune", "nom": "Claus von Stauffenberg", "pv": 36, "t": "centrale", "e": 3, "a": 1943},
+{"n": 115, "r": "commune", "nom": "Käthe Kollwitz", "pv": 36, "t": "centrale", "e": 3, "a": 1924},
+{"n": 116, "r": "commune", "nom": "Fritz Lang", "pv": 36, "t": "centrale", "e": 3, "a": 1950},
+{"n": 117, "r": "commune", "nom": "Clara Zetkin", "pv": 36, "t": "centrale", "e": 3, "a": 1912},
+{"n": 118, "r": "commune", "nom": "François Arago", "pv": 37, "t": "ouest", "e": 3, "a": 1837},
+{"n": 119, "r": "rare", "nom": "Arthur Rimbaud", "pv": 75, "t": "ouest", "e": 3, "a": 1890},
+{"n": 120, "r": "commune", "nom": "Salvador Allende", "pv": 37, "t": "conesud", "e": 3, "a": 1958},
+{"n": 121, "r": "peu-commune", "nom": "Václav Havel", "pv": 55, "t": "centrale", "e": 3, "a": 1991},
+{"n": 122, "r": "commune", "nom": "Norodom Sihanouk", "pv": 37, "t": "sudest", "e": 3, "a": 1984},
+{"n": 123, "r": "commune", "nom": "Darius III", "pv": 37, "t": "asiecentrale", "e": 0, "a": -338},
+{"n": 124, "r": "rare", "nom": "Gustave Flaubert", "pv": 74, "t": "ouest", "e": 3, "a": 1868},
+{"n": 125, "r": "rare", "nom": "Pierre Corneille", "pv": 73, "t": "ouest", "e": 2, "a": 1662},
+{"n": 126, "r": "rare", "nom": "Jean Racine", "pv": 72, "t": "ouest", "e": 2, "a": 1686},
+{"n": 127, "r": "commune", "nom": "Assurbanipal", "pv": 37, "t": "procheorient", "e": 0, "a": -640},
+{"n": 128, "r": "peu-commune", "nom": "Nabuchodonosor II", "pv": 52, "t": "procheorient", "e": 0, "a": -580},
+{"n": 129, "r": "commune", "nom": "Séthi Ier", "pv": 38, "t": "nil", "e": 0, "a": -1279},
+{"n": 130, "r": "commune", "nom": "Ramsès III", "pv": 38, "t": "nil", "e": 0, "a": -1168},
+{"n": 131, "r": "commune", "nom": "Alfred le Grand", "pv": 38, "t": "britanniques", "e": 1, "a": 892},
+{"n": 132, "r": "rare", "nom": "Ötzi", "pv": 66, "t": "centrale", "e": 0, "a": -3208},
+{"n": 133, "r": "commune", "nom": "Nicolas Poussin", "pv": 38, "t": "ouest", "e": 2, "a": 1647},
+{"n": 134, "r": "commune", "nom": "Satyendra Nath Bose", "pv": 39, "t": "inde", "e": 3, "a": 1952},
+{"n": 135, "r": "commune", "nom": "C. V. Raman", "pv": 39, "t": "inde", "e": 3, "a": 1946},
+{"n": 137, "r": "epique", "nom": "Honoré de Balzac", "pv": 81, "t": "ouest", "e": 3, "a": 1842},
+{"n": 138, "r": "epique", "nom": "Alexandre Dumas", "pv": 86, "t": "ouest", "e": 3, "a": 1854},
+{"n": 139, "r": "commune", "nom": "Humphry Davy", "pv": 39, "t": "britanniques", "e": 3, "a": 1821},
+{"n": 140, "r": "peu-commune", "nom": "Joseph-Louis Lagrange", "pv": 50, "t": "mediterranee", "e": 2, "a": 1792},
+{"n": 141, "r": "commune", "nom": "Hugo Grotius", "pv": 39, "t": "ouest", "e": 2, "a": 1632},
+{"n": 142, "r": "commune", "nom": "Jan Hus", "pv": 39, "t": "centrale", "e": 1, "a": 1411},
+{"n": 143, "r": "commune", "nom": "Jayavarman VII", "pv": 39, "t": "sudest", "e": 1, "a": 1188},
+{"n": 144, "r": "commune", "nom": "Zénon de Kition", "pv": 39, "t": "procheorient", "e": 0, "a": -280},
+{"n": 145, "r": "commune", "nom": "Dušan le Grand", "pv": 39, "t": "mediterranee", "e": 1, "a": 1349},
+{"n": 146, "r": "commune", "nom": "Paul Cornu", "pv": 39, "t": "ouest", "e": 3, "a": 1930},
+{"n": 147, "r": "commune", "nom": "Henri Potez", "pv": 39, "t": "ouest", "e": 3, "a": 1954},
+{"n": 149, "r": "rare", "nom": "Soliman le Magnifique", "pv": 76, "t": "procheorient", "e": 2, "a": 1548},
+{"n": 151, "r": "peu-commune", "nom": "Preston Tucker", "pv": 40, "ret": true, "t": "usa", "e": 3, "a": 1947},
+{"n": 152, "r": "peu-commune", "nom": "Jean Bertin", "pv": 40, "t": "ouest", "e": 3, "a": 1966},
+{"n": 153, "r": "peu-commune", "nom": "Freydís Eiríksdóttir", "pv": 41, "t": "groenland", "e": 1, "a": 1000},
+{"n": 154, "r": "peu-commune", "nom": "Kittur Rani Chennamma", "pv": 41, "t": "inde", "e": 3, "a": 1821},
+{"n": 155, "r": "peu-commune", "nom": "Judith Leyster", "pv": 42, "t": "ouest", "e": 2, "a": 1652},
+{"n": 156, "r": "peu-commune", "nom": "Salote Tupou III", "pv": 42, "ret": true, "t": "pacifique", "e": 3, "a": 1950},
+{"n": 157, "r": "peu-commune", "nom": "Sostrate de Cnide", "pv": 43, "t": "procheorient", "e": 0, "a": -250},
+{"n": 158, "r": "peu-commune", "nom": "Philon de Byzance", "pv": 43, "t": "procheorient", "e": 0, "a": -232},
+{"n": 159, "r": "peu-commune", "nom": "Ctésibios", "pv": 43, "t": "nil", "e": 0, "a": -236},
+{"n": 160, "r": "peu-commune", "nom": "Al-Karaji", "pv": 44, "ret": true, "t": "asiecentrale", "e": 1, "a": 1008},
+{"n": 161, "r": "peu-commune", "nom": "Hannon le Navigateur", "pv": 44, "t": "maghreb", "e": 0, "a": -450},
+{"n": 162, "r": "peu-commune", "nom": "Wang Zhaojun", "pv": 45, "t": "chine", "e": 0, "a": -15},
+{"n": 163, "r": "peu-commune", "nom": "Béhanzin", "pv": 45, "t": "afouest", "e": 3, "a": 1893},
+{"n": 164, "r": "peu-commune", "nom": "Saigō Takamori", "pv": 45, "t": "japon", "e": 3, "a": 1870},
+{"n": 165, "r": "peu-commune", "nom": "Thabit ibn Qurra", "pv": 46, "t": "procheorient", "e": 1, "a": 881},
+{"n": 166, "r": "peu-commune", "nom": "Mieszko Ier", "pv": 46, "t": "centrale", "e": 1, "a": 978},
+{"n": 167, "r": "peu-commune", "nom": "Tomislav de Croatie", "pv": 46, "t": "mediterranee", "e": 1, "a": 950},
+{"n": 168, "r": "peu-commune", "nom": "Norbert Elias", "pv": 46, "ret": true, "t": "centrale", "e": 3, "a": 1961},
+{"n": 169, "r": "peu-commune", "nom": "Mihai Viteazul", "pv": 47, "t": "est", "e": 2, "a": 1597},
+{"n": 170, "r": "peu-commune", "nom": "Osei Tutu", "pv": 47, "t": "afouest", "e": 2, "a": 1706},
+{"n": 171, "r": "peu-commune", "nom": "Idris Alooma", "pv": 47, "t": "afcentre", "e": 2, "a": 1603},
+{"n": 172, "r": "peu-commune", "nom": "Afonso Ier de Kongo", "pv": 47, "t": "afcentre", "e": 2, "a": 1516},
+{"n": 173, "r": "peu-commune", "nom": "Boleslas Ier de Pologne", "pv": 48, "t": "centrale", "e": 1, "a": 1014},
+{"n": 174, "r": "peu-commune", "nom": "Étienne le Grand", "pv": 48, "t": "est", "e": 1, "a": 1486},
+{"n": 175, "r": "peu-commune", "nom": "Siméon Ier de Bulgarie", "pv": 48, "t": "mediterranee", "e": 1, "a": 913},
+{"n": 176, "r": "peu-commune", "nom": "Bahadur Shah Zafar", "pv": 49, "ret": true, "t": "inde", "e": 3, "a": 1836},
+{"n": 177, "r": "peu-commune", "nom": "Fa Hien", "pv": 49, "t": "chine", "e": 0, "a": 397},
+{"n": 178, "r": "peu-commune", "nom": "Kanishka Ier", "pv": 49, "t": "inde", "e": 0, "a": 118},
+{"n": 179, "r": "peu-commune", "nom": "Ménandre Ier", "pv": 50, "t": "inde", "e": 0, "a": -130},
+{"n": 180, "r": "peu-commune", "nom": "Alp Arslan", "pv": 50, "t": "asiecentrale", "e": 1, "a": 1068},
+{"n": 181, "r": "peu-commune", "nom": "Massinissa", "pv": 50, "t": "maghreb", "e": 0, "a": -176},
+{"n": 182, "r": "rare", "nom": "Philippe le Bel", "pv": 70, "t": "ouest", "e": 1, "a": 1308},
+{"n": 183, "r": "peu-commune", "nom": "Boris Godounov", "pv": 51, "t": "russie", "e": 2, "a": 1596},
+{"n": 184, "r": "peu-commune", "nom": "Tahmasp Ier", "pv": 51, "t": "asiecentrale", "e": 2, "a": 1562},
+{"n": 185, "r": "peu-commune", "nom": "Verghese Kurien", "pv": 51, "ret": true, "t": "inde", "e": 3, "a": 1984},
+{"n": 186, "r": "peu-commune", "nom": "Robert Hooke", "pv": 51, "t": "britanniques", "e": 2, "a": 1686},
+{"n": 187, "r": "peu-commune", "nom": "Andreas Vesalius", "pv": 52, "t": "ouest", "e": 2, "a": 1556},
+{"n": 188, "r": "peu-commune", "nom": "Rudolf Diesel", "pv": 52, "t": "centrale", "e": 3, "a": 1903},
+{"n": 189, "r": "peu-commune", "nom": "Jules Hardouin-Mansart", "pv": 52, "t": "ouest", "e": 2, "a": 1694},
+{"n": 190, "r": "peu-commune", "nom": "Paul Painlevé", "pv": 52, "t": "ouest", "e": 3, "a": 1916},
+{"n": 191, "r": "peu-commune", "nom": "Olaf Tryggvason", "pv": 53, "t": "scandinavie", "e": 1, "a": 999},
+{"n": 192, "r": "peu-commune", "nom": "Harald Bluetooth", "pv": 53, "t": "scandinavie", "e": 1, "a": 966},
+{"n": 193, "r": "peu-commune", "nom": "Stefan Batory", "pv": 53, "t": "centrale", "e": 2, "a": 1577},
+{"n": 194, "r": "peu-commune", "nom": "Casimir III", "pv": 53, "t": "centrale", "e": 1, "a": 1358},
+{"n": 195, "r": "peu-commune", "nom": "Abdülmecid Ier", "pv": 53, "t": "procheorient", "e": 3, "a": 1860},
+{"n": 196, "r": "peu-commune", "nom": "Aspasie de Milet", "pv": 54, "t": "mediterranee", "e": 0, "a": -418},
+{"n": 197, "r": "peu-commune", "nom": "Percy Bysshe Shelley", "pv": 54, "t": "britanniques", "e": 3, "a": 1822},
+{"n": 198, "r": "peu-commune", "nom": "Rainer Maria Rilke", "pv": 54, "t": "centrale", "e": 3, "a": 1918},
+{"n": 199, "r": "peu-commune", "nom": "Victor-Emmanuel II", "pv": 54, "t": "mediterranee", "e": 3, "a": 1866},
+{"n": 200, "r": "peu-commune", "nom": "Pierre Mendès France", "pv": 54, "t": "ouest", "e": 3, "a": 1962},
+{"n": 201, "r": "peu-commune", "nom": "Baudouin", "pv": 54, "t": "ouest", "e": 3, "a": 1979},
+{"n": 202, "r": "peu-commune", "nom": "A. P. J. Abdul Kalam", "pv": 54, "t": "inde", "e": 3, "a": 1990},
+{"n": 203, "r": "peu-commune", "nom": "Thémistocle", "pv": 55, "t": "mediterranee", "e": 0, "a": -474},
+{"n": 204, "r": "peu-commune", "nom": "José Rizal", "pv": 55, "t": "insulinde", "e": 3, "a": 1896},
+{"n": 205, "r": "peu-commune", "nom": "Tycho Brahe", "pv": 55, "t": "scandinavie", "e": 2, "a": 1591},
+{"n": 206, "r": "epique", "nom": "Émile Zola", "pv": 85, "t": "ouest", "e": 3, "a": 1888},
+{"n": 207, "r": "epique", "nom": "Emmanuel Kant", "pv": 83, "t": "centrale", "e": 2, "a": 1782},
+{"n": 208, "r": "rare", "nom": "Charles Baudelaire", "pv": 76, "t": "ouest", "e": 3, "a": 1862},
+{"n": 209, "r": "legendaire", "nom": "Molière", "pv": 93, "t": "ouest", "e": 2, "a": 1665},
+{"n": 210, "r": "mythique", "nom": "Victor Hugo", "pv": 96, "t": "ouest", "e": 3, "a": 1861},
+{"n": 212, "r": "epique", "nom": "Blaise Pascal", "pv": 82, "t": "ouest", "e": 2, "a": 1660},
+{"n": 213, "r": "peu-commune", "nom": "Baruch Spinoza", "pv": 58, "t": "ouest", "e": 2, "a": 1672},
+{"n": 214, "r": "peu-commune", "nom": "Gottfried Leibniz", "pv": 59, "t": "centrale", "e": 2, "a": 1698},
+{"n": 215, "r": "epique", "nom": "Jean-Jacques Rousseau", "pv": 84, "t": "centrale", "e": 2, "a": 1762},
+{"n": 216, "r": "peu-commune", "nom": "Gustave II Adolphe", "pv": 59, "t": "scandinavie", "e": 2, "a": 1630},
+{"n": 217, "r": "epique", "nom": "Léon Tolstoï", "pv": 82, "t": "russie", "e": 3, "a": 1886},
+{"n": 219, "r": "rare", "nom": "Néron", "pv": 72, "t": "mediterranee", "e": 0, "a": 68},
+{"n": 220, "r": "peu-commune", "nom": "Percy Spencer", "pv": 45, "t": "usa", "e": 3, "a": 1950},
+{"n": 221, "r": "peu-commune", "nom": "Mary Anderson", "pv": 42, "t": "usa", "e": 3, "a": 1927},
+{"n": 222, "r": "rare", "nom": "Xerxès Ier", "pv": 60, "t": "asiecentrale", "e": 0, "a": -474},
+{"n": 223, "r": "rare", "nom": "Samuel Colt", "pv": 60, "t": "usa", "e": 3, "a": 1856},
+{"n": 225, "r": "rare", "nom": "Henri VIII", "pv": 75, "t": "britanniques", "e": 2, "a": 1536},
+{"n": 229, "r": "rare", "nom": "Nicolas II", "pv": 62, "t": "russie", "e": 3, "a": 1910},
+{"n": 230, "r": "rare", "nom": "Corazon Aquino", "pv": 62, "t": "insulinde", "e": 3, "a": 1988},
+{"n": 231, "r": "rare", "nom": "Philo Farnsworth", "pv": 62, "t": "usa", "e": 3, "a": 1956},
+{"n": 232, "r": "rare", "nom": "Walter Brattain", "pv": 62, "t": "usa", "e": 3, "a": 1962},
+{"n": 233, "r": "rare", "nom": "Eli Whitney", "pv": 62, "t": "usa", "e": 3, "a": 1812},
+{"n": 234, "r": "rare", "nom": "Bhimrao Ramji Ambedkar", "pv": 63, "t": "inde", "e": 3, "a": 1941},
+{"n": 236, "r": "rare", "nom": "Zhen Wang", "pv": 63, "ret": true, "t": "chine", "e": 1, "a": 1320},
+{"n": 237, "r": "rare", "nom": "John Bardeen", "pv": 64, "t": "usa", "e": 3, "a": 1967},
+{"n": 238, "r": "rare", "nom": "James Watson", "pv": 64, "t": "usa", "e": 3, "a": 1994},
+{"n": 239, "r": "rare", "nom": "Imhotep", "pv": 65, "t": "nil", "e": 0, "a": -2608},
+{"n": 240, "r": "rare", "nom": "Hérodote", "pv": 65, "t": "mediterranee", "e": 0, "a": -437},
+{"n": 241, "r": "rare", "nom": "Thucydide", "pv": 65, "t": "mediterranee", "e": 0, "a": -412},
+{"n": 242, "r": "rare", "nom": "Sophocle", "pv": 65, "t": "mediterranee", "e": 0, "a": -412},
+{"n": 243, "r": "peu-commune", "nom": "Tomoe Gozen", "pv": 48, "t": "japon", "e": 1, "a": 1220},
+{"n": 244, "r": "peu-commune", "nom": "Ban Zhao", "pv": 50, "t": "chine", "e": 0, "a": 100},
+{"n": 245, "r": "rare", "nom": "Zhang Zhidong", "pv": 66, "ret": true, "t": "chine", "e": 3, "a": 1890},
+{"n": 246, "r": "rare", "nom": "Daniel Cordier", "pv": 66, "t": "ouest", "e": 3, "a": 1988},
+{"n": 247, "r": "rare", "nom": "Henri Frenay", "pv": 67, "t": "ouest", "e": 3, "a": 1964},
+{"n": 248, "r": "peu-commune", "nom": "Razia Sultana", "pv": 52, "t": "inde", "e": 1, "a": 1240},
+{"n": 249, "r": "commune", "nom": "Patrick Juvet", "pv": 25, "t": "centrale", "e": 3, "a": 2003},
+{"n": 250, "r": "rare", "nom": "Alexandre Kerenski", "pv": 67, "t": "russie", "e": 3, "a": 1943},
+{"n": 251, "r": "peu-commune", "nom": "R. K. Narayan", "pv": 45, "t": "inde", "e": 3, "a": 1971},
+{"n": 252, "r": "peu-commune", "nom": "Ezana d'Aksoum", "pv": 48, "t": "corne", "e": 0, "a": 350},
+{"n": 253, "r": "peu-commune", "nom": "Max Jacob", "pv": 50, "t": "ouest", "e": 3, "a": 1928},
+{"n": 254, "r": "peu-commune", "nom": "Sei Shōnagon", "pv": 50, "t": "japon", "e": 1, "a": 1009},
+{"n": 255, "r": "peu-commune", "nom": "Ziryab", "pv": 45, "t": "procheorient", "e": 1, "a": 840},
+{"n": 256, "r": "rare", "nom": "Agrippine la Jeune", "pv": 70, "t": "mediterranee", "e": 0, "a": 54},
+{"n": 257, "r": "rare", "nom": "Askia Mohammed", "pv": 70, "t": "afouest", "e": 2, "a": 1508},
+{"n": 258, "r": "rare", "nom": "Dian Fossey", "pv": 70, "t": "corne", "e": 3, "a": 1976},
+{"n": 259, "r": "rare", "nom": "Jugurtha", "pv": 70, "t": "maghreb", "e": 0, "a": -114},
+{"n": 260, "r": "rare", "nom": "Reza Shah", "pv": 70, "t": "asiecentrale", "e": 3, "a": 1928},
+{"n": 261, "r": "rare", "nom": "Fatima al-Fihri", "pv": 70, "t": "maghreb", "e": 1, "a": 858},
+{"n": 262, "r": "rare", "nom": "Chiang Kai-shek", "pv": 71, "t": "chine", "e": 3, "a": 1948},
+{"n": 263, "r": "rare", "nom": "Marie Stuart", "pv": 71, "t": "britanniques", "e": 2, "a": 1582},
+{"n": 264, "r": "rare", "nom": "Samori Touré", "pv": 71, "t": "afouest", "e": 3, "a": 1882},
+{"n": 265, "r": "rare", "nom": "Zhou Enlai", "pv": 71, "t": "chine", "e": 3, "a": 1954},
+{"n": 266, "r": "rare", "nom": "Al-Idrisi", "pv": 72, "t": "maghreb", "e": 1, "a": 1150},
+{"n": 267, "r": "peu-commune", "nom": "Al-Jazari", "pv": 55, "t": "procheorient", "e": 1, "a": 1188},
+{"n": 268, "r": "rare", "nom": "Alexandre II de Russie", "pv": 72, "t": "russie", "e": 3, "a": 1867},
+{"n": 269, "r": "rare", "nom": "François-Joseph Ier", "pv": 72, "t": "centrale", "e": 3, "a": 1890},
+{"n": 270, "r": "rare", "nom": "Mohammad Mossadegh", "pv": 72, "t": "asiecentrale", "e": 3, "a": 1942},
+{"n": 271, "r": "rare", "nom": "Elizabeth Blackwell", "pv": 73, "t": "usa", "e": 3, "a": 1883},
+{"n": 272, "r": "rare", "nom": "John Logie Baird", "pv": 73, "t": "britanniques", "e": 3, "a": 1934},
+{"n": 273, "r": "peu-commune", "nom": "Kalidasa", "pv": 50, "t": "inde", "e": 0, "a": 418},
+{"n": 274, "r": "rare", "nom": "Leo Baekeland", "pv": 73, "t": "usa", "e": 3, "a": 1921},
+{"n": 275, "r": "rare", "nom": "Mikhaïl Boulgakov", "pv": 73, "t": "russie", "e": 3, "a": 1933},
+{"n": 276, "r": "rare", "nom": "Aung San", "pv": 74, "t": "sudest", "e": 3, "a": 1947},
+{"n": 277, "r": "rare", "nom": "Frédéric Barberousse", "pv": 74, "t": "centrale", "e": 1, "a": 1174},
+{"n": 278, "r": "rare", "nom": "Golda Meir", "pv": 74, "t": "procheorient", "e": 3, "a": 1956},
+{"n": 279, "r": "rare", "nom": "Hadrien", "pv": 74, "t": "mediterranee", "e": 0, "a": 124},
+{"n": 280, "r": "rare", "nom": "Patrice Lumumba", "pv": 74, "t": "afcentre", "e": 3, "a": 1960},
+{"n": 281, "r": "rare", "nom": "Philippe Leclerc", "pv": 74, "t": "ouest", "e": 3, "a": 1942},
+{"n": 282, "r": "legendaire", "nom": "Vercingétorix", "pv": 90, "t": "ouest", "e": 0, "a": -46},
+{"n": 283, "r": "rare", "nom": "Gerolamo Cardano", "pv": 75, "t": "mediterranee", "e": 2, "a": 1556},
+{"n": 284, "r": "rare", "nom": "Hipparque de Nicée", "pv": 75, "t": "mediterranee", "e": 0, "a": -138},
+{"n": 285, "r": "peu-commune", "nom": "Zhang Heng", "pv": 55, "t": "chine", "e": 0, "a": 126},
+{"n": 286, "r": "rare", "nom": "Guglielmo Marconi", "pv": 76, "t": "mediterranee", "e": 3, "a": 1923},
+{"n": 287, "r": "peu-commune", "nom": "Mozi", "pv": 50, "t": "chine", "e": 0, "a": -413},
+{"n": 288, "r": "rare", "nom": "Nikolaus Otto", "pv": 76, "t": "centrale", "e": 3, "a": 1879},
+{"n": 289, "r": "rare", "nom": "Ovide", "pv": 76, "t": "mediterranee", "e": 0, "a": -17},
+{"n": 290, "r": "rare", "nom": "Phidias", "pv": 76, "t": "mediterranee", "e": 0, "a": -442},
+{"n": 291, "r": "rare", "nom": "Pline l'Ancien", "pv": 76, "t": "mediterranee", "e": 0, "a": 68},
+{"n": 292, "r": "rare", "nom": "Euripide", "pv": 77, "t": "mediterranee", "e": 0, "a": -426},
+{"n": 293, "r": "rare", "nom": "George Stephenson", "pv": 77, "t": "britanniques", "e": 3, "a": 1832},
+{"n": 294, "r": "rare", "nom": "Richard Feynman", "pv": 77, "t": "usa", "e": 3, "a": 1970},
+{"n": 295, "r": "rare", "nom": "Vitruve", "pv": 77, "t": "mediterranee", "e": 0, "a": -50},
+{"n": 296, "r": "rare", "nom": "William Harvey", "pv": 77, "t": "britanniques", "e": 2, "a": 1635},
+{"n": 297, "r": "rare", "nom": "James Clerk Maxwell", "pv": 78, "t": "britanniques", "e": 3, "a": 1872},
+{"n": 298, "r": "rare", "nom": "John Napier", "pv": 78, "t": "britanniques", "e": 2, "a": 1601},
+{"n": 299, "r": "rare", "nom": "Claude Ptolémée", "pv": 78, "t": "nil", "e": 0, "a": 152},
+{"n": 300, "r": "peu-commune", "nom": "Barry White", "pv": 45, "t": "usa", "e": 3, "a": 1991},
+{"n": 301, "r": "rare", "nom": "Alexander Graham Bell", "pv": 79, "t": "canada", "e": 3, "a": 1902},
+{"n": 302, "r": "rare", "nom": "Démocrite", "pv": 79, "t": "mediterranee", "e": 0, "a": -398},
+{"n": 303, "r": "rare", "nom": "Erwin Schrödinger", "pv": 79, "t": "centrale", "e": 3, "a": 1942},
+{"n": 304, "r": "rare", "nom": "Ératosthène", "pv": 79, "t": "nil", "e": 0, "a": -218},
+{"n": 305, "r": "rare", "nom": "Werner Heisenberg", "pv": 79, "t": "centrale", "e": 3, "a": 1956},
+{"n": 307, "r": "epique", "nom": "Ada Lovelace", "pv": 80, "t": "britanniques", "e": 3, "a": 1851},
+{"n": 308, "r": "epique", "nom": "Mary Shelley", "pv": 80, "t": "britanniques", "e": 3, "a": 1842},
+{"n": 309, "r": "rare", "nom": "Mary Anning", "pv": 68, "t": "britanniques", "e": 3, "a": 1840},
+{"n": 310, "r": "epique", "nom": "Ibn Battûta", "pv": 80, "t": "maghreb", "e": 1, "a": 1354},
+{"n": 311, "r": "epique", "nom": "Émilie du Châtelet", "pv": 80, "t": "ouest", "e": 2, "a": 1745},
+{"n": 312, "r": "epique", "nom": "Hypatie d'Alexandrie", "pv": 80, "t": "nil", "e": 0, "a": 402},
+{"n": 313, "r": "epique", "nom": "Olympe de Gouges", "pv": 80, "t": "ouest", "e": 2, "a": 1788},
+{"n": 314, "r": "rare", "nom": "Mary Wollstonecraft", "pv": 75, "t": "britanniques", "e": 2, "a": 1796},
+{"n": 315, "r": "rare", "nom": "Alfred Russel Wallace", "pv": 72, "t": "britanniques", "e": 3, "a": 1886},
+{"n": 316, "r": "rare", "nom": "Toni Morrison", "pv": 76, "t": "usa", "e": 3, "a": 1992},
+{"n": 317, "r": "epique", "nom": "Ibn Rushd", "pv": 81, "t": "ouest", "e": 1, "a": 1180},
+{"n": 318, "r": "rare", "nom": "Hildegarde de Bingen", "pv": 75, "t": "centrale", "e": 1, "a": 1156},
+{"n": 319, "r": "epique", "nom": "Hokusai", "pv": 81, "t": "japon", "e": 3, "a": 1822},
+{"n": 321, "r": "epique", "nom": "Antonie van Leeuwenhoek", "pv": 81, "t": "ouest", "e": 2, "a": 1695},
+{"n": 322, "r": "rare", "nom": "Bartolomeu Dias", "pv": 76, "t": "ouest", "e": 1, "a": 1492},
+{"n": 323, "r": "peu-commune", "nom": "Pierre l'Ermite", "pv": 55, "t": "ouest", "e": 1, "a": 1100},
+{"n": 324, "r": "epique", "nom": "Christine de Pizan", "pv": 81, "t": "ouest", "e": 1, "a": 1414},
+{"n": 325, "r": "epique", "nom": "James Cook", "pv": 82, "t": "britanniques", "e": 2, "a": 1771},
+{"n": 326, "r": "rare", "nom": "Túpac Amaru II", "pv": 70, "t": "andes", "e": 2, "a": 1777},
+{"n": 327, "r": "epique", "nom": "Amelia Earhart", "pv": 82, "t": "usa", "e": 3, "a": 1934},
+{"n": 328, "r": "epique", "nom": "Toussaint Louverture", "pv": 81, "t": "mexique", "e": 2, "a": 1790},
+{"n": 329, "r": "epique", "nom": "William Wallace", "pv": 82, "t": "britanniques", "e": 1, "a": 1305},
+{"n": 330, "r": "rare", "nom": "Boudicca", "pv": 74, "t": "britanniques", "e": 0, "a": 61},
+{"n": 331, "r": "epique", "nom": "Hannibal Barca", "pv": 83, "t": "maghreb", "e": 0, "a": -196},
+{"n": 332, "r": "epique", "nom": "Scipion l'Africain", "pv": 83, "t": "mediterranee", "e": 0, "a": -192},
+{"n": 333, "r": "epique", "nom": "Louis Armstrong", "pv": 83, "t": "usa", "e": 3, "a": 1954},
+{"n": 334, "r": "epique", "nom": "Sitting Bull", "pv": 83, "t": "usa", "e": 3, "a": 1878},
+{"n": 335, "r": "epique", "nom": "Harriet Tubman", "pv": 83, "t": "usa", "e": 3, "a": 1885},
+{"n": 336, "r": "rare", "nom": "Frederick Douglass", "pv": 77, "t": "usa", "e": 3, "a": 1874},
+{"n": 337, "r": "rare", "nom": "Susan B. Anthony", "pv": 73, "t": "usa", "e": 3, "a": 1880},
+{"n": 338, "r": "legendaire", "nom": "Louis Pasteur", "pv": 93, "t": "ouest", "e": 3, "a": 1876},
+{"n": 339, "r": "epique", "nom": "Gregor Mendel", "pv": 84, "t": "centrale", "e": 3, "a": 1870},
+{"n": 340, "r": "epique", "nom": "Emiliano Zapata", "pv": 85, "t": "mexique", "e": 3, "a": 1916},
+{"n": 341, "r": "epique", "nom": "Florence Nightingale", "pv": 85, "t": "britanniques", "e": 3, "a": 1882},
+{"n": 342, "r": "epique", "nom": "Frida Kahlo", "pv": 85, "t": "mexique", "e": 3, "a": 1948},
+{"n": 343, "r": "epique", "nom": "Nikola Tesla", "pv": 85, "t": "usa", "e": 3, "a": 1917},
+{"n": 344, "r": "epique", "nom": "Thomas Edison", "pv": 85, "t": "usa", "e": 3, "a": 1906},
+{"n": 345, "r": "epique", "nom": "Rosa Parks", "pv": 85, "t": "usa", "e": 3, "a": 1976},
+{"n": 346, "r": "rare", "nom": "Rachel Carson", "pv": 72, "t": "usa", "e": 3, "a": 1953},
+{"n": 347, "r": "rare", "nom": "Wangari Maathai", "pv": 72, "t": "corne", "e": 3, "a": 1993},
+{"n": 348, "r": "epique", "nom": "Niels Bohr", "pv": 86, "t": "scandinavie", "e": 3, "a": 1941},
+{"n": 349, "r": "epique", "nom": "Emmy Noether", "pv": 86, "t": "centrale", "e": 3, "a": 1926},
+{"n": 350, "r": "rare", "nom": "Lise Meitner", "pv": 77, "t": "centrale", "e": 3, "a": 1940},
+{"n": 351, "r": "rare", "nom": "Chien-Shiung Wu", "pv": 74, "t": "usa", "e": 3, "a": 1972},
+{"n": 352, "r": "rare", "nom": "Katherine Johnson", "pv": 76, "t": "usa", "e": 3, "a": 1986},
+{"n": 353, "r": "epique", "nom": "Alan Turing", "pv": 87, "t": "britanniques", "e": 3, "a": 1950},
+{"n": 354, "r": "epique", "nom": "Georges Clemenceau", "pv": 87, "t": "ouest", "e": 3, "a": 1902},
+{"n": 355, "r": "rare", "nom": "Hedy Lamarr", "pv": 76, "t": "usa", "e": 3, "a": 1974},
+{"n": 356, "r": "epique", "nom": "Steve Jobs", "pv": 88, "t": "usa", "e": 3, "a": 2000},
+{"n": 357, "r": "rare", "nom": "Desmond Tutu", "pv": 76, "t": "australe", "e": 3, "a": 1994},
+{"n": 358, "r": "rare", "nom": "Kofi Annan", "pv": 75, "t": "afouest", "e": 3, "a": 1996},
+{"n": 360, "r": "epique", "nom": "Avicenne", "pv": 89, "t": "asiecentrale", "e": 1, "a": 1026},
+{"n": 362, "r": "legendaire", "nom": "Aliénor d'Aquitaine", "pv": 90, "t": "ouest", "e": 1, "a": 1180},
+{"n": 363, "r": "epique", "nom": "John Locke", "pv": 82, "t": "britanniques", "e": 2, "a": 1686},
+{"n": 364, "r": "epique", "nom": "Lao Tseu", "pv": 84, "t": "chine", "e": 0, "a": -550},
+{"n": 365, "r": "epique", "nom": "Ibn Khaldoun", "pv": 81, "t": "maghreb", "e": 1, "a": 1386},
+{"n": 366, "r": "rare", "nom": "Zhuge Liang", "pv": 76, "t": "chine", "e": 0, "a": 225},
+{"n": 367, "r": "legendaire", "nom": "Élisabeth Ire", "pv": 91, "t": "britanniques", "e": 2, "a": 1586},
+{"n": 368, "r": "legendaire", "nom": "Otto von Bismarck", "pv": 91, "t": "centrale", "e": 3, "a": 1874},
+{"n": 369, "r": "epique", "nom": "Mansa Moussa", "pv": 84, "t": "afouest", "e": 1, "a": 1337},
+{"n": 370, "r": "epique", "nom": "Simón Bolívar", "pv": 86, "t": "andes", "e": 3, "a": 1824},
+{"n": 371, "r": "rare", "nom": "Shaka Zulu", "pv": 72, "t": "australe", "e": 3, "a": 1825},
+{"n": 372, "r": "epique", "nom": "Sun Tzu", "pv": 87, "t": "chine", "e": 0, "a": -550},
+{"n": 373, "r": "epique", "nom": "Frédéric II de Prusse", "pv": 83, "t": "centrale", "e": 2, "a": 1766},
+{"n": 374, "r": "legendaire", "nom": "Saladin", "pv": 93, "t": "procheorient", "e": 1, "a": 1182},
+{"n": 375, "r": "legendaire", "nom": "Catherine II de Russie", "pv": 93, "t": "russie", "e": 2, "a": 1780},
+{"n": 376, "r": "legendaire", "nom": "Pierre le Grand", "pv": 93, "t": "russie", "e": 2, "a": 1716},
+{"n": 377, "r": "mythique", "nom": "Charlemagne", "pv": 96, "t": "ouest", "e": 1, "a": 798},
+{"n": 378, "r": "legendaire", "nom": "Ramsès II", "pv": 93, "t": "nil", "e": 0, "a": -1240},
+{"n": 379, "r": "legendaire", "nom": "Cléopâtre VII", "pv": 93, "t": "nil", "e": 0, "a": -32},
+{"n": 380, "r": "legendaire", "nom": "Mao Zedong", "pv": 93, "t": "chine", "e": 3, "a": 1952},
+{"n": 381, "r": "legendaire", "nom": "Franklin D. Roosevelt", "pv": 93, "t": "usa", "e": 3, "a": 1931},
+{"n": 382, "r": "legendaire", "nom": "Nicolas Copernic", "pv": 93, "t": "centrale", "e": 2, "a": 1526},
+{"n": 383, "r": "epique", "nom": "Cyrus le Grand", "pv": 85, "t": "asiecentrale", "e": 0, "a": -548},
+{"n": 384, "r": "legendaire", "nom": "Confucius", "pv": 94, "t": "chine", "e": 0, "a": -498},
+{"n": 385, "r": "legendaire", "nom": "Qin Shi Huang", "pv": 94, "t": "chine", "e": 0, "a": -217},
+{"n": 386, "r": "rare", "nom": "Wu Zetian", "pv": 78, "t": "chine", "e": 1, "a": 682},
+{"n": 387, "r": "mythique", "nom": "Gengis Khan", "pv": 97, "t": "chine", "e": 1, "a": 1212},
+{"n": 388, "r": "legendaire", "nom": "Jean Moulin", "pv": 94, "t": "ouest", "e": 3, "a": 1938},
+{"n": 389, "r": "legendaire", "nom": "Galilée", "pv": 94, "t": "mediterranee", "e": 2, "a": 1620},
+{"n": 390, "r": "legendaire", "nom": "Nelson Mandela", "pv": 94, "t": "australe", "e": 3, "a": 1983},
+{"n": 391, "r": "epique", "nom": "Mustafa Kemal Atatürk", "pv": 88, "t": "procheorient", "e": 3, "a": 1927},
+{"n": 392, "r": "legendaire", "nom": "René Descartes", "pv": 94, "t": "ouest", "e": 2, "a": 1640},
+{"n": 394, "r": "mythique", "nom": "Napoléon Bonaparte", "pv": 95, "t": "ouest", "e": 3, "a": 1812},
+{"n": 395, "r": "mythique", "nom": "William Shakespeare", "pv": 95, "t": "britanniques", "e": 2, "a": 1608},
+{"n": 396, "r": "mythique", "nom": "Jeanne d'Arc", "pv": 95, "t": "ouest", "e": 1, "a": 1431},
+{"n": 397, "r": "mythique", "nom": "Mahatma Gandhi", "pv": 96, "t": "inde", "e": 3, "a": 1926},
+{"n": 398, "r": "mythique", "nom": "Isaac Newton", "pv": 96, "t": "britanniques", "e": 2, "a": 1702},
+{"n": 399, "r": "mythique", "nom": "Charles de Gaulle", "pv": 97, "t": "ouest", "e": 3, "a": 1948},
+{"n": 400, "r": "rare", "nom": "Mahsa Amini", "pv": 74, "t": "asiecentrale", "e": 3, "a": 2022},
+{"n": 401, "r": "mythique", "nom": "Alexandre le Grand", "pv": 98, "t": "mediterranee", "e": 0, "a": -323},
+{"n": 402, "r": "epique", "nom": "Bob Marley", "pv": 86, "t": "mexique", "e": 3, "a": 1980},
+{"n": 403, "r": "mythique", "nom": "Albert Einstein", "pv": 98, "t": "centrale", "e": 3, "a": 1934},
+{"n": 404, "r": "mythique", "nom": "Léonard de Vinci", "pv": 98, "t": "mediterranee", "e": 2, "a": 1503},
+{"n": 405, "r": "mythique", "nom": "Lucy", "pv": 95, "t": "corne", "e": 0, "a": -3000000}
 ];
 /* Doublons supprimes (audit d'octobre 2026) : la carte supprimee -> la carte
    gardee du meme personnage. Une collection qui les a encore les echange
    (z0o_bourse.js, migration). */
 const CARTES_FUSIONNEES = {136: 321, 148: 365, 211: 392, 224: 262, 226: 274, 227: 272, 228: 288, 235: 293, 320: 296, 359: 121};
+/* La carte du monde de l'album et de la Conquete (novembre 2026) : les 30
+   territoires, leurs continents (et le cadrage de chacun), leurs formes
+   simplifiees (source : Natural Earth 1:110 000 000, domaine public),
+   ecrites par scratchpad/conquete/monde_app.py. */
+const MONDE = {"vb":"0 0 1000 446","sph":"M230,3L500,3L770,3L793,5L810,9L824,15L837,21L858,35L877,50L912,81L928,98L941,116L953,133L963,151L972,169L978,187L983,204L987,222L989,240L990,258L989,275L987,293L983,311L978,329L972,346L963,364L953,382L941,400L928,417L912,434L877,466L858,481L837,494L824,500L810,506L793,510L770,512L500,512L230,512L207,510L190,506L176,500L163,494L142,481L123,466L88,434L72,417L59,400L47,382L37,364L28,346L22,329L17,311L13,293L11,275L10,258L11,240L13,222L17,204L22,187L28,169L37,151L47,133L59,116L72,98L88,81L123,50L142,35L163,21L176,15L190,9L207,5L230,3Z","f":{"groenland":"M399,13L406,11L412,12L415,11L421,11L435,11L445,12L442,13L435,13L425,13L426,14L432,14L437,14L441,14L442,14L440,16L445,15L454,14L459,14L460,15L452,17L451,17L445,18L449,18L446,19L444,21L444,24L446,25L443,25L439,26L442,27L442,29L440,30L442,32L438,32L440,33L439,34L436,34L433,34L435,36L435,37L431,36L430,37L433,37L435,39L435,41L432,42L430,41L428,39L428,41L426,42L431,42L434,43L428,45L422,47L415,48L413,48L410,49L407,52L402,54L400,54L397,54L394,55L391,57L391,59L389,61L385,63L385,65L383,67L381,70L378,70L375,68L371,68L369,66L369,64L366,60L366,58L367,56L365,53L367,51L366,50L369,47L373,46L374,45L375,43L372,44L371,44L369,45L367,44L368,42L369,41L371,41L375,41L372,40L371,39L369,39L367,39L371,36L370,35L369,33L368,31L366,30L367,29L363,27L359,27L353,27L349,27L347,27L345,25L350,24L354,24L346,24L343,23L344,22L352,21L360,19L361,19L357,18L359,17L367,15L369,15L369,14L374,14L380,13L385,13L387,14L393,13L396,14L399,14L402,15L398,13Z","canada":"M181,103L178,100L177,99L174,98L174,95L176,93L174,92L175,89L174,87L175,86L177,84L179,82L176,81L176,77L177,75L176,74L175,73L175,71L172,72L169,74L168,72L168,71L166,70L164,70L179,54L190,44L193,44L195,46L197,46L200,45L203,44L206,44L210,43L214,42L214,43L216,43L218,42L219,42L220,44L225,42L223,44L226,44L228,43L230,43L232,45L236,45L239,46L241,46L242,47L238,48L242,49L247,49L250,48L251,50L254,49L253,47L255,46L257,46L259,46L260,47L261,48L264,48L267,49L270,49L273,49L274,47L276,47L279,48L277,50L280,48L282,48L285,45L284,44L282,43L284,40L288,38L291,38L292,39L292,42L290,44L293,44L291,47L295,45L297,47L295,49L295,50L299,48L302,46L304,43L307,43L310,44L311,45L311,46L308,48L309,49L308,51L302,53L299,53L298,52L296,53L293,56L291,57L287,59L284,59L282,60L281,62L278,62L274,65L269,68L267,70L265,74L268,74L267,77L267,79L271,78L274,80L276,81L277,82L279,83L281,84L285,84L287,85L285,87L285,90L285,94L287,96L289,96L292,92L293,88L292,86L296,85L300,83L302,81L303,79L303,76L301,74L305,71L305,68L307,64L309,63L312,64L314,64L317,64L318,65L320,66L320,67L324,67L323,70L322,74L324,74L325,76L329,74L332,71L334,70L335,72L336,76L337,79L336,81L338,83L339,85L343,85L344,86L344,89L346,89L346,90L345,94L343,95L341,96L337,97L333,99L329,100L324,99L321,99L318,99L315,102L312,103L307,107L303,110L305,109L311,105L316,103L320,103L322,104L319,106L319,109L319,112L321,113L325,113L329,109L328,112L330,113L326,115L320,117L317,118L314,120L312,120L313,117L318,115L314,115L311,115L310,113L311,109L311,108L309,109L308,108L306,110L304,113L303,114L301,115L300,116L296,116L292,116L291,116L287,118L287,119L286,120L283,120L281,120L280,120L280,121L280,122L276,124L273,124L270,126L269,126L268,125L269,124L271,122L272,120L273,117L273,114L271,113L272,112L271,112L271,111L270,111L270,110L268,109L267,108L265,106L263,105L260,106L257,105L255,106L253,105L251,104L249,104L249,102L248,102L248,103L243,103L235,103L226,103L219,103L212,103L205,103L198,103L195,103L188,103ZM294,64L297,62L300,62L299,63L296,64L294,64ZM321,36L320,34L320,33L321,33L326,33L328,35L326,35L324,35L321,36ZM298,30L296,31L293,31L291,30L293,29L297,28L298,29ZM303,24L302,24L299,24L299,23L303,23L303,24ZM300,21L302,22L300,23L297,23L296,22L297,21L299,21ZM307,31L304,31L300,30L300,29L301,28L300,27L296,26L295,26L297,25L300,25L302,26L306,26L307,26L305,27L307,28L308,28L310,29L313,29L316,28L321,28L324,28L325,29L325,30L323,31L320,31L317,31L311,31ZM272,22L274,23L272,23L268,24L266,23L269,23ZM274,21L276,21L273,22L270,22L270,21L273,21ZM345,96L343,98L340,101L342,100L344,100L343,101L344,102L346,102L348,102L347,105L348,104L348,106L348,108L347,110L346,111L344,110L345,107L341,110L340,110L342,108L340,107L337,108L332,108L332,107L334,106L333,105L336,103L340,98L342,96L344,95L345,95ZM299,56L301,57L303,58L302,59L304,59L305,60L303,61L300,60L299,59L296,60L292,62L292,60L289,60L292,59L294,57L296,54L297,55L297,56L298,55ZM322,37L325,36L328,37L330,38L330,39L334,39L335,40L339,41L341,43L341,45L337,46L341,48L344,49L345,51L349,51L347,53L342,56L340,55L338,53L335,53L334,54L335,56L337,57L338,58L338,61L336,63L334,62L329,60L331,62L333,64L333,65L327,64L323,62L322,61L323,60L320,59L318,57L317,58L311,59L310,58L312,56L316,56L321,55L321,54L322,53L326,50L327,49L326,48L324,47L320,46L322,45L321,43L319,43L318,42L316,43L312,44L305,43L302,42L299,42L298,41L300,40L298,40L299,37L302,35L305,34L311,33L308,35L308,36L312,34L318,33L319,36L318,37ZM294,32L298,32L302,33L297,35L294,36L290,38L288,37L289,35L290,34L292,33ZM244,27L249,25L255,24L258,24L261,24L258,25L256,26L254,26L249,27L246,28ZM168,88L171,88L167,91L168,94L167,94L166,92L166,91L166,90L166,89L167,88ZM285,20L289,20L293,21L293,22L293,23L290,23L288,22L284,22L286,21L285,21ZM179,105L177,105L174,104L174,103L173,102L173,101L171,100L171,99L172,98L174,98L175,99L177,99L177,100L177,102L179,103ZM242,31L244,32L249,32L250,33L251,34L248,34L241,36L237,38L236,39L230,40L230,39L226,38L228,37L232,35L235,33L235,32ZM272,28L274,27L276,28L275,29L273,30L266,30L260,31L257,31L258,31L263,30L254,30L251,29L257,27L259,26L264,27L266,29L269,29L269,26L271,26L273,26L272,27ZM268,35L269,36L269,38L268,40L270,42L273,43L271,44L268,44L268,45L267,46L264,46L261,45L258,45L253,46L248,47L244,47L244,45L242,45L240,45L239,43L241,43L244,42L247,42L250,42L247,41L242,41L239,41L239,40L245,39L242,39L239,39L242,37L245,36L251,34L253,35L251,36L256,35L258,36L261,35L262,36L262,39L263,37L264,35L267,34ZM279,36L279,34L282,33L284,33L288,33L288,34L285,35L287,36L285,38L281,40L279,39L278,38L275,36L276,35ZM269,34L272,33L273,34L270,36L268,34ZM292,26L293,27L292,28L289,30L286,30L284,30L285,28L282,29L284,27L286,27L289,26L292,26ZM306,17L308,16L310,16L310,15L315,15L316,17L318,17L321,17L321,19L322,20L319,20L314,22L310,22L307,22L306,21L306,20L309,20L305,20L304,19L304,18ZM318,14L321,14L323,14L327,13L331,13L333,13L334,13L337,12L339,12L343,12L348,12L349,12L354,11L358,12L362,12L366,12L370,12L373,13L372,13L367,14L362,14L360,15L364,15L358,16L355,17L350,19L346,19L344,19L339,20L341,20L339,20L340,21L337,22L334,23L332,24L329,25L332,25L332,26L326,27L321,26L315,27L312,26L309,26L310,25L314,25L314,23L316,23L320,24L319,22L316,22L318,21L322,20L323,20L322,19L322,18L327,18L328,18L332,17L328,17L322,17L319,16L319,15L317,15ZM321,50L319,51L317,51L317,49L319,48L321,47L322,48L322,49ZM281,44L282,45L280,46L278,45L276,46L274,44L276,44L279,42L280,43L281,44ZM322,101L323,100L326,101L328,102L328,103L327,103L324,102ZM320,109L321,111L322,111L325,111L323,112L322,113L320,111L319,110Z","usa":"M181,103L188,103L195,103L198,103L205,103L212,103L219,103L226,103L235,103L243,103L248,103L248,102L249,102L249,104L251,104L253,105L255,106L257,105L260,106L263,105L265,106L267,108L268,109L270,110L270,111L271,111L271,112L272,112L271,113L273,114L273,117L272,120L271,122L269,124L268,125L269,126L270,126L273,124L276,124L280,122L280,121L280,120L281,120L283,120L286,120L287,119L287,118L291,116L292,116L296,116L300,116L301,115L303,114L304,113L306,110L308,108L309,109L311,108L311,109L310,113L311,115L311,116L308,118L305,119L302,120L300,122L299,124L300,126L301,126L301,124L301,125L301,126L299,127L298,127L296,127L295,127L293,127L291,128L295,128L291,129L290,129L289,130L290,130L288,132L286,135L286,134L285,134L285,133L285,134L285,135L285,136L284,137L282,140L281,140L283,138L282,137L282,134L281,135L281,137L280,137L281,138L281,141L281,142L281,145L279,148L276,149L273,150L272,151L271,152L270,153L267,155L265,156L263,158L262,161L262,163L262,165L263,168L263,169L263,173L263,175L262,176L261,178L260,178L259,178L259,177L258,176L257,173L257,171L257,170L258,167L257,166L256,163L255,163L252,164L251,164L251,162L249,162L246,162L244,162L242,162L241,162L241,163L240,164L241,165L240,166L239,165L238,166L236,166L235,164L233,164L231,164L229,164L227,164L224,167L221,168L219,170L218,171L218,173L217,175L218,176L216,176L215,175L213,174L213,173L213,171L211,169L211,167L210,165L209,164L207,164L204,166L202,165L201,164L201,162L201,161L200,159L199,158L198,157L194,157L193,159L191,159L186,159L181,156L177,155L178,154L174,155L171,155L172,153L171,151L169,151L170,150L168,150L168,149L165,149L165,148L165,146L164,143L164,139L164,138L163,137L163,135L164,132L163,130L165,128L166,125L166,123L169,120L171,117L173,114L174,110L175,107L175,106L176,105L179,106L178,109L180,108L181,106ZM58,194L59,195L59,196L58,197L57,197L56,198L56,197L56,195L57,195L57,194ZM108,69L109,70L108,71L106,71L105,70ZM131,76L132,77L129,79L126,80L125,79L126,78L129,77ZM190,44L179,54L164,70L166,70L168,71L168,72L169,74L172,72L175,71L175,73L176,74L177,75L176,77L176,81L179,82L177,84L175,86L174,85L173,84L174,81L173,79L174,76L172,76L169,76L167,75L165,72L163,71L160,70L157,71L154,69L152,68L149,69L148,71L146,71L143,71L140,72L137,73L138,71L142,68L145,68L145,67L141,68L138,70L133,72L133,74L129,76L125,77L122,78L120,79L115,81L113,82L110,83L108,83L105,84L102,85L99,86L95,87L95,86L98,85L101,84L105,82L109,82L111,81L116,79L117,79L119,78L122,75L125,74L121,75L121,74L119,75L119,74L117,75L118,73L114,74L113,74L114,73L116,72L115,71L112,71L111,70L111,69L112,67L112,66L115,65L118,63L120,62L122,61L123,62L127,60L128,61L130,60L131,59L131,58L134,57L132,57L129,58L128,58L127,58L124,58L121,57L122,56L121,55L125,53L131,52L133,52L131,53L136,53L136,52L135,51L135,49L134,48L132,47L135,46L139,46L143,45L145,43L149,42L151,42L156,41L158,41L163,39L165,40L165,41L167,41L170,41L169,41L172,42L174,41L178,42L181,43L182,43L186,42L188,43ZM892,62L891,61L889,61L888,61L887,61L886,60L888,60L889,60L890,60L892,62Z","mexique":"M281,201L279,200L278,200L276,200L275,201L274,200L274,199L276,199L278,199L280,199L278,197L279,196L277,196L278,195L279,195L282,195L284,195L286,196L287,197L288,197L288,198L289,198L290,199L289,200L288,200L287,200L286,200L285,200L284,200L283,200L282,202L281,202ZM266,173L267,173L269,173L269,174L266,174ZM267,178L268,178L268,181L268,183L267,183L267,181L266,180ZM234,208L235,208L236,208L237,208L238,208L239,208L241,208L242,207L243,207L243,208L244,207L245,207L246,208L247,208L248,209L249,210L249,211L249,213L248,214L248,215L247,216L247,217L247,218L247,219L247,220L247,221L246,222L246,223L247,225L248,226L249,227L250,229L251,229L252,230L253,230L255,229L256,228L257,227L259,228L260,228L261,228L262,229L263,230L263,231L263,233L263,234L262,233L261,235L260,234L260,232L261,231L260,231L260,230L258,229L257,229L256,231L255,231L254,232L256,234L255,234L254,235L253,235L253,233L252,234L252,233L251,232L250,232L249,232L248,232L246,231L246,230L246,229L245,228L244,228L243,227L243,226L243,227L242,228L242,227L241,226L240,226L241,225L241,224L240,223L241,223L240,222L239,220L238,219L237,218L236,217L237,216L237,217L237,216L236,215L236,216L234,216L233,216L232,215L231,215L230,214L229,214L227,214L226,213L224,212L222,208L221,207L218,207L217,207L215,208L213,208L211,207L210,207L207,205L205,205L202,203L200,202L200,201L198,201L196,200L195,198L192,197L191,195L191,193L192,193L192,192L193,191L193,190L192,189L192,187L192,186L190,183L188,180L187,178L185,177L185,176L186,174L185,173L184,172L184,170L182,169L181,168L180,166L181,165L180,163L180,160L180,159L179,158L178,158L177,157L176,158L176,160L175,162L176,164L177,166L177,167L178,167L178,168L178,170L179,171L179,172L180,173L180,176L181,178L181,179L181,181L182,181L183,182L183,184L182,186L181,186L181,184L180,182L178,180L177,180L178,177L178,175L177,175L175,173L174,173L173,172L172,170L173,170L175,169L175,167L174,165L172,164L172,162L172,160L171,158L171,155L174,155L178,154L177,155L181,156L186,159L191,159L193,159L194,157L198,157L199,158L200,159L201,161L201,162L201,164L202,165L204,166L207,164L209,164L210,165L211,167L211,169L213,171L213,173L213,174L215,175L216,176L218,176L216,179L215,181L214,185L213,187L213,189L214,190L214,193L215,195L216,197L216,198L219,199L220,200L223,200L225,199L227,199L229,198L230,197L231,195L232,192L233,191L235,191L238,190L240,190L242,190L242,192L240,194L239,196L239,198L238,200L237,199L237,200L237,201L236,202L236,204L236,206L235,206ZM296,199L297,200L297,201L295,201L293,201L293,200L293,199ZM265,199L267,200L269,200L269,201L267,201L266,202L265,201L263,200L264,199L265,199ZM255,184L257,185L260,185L262,186L263,187L265,187L266,187L268,189L269,191L270,191L272,191L271,192L273,192L275,194L273,195L271,195L269,195L266,195L268,193L267,192L265,192L264,191L264,189L262,190L260,189L259,188L256,188L255,187L256,186L254,186L251,188L250,188L248,189L247,189L249,188L250,186L251,186L252,185L254,185ZM306,224L308,223L308,226L306,226L305,226L306,225Z","andes":"M258,253L258,252L259,252L259,250L259,249L261,249L262,247L263,246L262,245L263,243L262,240L263,239L262,237L261,235L262,233L263,234L263,233L263,231L263,230L264,230L267,228L268,228L268,227L269,224L270,223L272,223L272,222L274,222L277,221L278,220L279,218L280,219L281,219L280,221L278,222L279,223L279,225L278,227L278,229L280,229L280,227L280,225L280,223L283,222L283,220L284,219L285,222L287,222L288,223L288,224L291,224L294,224L295,225L297,226L299,225L299,224L302,224L305,224L303,225L304,226L306,227L308,228L308,231L310,231L311,231L312,232L314,234L314,236L315,236L316,238L318,239L321,239L323,239L326,239L327,240L329,241L332,243L332,245L331,247L330,250L329,251L327,251L327,250L326,250L326,251L324,250L323,250L322,250L320,250L320,251L321,251L320,252L319,252L318,252L317,251L316,252L315,253L314,253L313,254L312,253L310,252L310,251L310,249L310,246L311,245L310,244L309,243L310,242L309,241L308,241L308,242L307,243L304,245L302,245L301,246L299,245L297,245L296,245L298,246L298,248L298,250L300,250L300,251L298,252L298,253L297,253L295,254L294,255L292,255L291,254L290,254L290,252L289,251L288,252L283,252L283,254L284,255L284,256L284,255L282,256L282,258L283,259L284,261L284,263L283,271L280,271L278,272L275,274L274,276L274,277L274,279L273,279L273,281L272,281L273,284L275,286L274,287L276,288L277,289L280,289L282,288L282,292L283,293L285,292L287,292L288,292L289,291L291,290L292,289L296,288L296,291L296,292L296,294L299,297L302,297L303,299L305,299L306,300L308,300L310,301L310,303L311,304L311,305L310,305L311,309L317,309L316,311L317,312L318,313L319,315L319,317L318,319L319,321L318,321L318,320L315,319L313,319L308,320L307,322L307,324L307,328L306,327L303,327L302,330L301,327L297,327L295,329L293,330L292,325L290,322L290,319L289,317L288,315L286,313L286,315L285,315L282,314L281,312L276,309L270,306L268,304L267,301L267,300L265,296L261,290L258,284L257,283L256,280L254,278L252,277L253,276L251,273L252,270L254,268L256,266L255,265L254,266L252,265L253,264L252,261L253,260L254,259L255,256L255,255L256,255Z","bresil":"M337,364L336,363L337,361L335,359L333,357L330,355L329,355L326,353L324,353L327,349L329,346L331,344L333,343L332,340L331,338L330,339L330,337L330,335L330,333L329,333L328,333L327,333L326,332L326,329L325,328L323,327L322,328L319,327L319,323L318,321L319,321L318,319L319,317L319,315L318,313L317,312L316,311L317,309L311,309L310,305L311,305L311,304L310,303L310,301L308,300L306,300L305,299L303,299L302,297L299,297L296,294L296,292L296,291L296,288L292,289L291,290L289,291L288,292L287,292L285,292L283,293L282,292L282,288L280,289L277,289L276,288L274,287L275,286L273,284L272,281L273,281L273,279L274,279L274,277L274,276L275,274L278,272L280,271L283,271L284,263L284,261L283,259L282,258L282,256L284,255L284,256L284,255L283,254L283,252L288,252L289,251L290,252L290,254L291,254L292,255L294,255L295,254L297,253L298,253L298,252L300,251L300,250L298,250L298,248L298,246L296,245L297,245L299,245L301,246L302,245L304,245L307,243L308,242L308,241L309,241L310,242L309,243L310,244L311,245L310,246L310,249L310,251L310,252L312,253L313,254L314,253L315,253L316,252L317,251L318,252L319,252L320,252L321,251L320,251L320,250L322,250L323,250L324,250L326,251L326,250L327,250L327,251L329,251L330,250L331,247L332,245L333,244L334,246L335,252L337,252L337,254L335,257L336,258L340,258L341,262L343,259L346,261L351,263L352,264L351,266L355,265L360,267L364,267L368,269L372,273L374,274L376,274L377,275L378,279L379,281L378,286L376,288L373,292L371,296L369,299L368,301L368,307L368,312L368,314L367,315L367,319L365,324L364,327L362,328L362,330L359,330L355,331L353,333L350,334L348,336L346,339L346,342L346,343L346,347L346,348L344,350L342,356L340,358L339,360L338,363Z","conesud":"M315,423L317,424L319,427L323,429L326,429L326,431L324,431L322,430L322,431L320,432L319,432L318,432L315,431L313,430L309,429L306,427L302,424L304,424L308,426L311,427L312,426L312,424L314,423ZM324,365L324,366L328,369L328,371L330,373L330,374L329,378L325,380L320,381L317,380L318,382L319,385L319,386L318,387L316,388L313,387L312,387L313,391L315,391L317,390L318,392L316,393L314,395L315,398L315,400L312,400L311,401L311,404L314,406L317,407L317,409L315,411L314,415L313,416L312,417L314,420L316,422L315,422L313,422L312,423L311,424L311,427L310,427L307,426L304,424L300,422L299,420L299,418L297,416L294,411L294,408L296,406L292,405L293,402L292,397L295,398L295,392L293,391L293,395L291,394L291,390L290,384L290,382L289,379L288,375L289,375L289,370L289,365L289,360L288,355L288,353L287,349L288,345L287,339L287,332L287,325L286,320L285,315L286,315L286,313L288,315L289,317L290,319L290,322L292,325L293,330L295,329L297,327L301,327L302,330L303,327L306,327L307,328L307,324L307,322L308,320L313,319L315,319L318,320L318,321L319,323L319,327L322,328L323,327L325,328L326,329L326,332L327,333L328,333L329,333L330,333L330,335L330,337L330,339L331,338L332,340L333,343L331,344L329,346L327,349L324,353L326,353L329,355L330,355L333,357L335,359L337,361L336,363L337,364L336,366L334,368L332,367L330,368L328,366L326,367ZM332,421L334,419L337,420L338,418L340,420L340,421L337,422L335,421L334,422Z","britanniques":"M462,88L463,91L461,93L456,95L453,95L455,91L454,88L458,86L459,85L461,85L464,86ZM469,90L470,88L468,86L466,86L465,85L466,84L465,83L464,84L464,81L463,80L464,77L466,74L468,75L471,74L468,78L470,77L473,77L472,80L470,82L472,82L472,83L474,86L476,87L477,90L478,91L480,92L480,94L479,95L480,96L478,98L474,98L470,99L469,98L468,99L465,99L464,100L462,100L466,96L468,96L465,95L464,94L467,93L465,92L466,90ZM448,52L447,54L449,56L446,58L440,60L438,61L435,60L429,59L432,58L427,57L431,56L431,55L427,55L429,53L432,53L435,54L438,53L441,54L445,52Z","ouest":"M453,125L453,123L452,122L456,119L459,120L462,120L465,121L467,120L471,120L472,119L473,112L470,109L469,108L465,106L465,104L468,104L472,104L471,101L474,102L479,100L480,97L482,97L484,96L485,95L488,91L491,90L493,90L493,91L493,93L492,95L491,95L491,98L491,100L491,102L492,103L495,103L494,105L494,107L493,108L492,108L490,110L490,112L491,111L492,112L492,113L493,115L492,115L493,118L494,118L494,120L491,121L487,121L483,122L483,123L483,125L480,127L477,128L477,129L475,131L474,133L475,135L474,137L473,139L471,139L469,142L466,142L463,142L462,143L461,144L460,144L459,143L458,141L456,140L455,141L453,141L452,141L452,139L452,137L451,136L451,135L451,133L452,132L452,131L453,129L453,127L453,126ZM497,123L498,122L499,124L498,127L497,126L496,124Z","scandinavie":"M510,19L510,18L513,18L515,19L522,20L517,21L516,23L514,24L514,26L511,26L507,24L509,23L506,23L502,21L501,19L506,18L507,19ZM530,54L526,54L524,56L524,58L521,60L517,63L516,67L517,69L520,70L518,74L515,74L515,79L513,82L511,82L509,84L507,84L506,81L504,78L502,74L501,72L496,75L493,76L490,75L490,71L489,65L491,63L497,61L501,58L505,54L510,49L513,47L519,43L523,42L527,42L530,40L533,40L537,40L543,42L541,42L543,44L540,45L538,45L538,47L542,49L540,51L543,54L542,57L544,59L543,60L547,62L546,64L544,65L540,69L536,69L532,70L529,71L527,69L525,68L525,66L524,63L525,61L527,60L532,57L533,56L533,55ZM532,18L530,19L524,19L519,19L518,18L516,18L514,17L519,17L522,17L524,17L528,17ZM528,23L524,24L520,23L522,23L520,22L524,22L525,23ZM500,85L498,86L497,85L496,84L496,81L496,80L497,79L499,79L499,78L501,77L501,79L501,80L502,81L502,82L501,82L499,84ZM505,82L506,83L505,86L502,84L502,83Z","centrale":"M529,105L530,106L531,107L529,107L528,109L527,111L525,112L523,112L522,113L521,113L519,113L517,111L516,111L515,110L512,110L511,111L509,111L506,110L505,109L503,110L501,110L501,111L500,111L498,111L497,112L496,112L495,113L493,113L492,112L491,111L490,112L490,110L492,108L493,108L494,107L494,105L495,103L492,103L491,102L491,100L491,98L491,95L492,95L493,93L493,91L493,90L493,89L495,89L496,90L497,88L497,87L497,85L498,86L500,85L500,86L502,87L502,88L505,88L506,87L508,88L510,89L511,88L515,87L518,86L520,86L520,87L522,87L525,87L530,87L531,87L531,88L532,90L532,91L532,92L531,93L532,94L532,95L533,98L533,99L532,99L530,102L531,103L530,103L529,104Z","mediterranee":"M526,132L525,132L525,131L524,130L523,129L523,127L524,126L523,125L522,124L521,123L519,122L517,121L515,120L513,118L512,116L512,115L510,115L510,116L509,115L509,114L510,114L508,113L506,114L506,116L506,117L506,118L509,120L510,123L513,125L515,125L515,126L517,127L519,128L521,130L521,131L521,132L519,130L517,130L516,132L518,133L518,135L517,135L515,138L514,138L514,137L515,135L515,134L514,133L514,131L513,131L512,129L510,129L509,127L507,127L505,126L503,124L501,122L500,119L499,119L497,118L496,118L495,119L494,120L494,118L493,118L492,115L493,115L492,113L492,112L493,113L495,113L496,112L497,112L498,111L500,111L501,111L501,110L503,110L505,109L506,110L509,111L511,111L512,110L515,110L516,111L517,111L519,113L521,113L522,113L523,112L525,112L526,113L527,114L528,115L528,116L530,117L531,116L531,117L531,118L532,119L533,119L535,119L538,120L540,119L542,118L544,119L546,120L545,121L544,123L545,125L543,124L540,125L541,126L541,128L540,129L539,129L537,128L534,129L536,131L535,131L534,131L532,130L532,132L534,134L533,134L534,136L535,137L536,139L533,138L534,139L532,140L534,142L532,143L530,141L529,139L528,137L527,135L526,133ZM542,146L541,147L538,147L535,146L535,145L536,146L538,146L540,146ZM512,137L514,137L513,139L513,140L513,142L511,141L510,140L506,139L507,137L509,137ZM497,128L498,127L500,130L499,134L498,134L497,135L496,134L496,130L495,128Z","est":"M531,107L530,106L529,105L529,104L530,103L531,103L530,102L532,99L533,99L533,98L532,95L532,94L531,93L532,92L532,91L532,90L531,88L531,87L530,87L529,86L530,86L528,85L526,85L525,82L525,80L526,78L528,77L530,79L532,79L532,77L533,75L532,76L530,75L530,73L533,72L535,72L538,72L540,72L541,73L539,74L540,77L539,78L540,78L541,80L542,82L544,82L545,83L546,83L548,83L548,85L548,86L550,88L551,88L551,89L552,89L553,90L552,91L550,91L551,92L551,94L552,94L553,93L556,93L558,95L557,95L557,96L559,96L560,98L563,99L565,99L567,100L568,100L572,101L572,102L571,104L572,106L572,107L569,107L568,108L568,109L567,109L565,110L563,110L561,112L561,113L560,113L560,112L558,112L557,113L557,112L553,111L553,110L550,111L550,112L548,115L547,116L546,116L546,120L544,119L542,118L540,119L538,120L535,119L533,119L532,119L531,118L531,117L531,116L530,117L528,116L528,115L527,114L526,113L525,112L527,111L528,109L529,107Z","russie":"M652,16L656,15L660,16L667,19L668,21L664,21L658,20L655,19L652,18L649,17ZM672,20L678,21L679,22L669,23L670,20L671,20ZM748,27L754,27L762,29L763,30L755,30L753,31L747,29L746,28ZM769,29L774,30L773,31L770,31L765,30L765,29ZM758,34L758,33L761,33L765,34L762,35L758,34ZM564,17L567,16L570,16L570,17L571,16L573,16L576,17L575,17L573,17L571,17L571,18L569,18L567,18L568,17ZM530,87L525,87L522,87L523,86L526,85L528,85L530,86L529,86ZM586,33L590,31L589,30L593,28L599,27L605,26L608,26L611,25L613,26L612,27L606,28L600,29L595,32L593,34L591,37L592,39L597,41L596,41L589,41L588,40L584,39L583,38L585,37L585,36L588,33ZM810,89L813,92L814,95L817,98L823,103L819,102L820,107L824,110L825,112L823,110L822,113L820,110L819,107L817,104L816,101L813,97L810,94L808,90L809,89L807,87L808,87ZM882,54L882,55L879,55L882,58L879,58L877,57L873,57L871,55L868,55L866,55L864,54L863,53L862,54L864,55L864,56L863,58L860,57L863,59L867,61L869,62L870,63L871,64L866,63L862,65L860,66L859,68L857,70L858,71L853,69L849,71L847,70L846,71L843,71L844,73L843,76L844,77L848,77L851,82L849,82L850,84L852,86L849,87L851,90L848,91L849,94L848,97L846,95L841,91L835,84L833,80L834,78L833,77L836,76L836,72L838,70L840,67L838,63L835,63L836,66L833,69L828,65L823,66L822,71L825,73L821,74L818,74L816,72L812,71L811,73L804,72L797,73L794,79L790,86L794,86L796,88L799,89L799,87L802,88L807,91L809,93L809,96L811,100L813,105L812,109L812,112L811,115L809,119L809,121L806,122L805,122L802,121L800,123L800,124L799,122L800,122L799,118L797,116L798,115L802,115L802,112L801,109L801,108L801,105L797,106L796,107L792,107L790,104L786,102L781,101L779,98L777,96L775,95L772,92L769,91L765,90L762,90L759,90L758,92L760,93L761,94L760,95L760,98L760,100L758,102L755,101L752,101L750,100L749,99L746,102L743,102L741,103L738,102L736,102L734,101L731,99L728,99L725,99L723,100L719,99L718,96L715,96L713,95L709,94L708,97L710,99L708,101L705,100L702,100L700,99L698,99L695,98L692,99L689,102L686,102L685,103L683,101L681,101L679,100L677,99L675,97L674,97L671,98L667,96L666,98L658,90L655,88L655,87L650,89L648,90L648,88L644,87L642,88L640,85L636,84L634,85L629,86L628,87L620,88L619,89L621,91L619,92L620,93L618,94L622,96L622,98L618,98L618,99L615,97L611,97L609,98L606,97L600,95L596,95L592,98L592,101L589,99L588,102L589,103L588,105L590,107L592,107L594,109L594,111L595,111L594,113L592,114L590,117L593,120L593,122L596,126L595,127L594,128L593,127L591,125L589,125L588,123L586,123L584,123L580,121L576,121L574,120L571,118L568,117L565,115L567,114L569,112L567,110L571,109L568,109L568,108L569,107L572,107L572,106L571,104L572,102L572,101L568,100L567,100L565,99L563,99L560,98L559,96L557,96L557,95L558,95L556,93L553,93L552,94L551,94L551,92L550,91L552,91L553,90L552,89L551,89L551,88L550,88L548,86L548,85L548,83L546,83L545,83L544,82L542,82L541,80L540,78L539,78L540,77L539,74L541,73L540,72L543,70L540,69L544,65L546,64L547,62L543,60L544,59L542,57L543,54L540,51L542,49L538,47L538,45L540,45L543,44L545,43L549,45L555,45L563,48L565,50L566,51L564,53L560,54L550,52L549,52L553,54L553,55L554,58L557,59L558,60L558,58L557,57L558,56L564,58L565,57L563,55L568,52L570,53L572,53L573,52L571,50L571,48L569,47L575,48L577,49L574,49L575,51L577,52L580,51L580,49L584,48L591,46L592,46L591,48L593,48L594,47L598,47L601,46L604,47L606,46L603,44L604,43L610,44L613,45L622,48L623,47L620,45L617,44L617,43L615,41L615,40L618,38L618,35L619,35L625,36L626,37L625,39L627,40L628,42L629,45L632,47L632,49L630,53L632,53L633,52L635,51L635,50L636,49L634,47L634,46L632,45L631,44L631,41L628,39L630,37L629,35L630,35L632,37L632,39L635,40L633,38L636,37L640,37L644,38L641,36L639,33L643,33L647,33L652,33L649,31L650,30L653,30L656,28L660,28L661,27L665,27L667,28L671,26L674,26L674,25L675,24L679,23L683,24L681,25L685,25L687,26L688,26L694,26L699,27L701,28L702,29L700,30L696,31L696,32L698,32L702,33L703,33L705,34L706,34L709,33L715,34L717,35L725,35L724,33L728,34L732,34L736,35L738,37L738,38L743,40L747,41L746,38L751,39L753,39L758,39L759,39L762,39L759,37L760,35L780,37L783,39L791,41L798,40L803,41L806,42L808,44L811,44L813,44L817,44L821,44L825,44L831,46L833,45L829,44L829,43L836,43L840,43L847,44L852,46L859,48L868,50L870,52L872,53L869,51L875,51L882,54ZM843,39L844,39L845,39L849,40L848,41L846,41L844,41L842,40ZM557,113L558,112L560,112L560,113L561,113L561,114L562,114L565,114L565,115L562,116L559,118L557,117L558,115L555,115L555,114L558,113Z","maghreb":"M504,153L507,154L508,154L510,154L514,156L515,158L517,159L521,160L524,162L525,161L526,160L525,157L526,156L528,154L530,154L533,154L534,156L535,156L536,156L539,157L539,158L538,159L539,161L538,163L539,165L540,177L540,188L540,195L537,195L537,196L526,190L516,184L513,185L511,187L510,185L505,184L496,190L488,196L485,197L482,198L482,196L480,195L479,194L478,193L469,186L461,179L451,171L451,176L442,176L442,184L439,184L439,186L439,190L428,190L428,191L428,190L428,189L429,188L430,186L430,185L431,183L433,181L434,180L434,178L435,177L436,175L437,174L439,170L441,169L443,169L445,167L447,166L449,163L449,159L450,156L450,155L452,153L455,151L457,150L458,147L459,145L461,145L463,146L465,146L468,146L469,146L471,145L474,144L476,143L478,142L483,141L487,141L488,142L491,140L493,140L494,141L496,141L499,140L501,140L500,142L503,140L503,141L502,143L502,144L502,145L502,148L500,149L501,151L502,151L503,152Z","nil":"M571,188L572,191L572,192L572,195L574,199L575,200L576,201L575,203L573,203L572,204L572,206L571,211L571,212L571,215L570,218L568,220L567,222L567,223L566,224L565,227L565,230L565,231L563,231L562,233L564,233L565,235L566,236L567,237L569,240L567,242L565,244L564,246L562,246L560,246L558,246L557,247L554,244L554,243L552,244L551,244L550,244L549,244L547,241L547,240L545,239L544,237L543,236L541,234L541,233L540,232L537,230L537,229L536,228L537,227L537,226L535,224L535,223L535,222L534,221L534,219L533,218L532,218L533,217L533,215L533,214L534,213L533,212L534,211L535,208L537,208L537,196L537,195L540,195L540,188L540,177L539,165L538,163L539,161L538,159L539,158L543,158L545,159L548,160L549,160L551,159L552,158L554,158L556,158L557,160L558,159L560,160L562,160L563,159L565,164L564,166L564,168L563,170L562,169L561,168L558,163L558,164L559,167L561,170L564,175L565,177L566,179L568,182L568,183L568,185L571,188Z","afouest":"M428,191L428,190L439,190L439,186L439,184L442,184L442,176L451,176L451,171L461,179L469,186L478,193L479,194L480,195L482,196L482,198L485,197L488,196L496,190L505,184L510,185L511,187L513,185L514,190L515,191L515,192L516,193L515,195L514,201L514,205L511,208L510,212L511,214L511,216L512,216L512,217L511,217L511,218L512,220L512,221L510,224L509,226L509,227L508,228L507,230L506,231L506,233L505,234L505,236L503,237L501,235L500,235L499,237L498,237L497,240L496,243L493,244L492,244L491,244L489,244L487,242L487,240L485,238L483,238L480,238L478,238L476,239L471,241L470,242L467,243L465,242L464,242L462,241L460,241L457,242L455,243L452,244L451,244L448,242L446,240L444,238L442,236L441,236L439,235L438,233L437,232L437,230L436,228L435,226L434,226L433,225L433,224L433,223L432,223L431,222L429,221L429,220L428,219L428,216L428,215L427,212L426,211L427,211L428,208L429,207L429,205L429,203L430,201L430,197L429,196L430,194L429,193Z","afcentre":"M506,277L506,276L505,273L503,270L500,267L498,264L497,261L497,260L497,259L498,257L499,254L498,254L499,250L499,248L498,246L497,245L497,244L496,243L497,240L498,237L499,237L500,235L501,235L503,237L505,236L505,234L506,233L506,231L507,230L508,228L509,227L509,226L510,224L512,221L512,220L511,218L511,217L512,217L512,216L511,216L511,214L510,212L511,208L514,205L514,201L515,195L516,193L515,192L515,191L514,190L513,185L516,184L526,190L537,196L537,208L535,208L534,211L533,212L534,213L533,214L533,215L533,217L532,218L533,218L534,219L534,221L535,222L535,223L535,224L537,226L537,227L536,228L537,229L537,230L540,232L541,233L541,234L543,236L544,237L545,239L547,240L547,241L549,244L550,244L551,244L552,244L554,243L554,244L557,247L557,250L558,251L557,252L556,253L555,254L554,256L554,258L553,259L553,262L553,263L552,265L552,267L552,268L553,272L553,275L553,276L553,278L555,280L556,284L555,284L552,284L551,284L550,286L551,288L550,292L550,295L552,297L553,296L553,299L551,299L550,298L549,296L547,296L546,294L545,295L543,295L542,293L540,293L539,293L539,292L538,292L538,293L538,295L538,296L538,297L538,298L532,298L532,308L534,311L535,313L531,314L524,314L522,312L511,312L511,313L509,311L508,311L506,312L505,312L504,310L505,307L506,305L506,303L507,300L507,299L509,297L510,296L510,293L510,291L509,290L508,288L508,287L508,286L509,285L508,282L507,279L506,277Z","corne":"M571,212L571,211L572,206L572,204L573,203L575,203L576,201L578,205L579,207L580,209L584,212L586,214L587,216L588,217L589,218L590,219L590,220L588,221L590,222L591,222L591,223L592,225L594,225L596,224L599,224L602,223L603,222L604,222L605,222L606,222L607,221L609,221L610,220L611,220L611,221L611,222L611,224L611,225L610,229L609,232L607,236L605,241L603,244L600,249L597,251L593,254L590,257L587,261L587,262L586,263L584,264L583,265L582,266L582,268L581,269L581,271L579,272L578,276L578,278L580,279L580,280L579,282L579,283L579,284L580,286L581,289L582,290L580,292L577,293L575,293L574,294L572,294L572,295L568,294L566,294L566,290L565,288L564,287L562,287L560,286L558,285L557,285L556,284L555,280L553,278L553,276L553,275L553,272L552,268L552,267L552,265L553,263L553,262L553,259L554,258L554,256L555,254L556,253L557,252L558,251L557,250L557,247L558,246L560,246L562,246L564,246L565,244L567,242L569,240L567,237L566,236L565,235L564,233L562,233L563,231L565,231L565,230L565,227L566,224L567,223L567,222L568,220L570,218L571,215Z","australe":"M535,313L534,311L532,308L532,298L538,298L538,297L538,296L538,295L538,293L538,292L539,292L539,293L540,293L542,293L543,295L545,295L546,294L547,296L549,296L550,298L551,299L553,299L553,296L552,297L550,295L550,292L551,288L550,286L551,284L552,284L555,284L556,284L557,285L558,285L560,286L562,287L564,287L565,288L566,290L566,294L568,294L572,295L572,294L574,294L575,293L577,293L580,292L582,290L583,292L582,295L583,297L583,302L583,304L582,306L581,308L579,310L577,312L574,313L570,316L569,317L567,319L566,320L566,322L567,325L568,327L568,330L567,332L568,332L567,334L566,335L564,336L561,338L560,339L560,340L560,342L559,344L559,347L558,348L556,350L556,351L554,352L554,354L552,356L549,359L547,361L545,363L542,364L541,364L541,365L539,364L538,365L535,364L533,365L532,365L530,366L527,366L526,368L525,368L524,367L523,367L522,365L522,366L521,365L521,363L520,361L521,360L521,358L520,355L518,352L517,348L515,346L514,343L513,340L513,338L512,333L512,329L511,327L510,326L509,323L508,320L507,318L505,315L505,312L506,312L508,311L509,311L511,313L511,312L522,312L524,314L531,314ZM607,297L608,298L608,300L608,304L609,306L609,307L608,308L607,306L607,307L607,309L607,311L606,312L606,314L604,318L603,322L601,328L599,333L598,336L596,337L593,338L592,338L590,337L589,335L589,332L589,330L588,327L589,325L590,324L590,323L592,321L592,319L592,317L591,315L591,313L592,311L593,309L594,309L595,308L597,307L598,307L599,306L602,304L603,302L602,301L603,301L605,299L605,297L606,296Z","procheorient":"M565,164L563,159L564,158L563,158L564,156L564,154L565,153L566,150L567,148L566,146L567,144L566,143L567,142L565,142L563,141L561,143L557,143L555,142L552,142L552,143L550,143L548,142L545,142L543,139L541,137L542,134L541,133L543,130L547,130L548,127L553,128L556,126L559,125L563,125L567,127L571,128L574,128L576,128L579,126L579,125L578,123L576,122L575,121L574,120L576,121L580,121L584,123L586,123L588,123L589,125L591,125L593,127L594,128L595,127L596,126L598,127L599,129L600,130L601,130L599,131L599,133L599,134L598,135L598,136L598,137L596,135L597,133L596,133L595,133L592,135L591,135L589,135L588,133L587,132L586,133L587,137L587,138L588,140L590,144L592,145L593,147L591,148L591,150L593,153L597,155L598,157L598,160L599,160L599,161L601,163L599,163L597,163L596,166L591,165L583,159L579,157L576,156L575,156L570,158L573,161L572,162L572,163L570,163L569,164L568,165L565,165ZM540,125L543,124L545,125L545,126L547,127L547,128L544,128L543,129L541,131L540,129L541,128L541,126ZM558,147L559,146L561,146L563,145L561,146L561,147L562,147L559,148L558,148L557,147Z","arabie":"M622,176L623,179L624,181L626,182L628,183L629,183L631,185L631,186L632,187L632,189L631,190L630,191L629,193L628,193L628,194L627,195L628,197L628,198L626,198L625,199L625,201L624,201L622,201L621,202L622,203L620,204L619,204L617,205L616,205L614,206L613,207L613,208L611,210L607,211L604,213L603,214L602,213L601,215L599,215L597,216L596,216L596,217L595,217L595,218L593,218L592,218L590,218L590,216L590,214L589,213L589,211L588,210L588,208L588,207L588,206L588,205L587,204L587,203L585,201L584,199L583,196L581,194L580,193L578,190L577,188L577,186L576,183L574,182L573,181L572,179L572,178L571,177L570,176L569,174L567,171L566,169L565,169L565,167L565,166L565,165L568,165L569,164L570,163L572,163L572,162L573,161L570,158L575,156L576,156L579,157L583,159L591,165L596,166L597,163L599,163L600,164L599,165L601,167L602,170L603,171L604,172L606,173L606,175L606,176L606,177L607,178L607,179L608,179L608,177L608,176L609,175L610,176L610,178L609,180L610,181L611,181L611,182L613,181L615,181L617,181L618,179L620,177L621,175L622,174L622,175L622,176Z","asiecentrale":"M660,133L662,136L664,136L664,138L665,139L666,140L664,141L663,141L660,142L658,142L656,144L657,145L658,147L657,148L657,149L657,150L654,150L655,152L654,153L653,155L654,157L653,158L652,157L650,158L650,159L648,159L647,160L647,163L644,165L642,164L641,165L640,165L637,165L633,163L634,165L635,167L638,168L639,171L640,172L640,173L637,175L636,178L631,177L628,177L625,176L623,172L622,172L620,172L618,174L614,173L611,171L609,170L607,167L604,162L603,163L601,162L601,163L599,161L599,160L598,160L598,157L597,155L593,153L591,150L591,148L593,147L592,145L590,144L588,140L587,138L587,137L586,133L587,132L588,133L589,135L591,135L592,135L595,133L596,133L597,133L596,135L598,137L598,136L599,139L602,139L604,141L608,142L611,141L612,140L611,138L611,135L609,133L609,131L607,131L607,128L610,129L612,128L610,126L609,125L607,125L607,128L606,126L606,125L606,124L605,122L602,121L601,119L599,118L599,117L601,117L601,115L603,114L605,115L605,112L605,110L602,110L600,109L597,111L595,111L594,111L594,109L592,107L590,107L588,105L589,103L588,102L589,99L592,101L592,98L596,95L600,95L606,97L609,98L611,97L615,97L618,99L618,98L622,98L622,96L618,94L620,93L619,92L621,91L619,89L620,88L628,87L629,86L634,85L636,84L640,85L642,88L644,87L648,88L648,90L650,89L655,87L655,88L658,90L666,98L667,96L671,98L674,97L675,97L677,99L679,100L681,101L683,101L685,103L684,105L682,105L683,108L682,109L677,108L677,114L676,115L672,116L675,121L674,122L675,124L674,125L671,126L670,127L667,128L667,130L664,129L662,130L660,132L661,132Z","inde":"M710,188L710,189L708,189L705,190L705,192L704,194L701,196L698,200L696,202L694,204L694,205L693,206L690,207L689,208L689,210L689,214L690,217L689,220L689,225L688,225L687,228L688,229L685,229L684,232L683,233L681,230L679,225L678,222L677,221L675,217L674,214L674,212L671,207L669,201L668,197L668,193L667,190L663,192L661,192L657,188L659,187L658,186L654,183L652,182L651,180L649,177L644,178L640,178L636,178L637,175L640,173L640,172L639,171L638,168L635,167L634,165L633,163L637,165L640,165L641,165L642,164L644,165L647,163L647,160L648,159L650,159L650,158L652,157L653,158L654,157L653,155L654,153L655,152L654,150L657,150L657,149L657,148L658,147L657,145L656,144L658,142L660,142L663,141L664,141L666,140L668,142L669,144L674,145L677,149L677,152L679,153L679,155L677,155L678,158L681,160L685,162L686,161L688,162L691,165L693,165L694,167L696,167L699,169L702,169L705,170L706,169L707,171L708,169L710,168L712,169L713,169L714,170L716,170L718,167L721,165L723,166L725,165L726,167L726,168L729,168L729,170L728,170L729,172L727,172L724,174L724,176L723,178L724,180L723,182L721,182L721,185L721,186L721,187L720,188L720,190L719,190L720,192L719,191L718,189L718,188L716,186L714,186L714,187L714,189L712,188L712,189L711,188ZM695,234L695,237L694,238L691,239L690,236L689,232L690,227L692,228L693,231Z","chine":"M675,124L674,122L675,121L672,116L676,115L677,114L677,108L682,109L683,108L682,105L684,105L685,103L686,102L689,102L692,99L695,98L698,99L700,99L702,100L705,100L708,101L710,99L708,97L709,94L713,95L715,96L718,96L719,99L723,100L725,99L728,99L731,99L734,101L736,102L738,102L741,103L743,102L746,102L749,99L750,100L752,101L755,101L758,102L760,100L760,98L760,95L761,94L760,93L758,92L759,90L762,90L765,90L769,91L772,92L775,95L777,96L779,98L781,101L786,102L790,104L792,107L796,107L797,106L801,105L801,108L801,109L802,112L802,115L798,115L797,116L799,118L800,122L799,122L800,124L797,122L797,124L794,125L795,127L793,126L791,125L790,128L788,129L787,131L784,132L783,134L780,135L781,133L780,132L781,130L779,128L777,129L775,132L775,134L772,134L771,135L774,137L776,138L776,139L779,140L781,138L784,139L785,139L786,141L783,142L782,143L780,145L780,147L783,149L785,152L788,155L790,157L791,160L789,161L790,162L792,163L793,166L793,168L791,169L790,172L789,176L787,180L784,183L781,186L778,186L777,187L776,186L775,188L771,190L768,190L768,193L767,194L766,191L766,190L762,189L761,190L758,189L757,188L757,186L754,185L753,184L751,186L748,186L746,186L745,187L744,187L745,191L743,191L743,190L743,189L741,190L740,189L737,188L738,185L736,185L735,182L732,182L732,178L734,176L733,173L733,171L731,170L730,168L729,168L726,168L726,167L725,165L723,166L721,165L718,167L716,170L714,170L713,169L712,169L710,168L708,169L707,171L706,169L705,170L702,169L699,169L696,167L694,167L693,165L691,165L688,162L686,161L685,162L681,160L678,158L677,155L679,155L679,153L677,152L677,149L674,145L669,144L668,142L666,140L665,139L664,138L664,136L662,136L660,133L661,132L660,132L662,130L664,129L667,130L667,128L670,127L671,126L674,125ZM767,200L764,199L764,197L765,195L768,194L769,194L770,195L769,197L769,199ZM796,181L795,186L795,188L793,186L792,183L793,180L794,178L796,179Z","japon":"M795,138L793,138L792,139L792,138L791,138L790,137L791,136L791,135L791,133L790,133L789,132L787,131L788,129L790,128L791,125L793,126L795,127L794,125L797,124L797,122L800,124L799,124L799,125L798,126L799,128L798,129L798,130L798,131L796,131L795,132L796,133L796,134L797,134L799,136L803,139L804,141L805,145L805,147L803,147L801,149L799,149L798,147L798,145L796,142L797,141ZM832,134L831,137L833,140L833,143L834,144L834,147L831,148L826,148L824,152L822,151L821,148L817,149L814,150L811,151L815,153L815,158L813,160L812,158L812,155L810,155L808,152L810,151L811,149L813,148L814,146L818,145L821,145L822,140L824,141L827,138L827,137L827,133L825,129L825,127L828,127L831,131ZM832,119L833,117L835,121L832,122L831,125L826,123L827,126L824,126L822,123L822,121L825,121L823,116L823,114L827,117L830,118ZM815,152L816,150L818,150L818,149L820,150L821,151L820,153L819,152L818,152L818,154L816,153Z","sudest":"M745,237L744,236L743,234L742,233L740,231L740,233L739,231L739,229L740,226L740,224L740,222L739,220L739,216L738,215L737,211L736,207L734,204L733,206L730,208L728,208L726,207L727,203L726,200L723,197L724,195L722,195L720,192L719,190L720,190L720,188L721,187L721,186L721,185L721,182L723,182L724,180L723,178L724,176L724,174L727,172L729,172L728,170L729,170L729,168L730,168L731,170L733,171L733,173L734,176L732,178L732,182L735,182L736,185L738,185L737,188L740,189L741,190L743,189L743,190L743,191L745,191L744,187L745,187L746,186L748,186L751,186L753,184L754,185L757,186L757,188L758,189L761,190L758,192L756,195L756,198L759,201L762,205L764,207L766,209L768,215L768,221L766,223L763,225L761,228L758,231L757,229L758,226L755,225L753,224L752,222L750,219L748,218L745,218L746,215L743,215L743,219L742,223L742,226L742,229L744,229L745,231L746,234L747,236L749,236L750,238L751,238L753,240L754,242L754,244L754,246L754,247L754,249L755,250L757,252L756,254L755,254L752,251L749,249L748,247L747,245L746,243L745,241L745,239ZM793,245L791,244L788,244L787,248L786,249L785,253L783,254L780,253L779,253L777,255L775,255L774,255L772,253L771,251L773,252L775,252L776,249L777,249L780,248L782,245L783,243L785,245L785,244L787,244L787,242L787,240L789,238L790,236L791,236L792,237L793,239L795,240L797,241L797,242L795,242L795,244Z","insulinde":"M857,266L861,268L866,270L868,271L869,273L870,275L874,277L875,278L872,279L873,281L875,283L876,286L878,286L878,288L880,288L879,289L881,290L881,291L879,291L879,290L876,290L874,290L872,288L870,286L869,283L866,282L863,283L862,284L862,286L860,287L858,286L855,286L853,284L850,283L850,284L846,284L848,282L849,281L849,277L848,275L843,272L840,272L836,269L836,270L835,271L834,269L834,268L832,267L835,265L837,265L833,265L832,263L829,262L828,261L832,260L833,259L838,260L838,261L839,266L841,268L844,265L847,263L849,263L852,264L854,265ZM888,269L889,270L889,272L888,273L888,271L887,270L886,269L885,267L883,266L884,265L885,266L886,267L887,268ZM884,276L883,277L881,278L880,278L877,277L876,276L876,275L879,275L880,275L881,273L881,275L883,275L884,274L885,273L885,271L887,271L887,273L886,275L885,275ZM894,274L894,275L896,277L897,278L896,279L895,279L894,278L893,276L893,274ZM812,287L810,290L808,290L807,290L808,289L809,287L812,286L812,285L815,284L816,284L817,284L818,284L817,285L814,286ZM837,279L837,277L838,276L838,275L839,276L839,277ZM793,245L792,247L794,250L794,252L797,255L793,255L793,257L793,260L790,262L790,265L789,270L788,269L785,271L784,269L782,268L781,267L778,269L777,267L775,267L773,267L772,263L771,262L770,259L769,256L770,253L771,251L772,253L774,255L775,255L777,255L779,253L780,253L783,254L785,253L786,249L787,248L788,244L791,244ZM825,266L828,267L829,270L826,268L824,268L823,268L821,268L821,267ZM818,270L816,269L816,268L818,267L819,269ZM821,251L821,252L823,253L823,254L823,257L822,257L821,258L822,260L821,260L820,258L820,254L820,252ZM807,255L811,255L813,252L814,253L812,256L809,257L807,256L802,256L800,257L800,259L802,262L803,261L809,260L808,261L807,261L806,262L803,264L806,268L805,269L808,272L808,274L806,275L805,274L807,272L804,273L803,272L804,271L802,269L802,266L800,267L800,271L800,275L798,275L797,275L798,272L798,269L797,269L796,266L797,264L798,262L799,257L800,256L802,254L804,254ZM799,290L795,288L798,287L799,288L800,289L800,290ZM802,285L804,284L806,283L806,285L802,286L798,285L798,284L800,284ZM794,284L795,284L796,285L793,286L791,286L789,286L791,284L792,284L793,283ZM768,278L768,279L773,279L774,278L779,280L780,282L784,282L787,284L784,285L781,284L778,284L775,284L773,283L770,282L768,282L767,282L762,281L762,279L759,279L761,276L764,276L766,278ZM757,261L757,263L758,265L760,265L762,267L761,271L760,276L757,276L755,273L752,271L751,269L749,266L747,264L745,260L743,257L742,254L741,252L739,250L737,247L735,245L732,242L732,240L734,240L738,241L740,244L743,246L744,248L747,251L749,251L752,253L753,256L755,257L754,260L756,261ZM799,218L798,215L800,215L801,216L801,219ZM805,226L806,225L806,223L807,223L807,225L809,222L809,225L808,226L807,228L806,229L805,227ZM816,231L816,233L816,235L816,238L815,235L813,236L814,239L814,240L810,238L809,236L810,234L808,233L808,234L806,234L804,236L804,235L805,232L806,231L808,230L809,232L811,231L811,229L813,229L813,227L815,228L815,230ZM794,228L791,231L792,229L794,227L795,225L796,222L797,224L795,226ZM801,200L801,201L802,204L802,206L800,207L800,210L801,212L803,213L804,212L807,214L807,216L808,217L808,218L806,217L805,215L804,216L802,214L800,215L798,214L798,213L799,212L798,211L798,212L797,210L796,209L795,206L797,207L796,202L797,199L798,199L800,200L801,199ZM803,222L803,220L804,221L806,221L806,222L805,224L803,225L803,223ZM812,219L813,223L811,222L811,223L812,225L811,226L811,223L810,223L809,221L811,222L811,220L809,218L811,218ZM787,240L787,242L787,244L785,244L785,245L783,243L784,242Z","australie":"M845,387L846,387L844,391L843,392L841,394L841,393L838,395L836,395L836,392L837,390L837,388L837,386L839,387L841,388L842,387ZM801,359L797,361L795,362L794,363L792,365L790,365L788,365L786,365L784,365L783,365L781,367L780,367L778,367L777,368L775,368L773,368L771,366L770,366L771,364L772,363L773,363L773,362L774,359L774,358L774,354L774,353L774,351L774,349L774,348L773,346L773,344L772,341L772,340L773,341L773,339L774,339L774,341L775,339L774,337L774,336L774,335L774,333L775,332L776,330L776,329L777,326L777,329L779,327L781,325L782,324L785,323L786,323L787,323L789,322L791,322L791,321L792,321L793,321L796,320L798,318L799,317L801,315L801,314L801,312L804,309L804,312L806,311L805,310L806,308L807,309L808,307L810,305L810,304L812,303L812,302L813,303L813,302L814,302L816,301L818,303L819,304L821,305L822,305L822,303L824,301L825,300L825,299L826,297L828,296L829,296L831,296L832,294L830,293L831,293L833,293L834,295L836,296L837,295L839,296L840,295L841,296L842,295L843,297L842,298L841,300L840,300L840,301L839,302L838,304L838,305L840,307L842,308L843,309L845,311L847,311L847,312L849,313L851,312L852,311L853,309L854,308L855,305L855,304L855,303L855,301L856,298L856,297L857,295L858,293L858,292L859,291L859,293L859,295L860,295L860,296L861,298L861,300L860,301L861,303L863,302L864,304L865,305L864,306L864,309L864,311L865,311L865,314L865,315L865,317L868,319L869,321L871,322L870,323L871,325L871,328L873,327L873,329L874,328L874,332L875,334L876,335L877,337L877,340L877,342L876,344L876,346L875,349L874,351L872,354L872,355L870,358L868,361L866,362L864,365L862,366L860,369L859,370L857,373L856,375L855,376L853,377L851,377L848,378L846,380L844,381L842,380L841,379L842,377L840,378L837,380L835,379L834,379L833,379L831,378L830,376L831,373L831,372L830,371L828,370L829,369L829,366L827,369L825,369L827,367L828,366L829,364L830,362L827,364L825,365L823,368L821,367L822,365L821,363L820,361L821,361L818,359L817,359L815,357L810,357L806,359L803,360Z","pacifique":"M951,313L952,312L953,313L952,315L950,315L949,315L949,314L950,312ZM957,308L958,308L957,310L955,311L953,311L953,310L955,309L957,308ZM915,324L917,326L918,328L917,328L915,327L914,326L913,324L911,322L911,321L913,321L914,322L915,323ZM911,288L909,286L909,284L910,284L910,286ZM909,289L908,289L906,288L906,287L908,287L908,288ZM906,283L907,284L907,285L905,283L903,282L902,281L903,281L904,281ZM919,384L917,386L914,388L912,389L911,388L914,385L914,384L912,383L913,381L915,380L917,378L918,376L918,374L919,373L918,372L917,369L917,367L919,367L919,368L921,369L920,372L920,375L921,373L922,374L921,376L923,377L924,378L926,376L927,377L925,380L923,381L921,381L920,382L920,384ZM894,395L898,394L900,392L903,390L904,389L905,387L908,386L908,387L907,388L910,387L910,388L909,390L907,391L904,393L902,395L902,396L900,396L897,397L895,399L892,403L889,404L887,405L885,405L884,404L882,403L882,402L885,400L890,397L892,396Z"}};
+const TERRITOIRES = [{"id":"groenland","nom":"Groenland","r":"an"},{"id":"canada","nom":"Canada","r":"an"},{"id":"usa","nom":"États-Unis","r":"an"},{"id":"mexique","nom":"Mexique et Caraïbes","r":"an"},{"id":"andes","nom":"Andes et Caraïbe du Sud","r":"as"},{"id":"bresil","nom":"Brésil","r":"as"},{"id":"conesud","nom":"Cône Sud","r":"as"},{"id":"britanniques","nom":"Îles Britanniques","r":"eu"},{"id":"ouest","nom":"Europe de l’Ouest","r":"eu"},{"id":"scandinavie","nom":"Scandinavie","r":"eu"},{"id":"centrale","nom":"Europe centrale","r":"eu"},{"id":"mediterranee","nom":"Italie et Balkans","r":"eu"},{"id":"est","nom":"Europe de l’Est","r":"eu"},{"id":"russie","nom":"Russie","r":"asi"},{"id":"maghreb","nom":"Maghreb","r":"af"},{"id":"nil","nom":"Égypte et Nil","r":"af"},{"id":"afouest","nom":"Afrique de l’Ouest","r":"af"},{"id":"afcentre","nom":"Afrique centrale","r":"af"},{"id":"corne","nom":"Corne et Grands Lacs","r":"af"},{"id":"australe","nom":"Afrique australe","r":"af"},{"id":"procheorient","nom":"Proche-Orient","r":"asi"},{"id":"arabie","nom":"Arabie","r":"asi"},{"id":"asiecentrale","nom":"Iran et Asie centrale","r":"asi"},{"id":"inde","nom":"Inde","r":"asi"},{"id":"chine","nom":"Chine et Mongolie","r":"asi"},{"id":"japon","nom":"Japon et Corées","r":"asi"},{"id":"sudest","nom":"Asie du Sud-Est","r":"asi"},{"id":"insulinde","nom":"Insulinde","r":"asi"},{"id":"australie","nom":"Australie","r":"oc"},{"id":"pacifique","nom":"Nouvelle-Zélande et Pacifique","r":"oc"}];
+const CONTINENTS = {"an":{"nom":"Amérique du Nord","court":"Am. du Nord","ids":["groenland","canada","usa","mexique"],"vb":[44,-1,428,248]},"as":{"nom":"Amérique du Sud","court":"Am. du Sud","ids":["andes","bresil","conesud"],"vb":[239,206,152,238]},"eu":{"nom":"Europe","court":"Europe","ids":["britanniques","ouest","scandinavie","centrale","mediterranee","est"],"vb":[415,5,169,154]},"af":{"nom":"Afrique","court":"Afrique","ids":["maghreb","nil","afouest","afcentre","corne","australe"],"vb":[414,128,209,252]},"asi":{"nom":"Asie","court":"Asie","ids":["russie","procheorient","arabie","asiecentrale","inde","chine","japon","sudest","insulinde"],"vb":[510,3,399,300]},"oc":{"nom":"Océanie","court":"Océanie","ids":["australie","pacifique"],"vb":[758,269,212,148]}};
+/* ==========================================================================
+   L'EXPLORATEUR DE CARTES (novembre 2026)
+
+   Trier et filtrer les cartes par epoque et par region, comme dans les
+   jeux de cartes a collectionner (rangee d'icones a la Hearthstone, puces
+   de filtres actifs a la FUT, carte qui se colore a mesure qu'on complete
+   comme un Pokedex regional, sections « trouvees / total » a la Clash
+   Royale) :
+   - la frise des 4 epoques, chacune avec son icone, sa couleur et sa jauge ;
+   - la carte du monde : un continent touche se cadre en grand, un
+     territoire touche s'ajoute au filtre ; chaque territoire est d'autant
+     plus colore que la collection y est complete ;
+   - le tri (meilleures, rarete, chronologie, nom, numero ; un 2e appui
+     inverse) et le rangement en sections (par epoque, par region) ;
+   - les filtres actifs en puces, chacune avec sa croix.
+   Un etat par contexte (« album » ; la Conquete aura le sien), garde sur
+   l'appareil. Les compteurs d'une facette tiennent compte des autres
+   filtres (combien de cartes du Moyen Age en Europe, par exemple).
+   Chaque carte porte t (territoire), e (epoque) et a (annee de reference),
+   dans z0l0_cartes_donnees.js ; la carte du monde est dans z0l1_monde.js.
+   ========================================================================== */
+const EPOQUES = [
+  { k: 0, nom: "Antiquité", court: "Antiquité", borne: "avant 500", c: "#b07a2a",
+    ico: '<path d="M12 2 2 7v2h20V7z"/><path d="M4 10h2.4v8H4zm4.5 0h2.4v8H8.5zm4.6 0h2.4v8h-2.4zm4.5 0H20v8h-2.4z"/><path d="M2 19h20v3H2z"/>' },
+  { k: 1, nom: "Moyen Âge", court: "Moyen Âge", borne: "500 – 1500", c: "#7b4f9e",
+    ico: '<path d="M3 22V8h2.5V5H8v3h2V5h4v3h2V5h2.5v3H21v14h-6.5v-5a2.5 2.5 0 0 0-5 0v5z"/>' },
+  { k: 2, nom: "Époque moderne", court: "Moderne", borne: "1500 – 1800", c: "#2c7a8c",
+    ico: '<path d="M11 2v12H4.5z"/><path d="M13 5.5 19.5 14H13z"/><path d="M2 16h20l-3.2 5H5.2z"/>' },
+  { k: 3, nom: "Époque contemporaine", court: "Contemp.", borne: "depuis 1800", c: "#b0442f",
+    ico: '<path d="M2 22V11.5l5.5 3v-3l5.5 3v-3l3 1.6V3h3.5v19z"/><path d="M5 17h2v2H5zm5 0h2v2h-2z" fill="var(--ex-trou,#fff)"/>' }
+];
+const COULEURS_CONT = { an: "#d3a95f", as: "#94a95c", eu: "#c9846c", af: "#c27c45", asi: "#6f9a92", oc: "#a989a6" };
+const TERR = {}; (typeof TERRITOIRES !== "undefined" ? TERRITOIRES : []).forEach(t => { TERR[t.id] = t; });
+const TRIS = [{ k: "pv", nom: "Meilleures" }, { k: "rar", nom: "Rareté" }, { k: "chrono", nom: "Chronologie" }, { k: "nom", nom: "A-Z" }, { k: "num", nom: "N°" }];
+const GROUPES_EX = [{ k: "", nom: "En vrac" }, { k: "epoque", nom: "Par époque" }, { k: "region", nom: "Par région" }];
+
+/* ---------- L'etat (un par contexte), garde sur l'appareil ---------- */
+function exploVierge(){ return { ep: [], terr: [], cont: null, tri: "pv", inverse: false, groupe: "", carte: false }; }
+const EXPLO = {}, EXPLO_RENDU = {};
+function nettoyerExplo(x){
+  const r = exploVierge();
+  if(!x || typeof x !== "object") return r;
+  if(Array.isArray(x.ep)) r.ep = x.ep.filter(k => [0, 1, 2, 3].indexOf(k) >= 0);
+  if(Array.isArray(x.terr)) r.terr = x.terr.filter(t => TERR[t]);
+  if(x.cont && CONTINENTS[x.cont]) r.cont = x.cont;
+  if(TRIS.some(t => t.k === x.tri)) r.tri = x.tri;
+  r.inverse = x.inverse === true;
+  if(GROUPES_EX.some(g => g.k === x.groupe)) r.groupe = x.groupe;
+  r.carte = x.carte === true;
+  return r;
+}
+function explo(ctx){
+  if(!EXPLO[ctx]){
+    let x = null;
+    try{ x = JSON.parse(localStorage.getItem("epok.explo." + ctx) || "null"); }catch(e){}
+    EXPLO[ctx] = nettoyerExplo(x);
+  }
+  return EXPLO[ctx];
+}
+function sauverExplo(ctx){ try{ localStorage.setItem("epok.explo." + ctx, JSON.stringify(EXPLO[ctx])); }catch(e){} }
+
+/* ---------- Filtrer, trier ---------- */
+function epoqueDe(c){ return Number.isInteger(c.e) && c.e >= 0 && c.e <= 3 ? c.e : 3; }
+function continentDe(c){ return c.t && TERR[c.t] ? TERR[c.t].r : null; }
+/* sauf : la facette qu'on n'applique pas (pour ses propres compteurs). */
+function passeExplo(c, ex, sauf){
+  if(sauf !== "ep" && ex.ep.length && ex.ep.indexOf(epoqueDe(c)) < 0) return false;
+  if(sauf !== "terr" && ex.terr.length && ex.terr.indexOf(c.t) < 0) return false;
+  return true;
+}
+const sansArticle = s => String(s).replace(/^(le|la|les|l['’])\s*/i, "");
+function trierExplo(l, ex){
+  const ordres = {
+    pv: (a, b) => (b.pv - a.pv) || (rangRarete(b.r) - rangRarete(a.r)) || (a.n - b.n),
+    rar: (a, b) => (rangRarete(b.r) - rangRarete(a.r)) || (b.pv - a.pv) || (a.n - b.n),
+    chrono: (a, b) => ((Number.isFinite(a.a) ? a.a : 3000) - (Number.isFinite(b.a) ? b.a : 3000)) || (a.n - b.n),
+    nom: (a, b) => sansArticle(a.nom).localeCompare(sansArticle(b.nom), "fr", { sensitivity: "base" }) || (a.n - b.n),
+    num: (a, b) => a.n - b.n
+  };
+  const r = l.slice().sort(ordres[ex.tri] || ordres.pv);
+  return ex.inverse ? r.reverse() : r;
+}
+function exploActif(ex){ return ex.ep.length > 0 || ex.terr.length > 0; }
+
+/* ---------- Les morceaux de l'interface ---------- */
+const icoEpoque = (e, cl) => `<svg class="${cl || "ex-ico"}" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${e.ico}</svg>`;
+const pctEx = (a, n) => n ? Math.round(100 * a / n) : 0;
+const attrCtx = ctx => `data-ctx="${ctx}"`;
+
+/* La frise des epoques : 4 tuiles reliees par le fil du temps. */
+function friseEpoques(ctx, ex, jeu, m){
+  return `<div class="ex-frise" role="group" aria-label="Filtrer par époque">
+    ${EPOQUES.map(e => {
+      const l = jeu.filter(c => epoqueDe(c) === e.k && passeExplo(c, ex, "ep")), a = l.filter(c => m[c.n]).length, on = ex.ep.indexOf(e.k) >= 0;
+      return `<button type="button" class="ex-ep${on ? " actif" : ""}${l.length ? "" : " vide"}" data-action="ex-ep" ${attrCtx(ctx)} data-k="${e.k}" style="--ep:${e.c}"
+          aria-pressed="${on}" aria-label="${e.nom} (${e.borne}) : ${a} sur ${l.length}">
+        ${icoEpoque(e)}<span class="ex-ep-nom">${e.court}</span><span class="ex-ep-n"><b>${a}</b>/${l.length}</span>
+        <span class="ex-jauge" aria-hidden="true"><i style="width:${pctEx(a, l.length)}%"></i></span></button>`; }).join("")}
+  </div>
+  <div class="ex-bornes" aria-hidden="true"><span>500</span><span>1500</span><span>1800</span></div>`;
+}
+
+/* La carte du monde (depliable). */
+function carteMonde(ctx, ex, jeu, m){
+  const parT = {};
+  jeu.forEach(c => { if(!c.t || !passeExplo(c, ex, "terr")) return; const x = parT[c.t] = parT[c.t] || { n: 0, a: 0 }; x.n++; if(m[c.n]) x.a++; });
+  const sel = ex.terr;
+  const resume = !sel.length ? "le monde entier" : resumeTerr(sel);
+  const entete = `<button type="button" class="ex-deplier" data-action="ex-carte" ${attrCtx(ctx)} aria-expanded="${ex.carte}">
+      <svg class="ex-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>
+      <span>Régions&#8239;: <b>${tx(resume)}</b></span><span class="ex-chevron" aria-hidden="true">${ex.carte ? "&#9652;" : "&#9662;"}</span></button>`;
+  if(!ex.carte) return `<div class="ex-regions">${entete}</div>`;
+  const vb = ex.cont ? CONTINENTS[ex.cont].vb.join(" ") : MONDE.vb;
+  const ids = TERRITOIRES.map(t => t.id).sort((a, b) => (sel.indexOf(a) >= 0) - (sel.indexOf(b) >= 0));   // les choisis par-dessus
+  const formes = ids.map(id => {
+    const t = TERR[id], x = parT[id] || { n: 0, a: 0 }, on = sel.indexOf(id) >= 0, grise = sel.length && !on;
+    const op = x.n ? 0.38 + 0.62 * x.a / x.n : 0.16;
+    return `<path class="ex-t${on ? " sel" : ""}${grise ? " grise" : ""}${x.n ? "" : " vide"}" d="${MONDE.f[id]}" data-action="ex-terr" ${attrCtx(ctx)} data-t="${id}"
+      style="fill:${COULEURS_CONT[t.r]};fill-opacity:${op.toFixed(2)}"><title>${esc(t.nom)} : ${x.a}/${x.n}</title></path>`; }).join("");
+  const conts = `<div class="ex-conts" role="group" aria-label="Continents">
+      <button type="button" class="ex-puce${!ex.cont && !sel.length ? " actif" : ""}" data-action="ex-cont" ${attrCtx(ctx)} data-r="*">Monde</button>
+      ${Object.keys(CONTINENTS).map(r => { const on = ex.cont === r;
+        const l = jeu.filter(c => continentDe(c) === r && passeExplo(c, ex, "terr")), a = l.filter(c => m[c.n]).length;
+        return `<button type="button" class="ex-puce${on ? " actif" : ""}" data-action="ex-cont" ${attrCtx(ctx)} data-r="${r}" style="--pc:${COULEURS_CONT[r]}" aria-pressed="${on}">
+          <i class="ex-pastille" aria-hidden="true"></i>${CONTINENTS[r].court} <small>${a}/${l.length}</small></button>`; }).join("")}
+    </div>`;
+  const legende = sel.length
+    ? (() => { let n = 0, a = 0; sel.forEach(id => { const x = parT[id]; if(x){ n += x.n; a += x.a; } }); return `<b>${tx(resumeTerr(sel))}</b> &#8226; ${a}/${n} carte${n > 1 ? "s" : ""}`; })()
+    : (ex.cont ? "Touchez un territoire pour le choisir." : "Touchez un continent pour zoomer, puis un territoire.");
+  return `<div class="ex-regions ouvert">${entete}${conts}
+    <div class="ex-monde-cadre"><svg class="ex-monde" id="ex-monde-${ctx}" viewBox="${vb}" role="group" aria-label="Carte des territoires">
+      <path class="ex-sphere" d="${MONDE.sph}"/>${formes}</svg></div>
+    <p class="ex-legende">${legende}</p>
+    <p class="ex-echelle" aria-hidden="true"><span>peu de cartes trouvées</span><i></i><span>complet</span></p></div>`;
+}
+/* « Europe » si tout le continent est choisi, sinon les noms (3 au plus). */
+function resumeTerr(sel){
+  const noms = [];
+  Object.keys(CONTINENTS).forEach(r => {
+    const ids = CONTINENTS[r].ids, pris = ids.filter(id => sel.indexOf(id) >= 0);
+    if(pris.length === ids.length && ids.length > 1) noms.push(CONTINENTS[r].nom);
+    else pris.forEach(id => noms.push(TERR[id].nom));
+  });
+  return noms.length > 3 ? noms.slice(0, 2).join(", ") + " et " + (noms.length - 2) + " autres" : noms.join(", ");
+}
+
+/* Le tri et le rangement. */
+function lignesTri(ctx, ex){
+  const fleche = t => {
+    if(ex.tri !== t.k) return "";
+    const montant = (t.k === "nom" || t.k === "num" || t.k === "chrono") !== ex.inverse;
+    return ` <span class="ex-sens" aria-label="${montant ? "croissant" : "décroissant"}">${montant ? "&#9650;" : "&#9660;"}</span>`;
+  };
+  return `<div class="ex-ligne"><span class="ex-lib">Trier</span><div class="ex-puces" role="group" aria-label="Trier les cartes">
+      ${TRIS.map(t => `<button type="button" class="ex-puce${ex.tri === t.k ? " actif" : ""}" data-action="ex-tri" ${attrCtx(ctx)} data-k="${t.k}" aria-pressed="${ex.tri === t.k}">${t.nom}${fleche(t)}</button>`).join("")}
+    </div></div>
+    <div class="ex-ligne"><span class="ex-lib">Ranger</span><div class="ex-puces" role="group" aria-label="Ranger les cartes">
+      ${GROUPES_EX.map(g => `<button type="button" class="ex-puce${ex.groupe === g.k ? " actif" : ""}" data-action="ex-groupe" ${attrCtx(ctx)} data-k="${g.k}" aria-pressed="${ex.groupe === g.k}">${g.nom}</button>`).join("")}
+    </div></div>`;
+}
+
+/* Les filtres actifs, en puces a croix. */
+function filtresActifs(ctx, ex, nb){
+  if(!exploActif(ex)) return "";
+  const puces = ex.ep.map(k => { const e = EPOQUES[k];
+    return `<button type="button" class="ex-actif" data-action="ex-ep" ${attrCtx(ctx)} data-k="${k}" style="--pc:${e.c}" aria-label="Retirer ${e.nom}">${icoEpoque(e, "ex-ico-p")}${e.court} <span aria-hidden="true">&#10005;</span></button>`; });
+  const tous = Object.keys(CONTINENTS).filter(r => CONTINENTS[r].ids.length > 1 && CONTINENTS[r].ids.every(id => ex.terr.indexOf(id) >= 0));
+  tous.forEach(r => puces.push(`<button type="button" class="ex-actif" data-action="ex-cont-retirer" ${attrCtx(ctx)} data-r="${r}" style="--pc:${COULEURS_CONT[r]}" aria-label="Retirer ${CONTINENTS[r].nom}">${CONTINENTS[r].nom} <span aria-hidden="true">&#10005;</span></button>`));
+  ex.terr.filter(id => tous.indexOf(TERR[id].r) < 0).forEach(id => puces.push(`<button type="button" class="ex-actif" data-action="ex-terr" ${attrCtx(ctx)} data-t="${id}" style="--pc:${COULEURS_CONT[TERR[id].r]}" aria-label="Retirer ${esc(TERR[id].nom)}">${esc(TERR[id].nom)} <span aria-hidden="true">&#10005;</span></button>`));
+  return `<div class="ex-actifs"><span class="ex-nb">${nb} carte${nb > 1 ? "s" : ""}</span>${puces.join("")}
+    <button type="button" class="ex-effacer" data-action="ex-effacer" ${attrCtx(ctx)}>Tout effacer</button></div>`;
+}
+
+/* Tout l'explorateur (au-dessus de la grille). */
+function htmlExplorateur(ctx, jeu, m, nb){
+  const ex = explo(ctx);
+  return `<div class="ex" id="ex-${ctx}">${friseEpoques(ctx, ex, jeu, m)}${carteMonde(ctx, ex, jeu, m)}${lignesTri(ctx, ex)}${filtresActifs(ctx, ex, nb)}</div>`;
+}
+
+/* La grille, en vrac ou en sections. tous : les cartes filtrees (pour les
+   compteurs des sections), liste : celles a montrer, triees ; mini(c) :
+   le dessin d'une carte. */
+function grilleExplo(ctx, tous, liste, m, mini){
+  const ex = explo(ctx);
+  if(!ex.groupe) return `<div class="album">${liste.map(mini).join("")}</div>`;
+  let groupes;
+  if(ex.groupe === "epoque"){
+    const ordre = ex.tri === "chrono" && ex.inverse ? [3, 2, 1, 0] : [0, 1, 2, 3];
+    groupes = ordre.map(k => ({ cle: k, titre: EPOQUES[k].nom, sous: EPOQUES[k].borne, c: EPOQUES[k].c, ico: icoEpoque(EPOQUES[k]), test: c => epoqueDe(c) === k }));
+  }else{
+    /* Un seul continent en vue : ses territoires ; sinon les continents. */
+    const conts = [...new Set(tous.map(continentDe).filter(Boolean))];
+    if(conts.length === 1 || ex.cont){
+      const r = ex.cont || conts[0];
+      groupes = CONTINENTS[r].ids.map(id => ({ cle: id, titre: TERR[id].nom, sous: CONTINENTS[r].nom, c: COULEURS_CONT[r], ico: "", test: c => c.t === id }));
+    }else{
+      groupes = Object.keys(CONTINENTS).map(r => ({ cle: r, titre: CONTINENTS[r].nom, sous: CONTINENTS[r].ids.length + " territoires", c: COULEURS_CONT[r], ico: "", test: c => continentDe(c) === r }));
+    }
+  }
+  return groupes.map(g => {
+    const t = tous.filter(g.test), l = liste.filter(g.test);
+    if(!t.length) return "";
+    const a = t.filter(c => m[c.n]).length;
+    return `<section class="ex-groupe" style="--ep:${g.c}">
+      <h4 class="ex-g-titre">${g.ico || `<i class="ex-pastille" aria-hidden="true" style="--pc:${g.c}"></i>`}<span><b>${esc(g.titre)}</b><small>${esc(g.sous)}</small></span>
+        <span class="ex-g-n"><b>${a}</b>/${t.length}</span></h4>
+      <span class="ex-jauge large" aria-hidden="true"><i style="width:${pctEx(a, t.length)}%"></i></span>
+      ${l.length ? `<div class="album">${l.map(mini).join("")}</div>` : `<p class="minuscule ex-g-vide">Aucune trouvée ici pour l’instant.</p>`}
+    </section>`; }).join("");
+}
+
+/* L'origine d'une carte (sa fiche) : l'epoque et le territoire. */
+function ligneOrigine(c){
+  if(!c) return "";
+  const e = EPOQUES[epoqueDe(c)], t = c.t && TERR[c.t];
+  return `<p class="ex-origine"><span class="ex-actif statique" style="--pc:${e.c}">${icoEpoque(e, "ex-ico-p")}${e.nom}</span>${t ? `<span class="ex-actif statique" style="--pc:${COULEURS_CONT[t.r]}">${esc(t.nom)}</span>` : ""}</p>`;
+}
+
+/* ---------- Le cadrage anime de la carte (zoom sur un continent) ---------- */
+function animerCadrage(ctx, avant){
+  const svg = document.getElementById("ex-monde-" + ctx);
+  if(!svg || !avant) return;
+  const fin = svg.getAttribute("viewBox"), apres = fin.split(/\s+/).map(Number), de = avant.split(/\s+/).map(Number);
+  if(de.join() === apres.join() || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  const t0 = performance.now(), D = 380;
+  const pas = now => {
+    const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
+    svg.setAttribute("viewBox", k < 1 ? de.map((v, i) => (v + (apres[i] - v) * e).toFixed(1)).join(" ") : fin);
+    if(k < 1) requestAnimationFrame(pas);
+  };
+  svg.setAttribute("viewBox", avant);
+  requestAnimationFrame(pas);
+}
+
+/* ---------- Les actions ---------- */
+function actionExplorateur(a, el){
+  if(!/^ex-/.test(a)) return false;
+  const ctx = el.dataset.ctx || "album", ex = explo(ctx);
+  const svg = document.getElementById("ex-monde-" + ctx), avant = svg ? svg.getAttribute("viewBox") : null;
+  if(a === "ex-ep"){ const k = +el.dataset.k, i = ex.ep.indexOf(k); ex.ep = i >= 0 ? ex.ep.filter(x => x !== k) : ex.ep.concat(k); if(ex.ep.length === 4) ex.ep = []; }
+  else if(a === "ex-carte"){ ex.carte = !ex.carte; }
+  else if(a === "ex-cont"){
+    const r = el.dataset.r;
+    if(r === "*" || ex.cont === r){ ex.cont = null; ex.terr = []; }
+    else { ex.cont = r; ex.terr = CONTINENTS[r].ids.slice(); }
+  }
+  else if(a === "ex-cont-retirer"){ const r = el.dataset.r; ex.terr = ex.terr.filter(id => TERR[id].r !== r); if(ex.cont === r) ex.cont = null; }
+  else if(a === "ex-terr"){
+    const id = el.dataset.t; if(!TERR[id]) return true;
+    /* Tout un continent choisi, puis un de ses territoires touche : on ne garde que lui. */
+    const r = TERR[id].r, tout = CONTINENTS[r].ids.every(x => ex.terr.indexOf(x) >= 0) && el.closest("svg");
+    if(tout && CONTINENTS[r].ids.length > 1) ex.terr = ex.terr.filter(x => TERR[x].r !== r).concat(id);
+    else ex.terr = ex.terr.indexOf(id) >= 0 ? ex.terr.filter(x => x !== id) : ex.terr.concat(id);
+    if(!ex.terr.length && !el.closest("svg")) ex.cont = null;
+  }
+  else if(a === "ex-tri"){ const k = el.dataset.k; if(ex.tri === k) ex.inverse = !ex.inverse; else { ex.tri = k; ex.inverse = false; } }
+  else if(a === "ex-groupe"){ ex.groupe = el.dataset.k || ""; }
+  else if(a === "ex-effacer"){ ex.ep = []; ex.terr = []; ex.cont = null; }
+  else return false;
+  sauverExplo(ctx);
+  if(EXPLO_RENDU[ctx]) EXPLO_RENDU[ctx]();
+  animerCadrage(ctx, avant);
+  return true;
+}
 
 /* ==========================================================================
    Cartes EPOK : un pli de 3 cartes de personnages historiques par jour,
@@ -9086,16 +9429,31 @@ function rendreCartes(){
   }
 
   if(typeof BETA !== "undefined" && BETA && typeof carteVitrine === "function") parts.push(carteVitrine());
+  parts.push(htmlAlbum(m));
+  vue.innerHTML = parts.join("");
+}
+
+/* L'album : rarete, mes cartes ou toutes, puis l'explorateur (epoques,
+   regions, tri, rangement : z0l2_explorateur.js). Se redessine seul quand
+   un filtre change (EXPLO_RENDU.album), sans toucher au reste de l'onglet. */
+function htmlAlbum(m){
   const jeu = cartesDuJeu(m), total = jeu.length, nbDiff = Object.keys(m).length;
-  const liste = jeu.filter(c => (!ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0) && (ALBUM.vue === "toutes" || m[c.n]))
-    .slice().sort(ordreAlbum);
-  parts.push(`<div class="carte">
+  const ex = typeof explo === "function" ? explo("album") : null;
+  const passe = c => !ex || passeExplo(c, ex);
+  const rares = jeu.filter(c => !ALBUM.filtres.length || ALBUM.filtres.indexOf(c.r) >= 0);
+  const tous = rares.filter(passe);
+  const visibles = tous.filter(c => ALBUM.vue === "toutes" || m[c.n]);
+  const liste = ex ? trierExplo(visibles, ex) : visibles.slice().sort(ordreAlbum);
+  const mini = c => m[c.n] ? miniCarte(c.n, m[c.n]) : miniGrise(c.n);
+  const vide = nbDiff ? (ex && exploActif(ex) ? "Aucune carte trouvée avec ces filtres pour l’instant." : "Aucune carte de cette rareté pour l’instant.")
+    : "Pas encore de carte&#8239;: ouvrez votre premier pack.";
+  return `<div class="carte" id="album-bloc">
     <p class="capitales" style="margin:0 0 4px">Album</p>
     ${typeof boutonRecyclage === "function" ? boutonRecyclage() : ""}
     <p class="album-chiffres"><b>${nbDiff}</b>/${total} cartes &#8226; <b>${scoreCollection(m).toLocaleString("fr-FR")}</b> PV</p>
     <div class="st-classes album-filtres" role="group" aria-label="Filtrer par rareté">
       <button class="st-puce${!ALBUM.filtres.length ? " actif" : ""}" data-action="album-filtre" data-r="*" aria-pressed="${!ALBUM.filtres.length}">Toutes</button>
-      ${RARETES.map(r => { const n = jeu.filter(c => c.r === r.k).length, a = jeu.filter(c => c.r === r.k && m[c.n]).length;
+      ${RARETES.map(r => { const l = jeu.filter(c => c.r === r.k && passe(c)), n = l.length, a = l.filter(c => m[c.n]).length;
         const on = ALBUM.filtres.indexOf(r.k) >= 0;
         return `<button class="st-puce${on ? " actif" : ""}" data-action="album-filtre" data-r="${r.k}" aria-pressed="${on}" style="--rar:${r.c}">${r.nom} ${a}/${n}</button>`; }).join("")}
     </div>
@@ -9103,12 +9461,18 @@ function rendreCartes(){
       <button type="button" data-action="album-vue" data-vue="miennes" aria-pressed="${ALBUM.vue === "miennes"}">Mes cartes</button>
       <button type="button" data-action="album-vue" data-vue="toutes" aria-pressed="${ALBUM.vue === "toutes"}">Toutes les cartes</button>
     </div>
-    <p class="minuscule" style="margin:0 0 10px">De la meilleure à la moins bonne${ALBUM.vue === "toutes" ? "&#8239;; en gris, celles qui vous manquent" : ""}.</p>
-    ${liste.length ? `<div class="album">${liste.map(c => m[c.n] ? miniCarte(c.n, m[c.n]) : miniGrise(c.n)).join("")}</div>`
-      : `<p class="secondaire" style="margin:6px 0 0">${nbDiff ? "Aucune carte de cette rareté pour l’instant." : "Pas encore de carte&#8239;: ouvrez votre premier pack."}</p>`}
-  </div>`);
-  vue.innerHTML = parts.join("");
+    ${ex ? htmlExplorateur("album", rares, m, liste.length) : ""}
+    ${ALBUM.vue === "toutes" ? `<p class="minuscule" style="margin:0 0 10px">En gris, celles qui vous manquent.</p>` : ""}
+    ${liste.length || (ex && ex.groupe && tous.length) ? (ex ? grilleExplo("album", tous, liste, m, mini) : `<div class="album">${liste.map(mini).join("")}</div>`)
+      : `<p class="secondaire" style="margin:6px 0 0">${vide}</p>`}
+  </div>`;
 }
+function rendreAlbum(){
+  const b = typeof document !== "undefined" && document.getElementById("album-bloc");
+  if(!b) return rendreCartes();
+  b.outerHTML = htmlAlbum(cartesPossedees());
+}
+if(typeof EXPLO_RENDU !== "undefined") EXPLO_RENDU.album = rendreAlbum;
 
 /* Fiche d'une carte : la grande image, en bulle. */
 function voirCarte(n, el){
@@ -9119,6 +9483,7 @@ function voirCarte(n, el){
     <div class="c-grande" style="--rar:${r.c}"><span class="c-cadre">${IMG} class="c-img" src="${imageCarte(n)}" alt="${esc(c.nom)}">
       <span class="c-repli"><b>${esc(c.nom)}</b><small>PV ${c.pv}</small></span></span></div>
     <p class="minuscule" style="text-align:center;margin:10px 0 0">${r.nom} &#8226; PV ${c.pv}${nb > 1 ? ` &#8226; ${nb} exemplaires` : ""}</p>
+    ${typeof ligneOrigine === "function" ? ligneOrigine(c) : ""}
     ${typeof BETA !== "undefined" && BETA && nb && typeof enVitrine === "function" ? `<button class="bouton petit" data-action="vitrine-basculer" data-n="${n}" style="display:block;margin:10px auto 0">${enVitrine(n) ? "Retirer de la vitrine" : "Mettre en vitrine (" + social().vitrine.length + "/3)"}</button>` : ""}`, "carte fenetre-carte", el);
 }
 
@@ -9598,9 +9963,10 @@ function actionCartes(a, el){
     const r = el.dataset.r, k = ALBUM.filtres.indexOf(r);
     ALBUM.filtres = r === "*" ? [] : k >= 0 ? ALBUM.filtres.filter(x => x !== r) : ALBUM.filtres.concat(r);
     if(ALBUM.filtres.length === RARETES.length) ALBUM.filtres = [];
-    rendreCartes(); return true;
+    rendreAlbum(); return true;
   }
-  if(a === "album-vue"){ ALBUM.vue = el.dataset.vue === "toutes" ? "toutes" : "miennes"; rendreCartes(); return true; }
+  if(a === "album-vue"){ ALBUM.vue = el.dataset.vue === "toutes" ? "toutes" : "miennes"; rendreAlbum(); return true; }
+  if(typeof actionExplorateur === "function" && actionExplorateur(a, el)) return true;
   return false;
 }
 
