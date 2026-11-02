@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-lIqwQ6cDq4rQ1v4NLhud+uO58/QBwT2fZf5Oe47+ylk=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Dv4L71IXbeWAryr+RXFNr84gP0s89cChznbNr5zUO4s=' 'sha256-DBFX8sNdEtR6GrOVRW7gxiRjqC7I7PlvnsP2GqLPdTA=' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com https://accounts.google.com; frame-src https://epok-71194.firebaseapp.com https://apis.google.com https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -4807,6 +4807,8 @@ const CONFIG_COMPTE = Object.assign({ apiKey: "", authDomain: "", projectId: "",
   (typeof window !== "undefined" && window.EPOK_COMPTE) || {});
 const PAGE_CONNEXION = "https://thot-boomerang.github.io/" + (typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE ? "epok-beta" : appCours() ? "epok-cours" : "epok") + "/connexion.html";
 const DELAI_SYNCHRO = 1500;    // ms entre une sauvegarde et l'envoi
+const ECART_ENVOIS = 60000;    // ms : un envoi de la progression par minute en continu (deux d'affilee au plus)
+const RELEVE_FOCUS = 5 * 60 * 1000;   // le focus seul relit le serveur au plus toutes les 5 minutes
 
 const COMPTE = {
   auth: null,          // service d'authentification Firebase
@@ -5001,18 +5003,23 @@ function compteInit(){
     });
     /* De retour en ligne : on rattrape ce qui n'a pas pu partir. */
     window.addEventListener("online", () => { if(compteConnecte()) planifierSynchro(500); });
-    /* Appareils toujours d'accord : on relit le serveur des qu'on revient
-       sur l'application (retour au premier plan, focus, reprise de l'APK)
-       et toutes les 15 secondes tant qu'elle est ouverte ; on envoie sans
-       attendre en la quittant. Les points sont deduits de la progression,
-       donc fusionner la progression suffit a les rendre identiques. */
-    const rattraper = () => { if(compteConnecte() && !document.hidden) synchroniser(); };
-    document.addEventListener("visibilitychange", () => { if(document.hidden){ if(compteConnecte()) synchroniser(); } else rattraper(); });
-    window.addEventListener("focus", rattraper);
-    window.addEventListener("pageshow", rattraper);
+    /* Synchronisation sobre (novembre 2026, chantier C2.6). Plus de releve
+       toutes les 15 secondes : chaque releve coutait une lecture et cinq
+       ecritures, meme quand rien n'avait change. Le serveur est relu a
+       l'ouverture et au retour au premier plan (reprise de l'APK, fenetre
+       de nouveau visible ; le focus seul, au plus toutes les 5 minutes) ;
+       ce qui change ici part, regroupe, apres une sauvegarde, et sans
+       attendre quand on quitte l'application. Les points sont deduits de
+       la progression, donc fusionner la progression suffit a les rendre
+       identiques d'un appareil a l'autre. */
+    const rattraper = () => { if(compteConnecte() && !document.hidden) planifierReleve(); };
+    document.addEventListener("visibilitychange", () => { if(document.hidden){ if(compteConnecte()) envoyerAuDepart(); } else rattraper(); });
+    const sansFocus = () => { if(compteConnecte() && !document.hidden && Date.now() - (COMPTE.relu || 0) > RELEVE_FOCUS) planifierReleve(); };
+    window.addEventListener("focus", sansFocus);
+    window.addEventListener("pageshow", sansFocus);
+    window.addEventListener("pagehide", () => { if(compteConnecte()) envoyerAuDepart(); });
     window.epokReprise = rattraper;
     window.epokSynchro = () => { if(compteConnecte()) synchroniser(); };
-    setInterval(rattraper, 15000);
     COMPTE.retours.splice(0).forEach(compteRetour);
     majVuesCompte();
   }).catch(e => console.warn("Epok : compte indisponible.", e));
@@ -5351,23 +5358,36 @@ function requete(methode, suite, corps){
 }
 function erreurHttp(r){
   return r.json().catch(() => ({})).then(j => {
-    throw new Error((j && j.error && j.error.message) || ("réponse " + r.status));
+    const e = j && j.error;
+    throw Object.assign(new Error((e && e.message) || ("réponse " + r.status)), { statut: r.status, code: e && e.status });
   });
 }
 /* La progression est rangee en texte JSON dans un champ « etat » : un
-   seul champ, que Firestore n'a pas a decomposer. */
+   seul champ, que Firestore n'a pas a decomposer. lireDistant rend
+   { etat, texte, version } (null si le document n'existe pas). */
 function lireDistant(){
   return requete("GET").then(r => {
     if(r.status === 404) return null;
     if(!r.ok) return erreurHttp(r);
-    return r.json().then(j => (j.fields && j.fields.etat && j.fields.etat.stringValue)
-      ? JSON.parse(j.fields.etat.stringValue) : null);
+    return r.json().then(j => {
+      const texte = j.fields && j.fields.etat && j.fields.etat.stringValue;
+      return { etat: texte ? JSON.parse(texte) : null, texte: texte || null, version: j.updateTime || null };
+    });
   });
 }
-function ecrireDistant(texte){
-  return requete("PATCH", "?updateMask.fieldPaths=etat&updateMask.fieldPaths=maj", {
-    fields: { etat: { stringValue: texte }, maj: { timestampValue: new Date().toISOString() } }
-  }).then(r => r.ok ? true : erreurHttp(r));
+/* version : celle que le serveur doit avoir pour accepter (« absent » : le
+   document ne doit pas exister) ; rend la nouvelle version. La condition
+   sur la version passe par un commit : l'emulateur de Firestore ignore
+   currentDocument.updateTime dans l'adresse d'un PATCH. */
+function ecrireDistant(texte, version){
+  const champs = { etat: { stringValue: texte }, maj: { timestampValue: new Date().toISOString() } };
+  if(version && version !== "absent")
+    return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+      update: { name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/progressions/" + COMPTE.user.uid, fields: champs },
+      updateMask: { fieldPaths: ["etat", "maj"] }, currentDocument: { updateTime: version } }] })
+      .then(r => r.ok ? r.json().then(j => ((j.writeResults || [])[0] || {}).updateTime || null) : erreurHttp(r));
+  return requete("PATCH", "?updateMask.fieldPaths=etat&updateMask.fieldPaths=maj" + (version === "absent" ? "&currentDocument.exists=false" : ""), { fields: champs })
+    .then(r => r.ok ? r.json().catch(() => ({})).then(j => (j && j.updateTime) || null) : erreurHttp(r));
 }
 function effacerDistant(){
   if(typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE) return Promise.resolve(true);   /* la beta a part ne touche pas au serveur */
@@ -5381,6 +5401,7 @@ function effacerDistant(){
   if(typeof saisonEnCours === "function" && COMPTE.user)
     requeteJeton("DELETE", urlDocuments("/saisons/" + saisonEnCours() + "/scores/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
   if(typeof effacerQuotidien === "function" && COMPTE.user) effacerQuotidien();
+  COMPTE.publie = null; COMPTE.distant = null;
   return requete("DELETE").then(r => (r.ok || r.status === 404) ? true : erreurHttp(r));
 }
 
@@ -5410,11 +5431,53 @@ function supprimerCompte(){
 
 /* ---------- Synchronisation ---------- */
 
+/* Apres une sauvegarde : l'envoi part 1,5 s apres la derniere. Au-dela
+   de deux envois rapproches, un par minute au plus (les sauvegardes d'un
+   quiz se regroupent) : un seau de deux jetons, qui se remplit d'un jeton
+   par minute. */
+function jetonsEnvoi(){
+  const j = COMPTE.jetons || { n: 2, t: Date.now() };
+  return Math.min(2, j.n + (Date.now() - j.t) / ECART_ENVOIS);
+}
 function planifierSynchro(delai){
   if(!compteConnecte()) return;
   clearTimeout(COMPTE.minuteur);
-  COMPTE.minuteur = setTimeout(synchroniser, delai === undefined ? DELAI_SYNCHRO : delai);
+  const n = jetonsEnvoi();
+  const attente = delai === undefined ? Math.max(DELAI_SYNCHRO, n >= 1 ? 0 : (1 - n) * ECART_ENVOIS) : delai;
+  COMPTE.minuteur = setTimeout(() => synchroniser({ envoi: true }), attente);
 }
+/* Relire le serveur : les evenements du retour au premier plan arrivent
+   souvent ensemble (reprise, visibilite, focus) ; une seule releve part. */
+function planifierReleve(){
+  clearTimeout(COMPTE.minuteurReleve);
+  COMPTE.minuteurReleve = setTimeout(() => { if(compteConnecte()) synchroniser(); }, 200);
+}
+/* On quitte l'application : ce qui attend part tout de suite, sans relire. */
+function envoyerAuDepart(){
+  clearTimeout(COMPTE.minuteurReleve);
+  synchroniser({ envoi: true });
+}
+
+/* Ce qu'on sait du document du serveur : son texte et sa version (heure de
+   sa derniere ecriture), lus ou ecrits par cet appareil. Tant que la version
+   ne bouge pas, rien n'a change la-bas : un envoi part sans relire, a
+   condition que le serveur ait toujours cette version (sinon il refuse, et
+   l'on relit puis fusionne). */
+function distantConnu(){ const d = COMPTE.distant; return d && COMPTE.user && d.uid === COMPTE.user.uid ? d : null; }
+function retenirDistant(texte, version){ COMPTE.distant = { uid: COMPTE.user.uid, texte, version: version || null }; }
+function conflitEcriture(e){ return !!(e && (e.statut === 409 || e.statut === 404 || (e.statut === 400 && e.code === "FAILED_PRECONDITION"))); }
+
+/* Publier une fiche (classement, collection, profil...) seulement si elle a
+   change depuis le dernier envoi reussi de cet appareil : une fiche
+   identique ne repart pas. envoyer() rend une promesse de vrai ou faux. */
+function publierSiChange(cle, contenu, envoyer){
+  if(!COMPTE.user) return Promise.resolve(false);
+  const memo = COMPTE.publie && COMPTE.publie.uid === COMPTE.user.uid ? COMPTE.publie : (COMPTE.publie = { uid: COMPTE.user.uid, fiches: {} });
+  const texte = JSON.stringify(contenu);
+  if(memo.fiches[cle] === texte) return Promise.resolve(true);
+  return envoyer().then(ok => { if(ok) memo.fiches[cle] = texte; return ok; });
+}
+function oublierPublication(cle){ if(COMPTE.publie) delete COMPTE.publie.fiches[cle]; }
 
 /* Beta : une fois, la progression du serveur est lue et fusionnee ici,
    sans rien renvoyer. Les ecus repartent du total ainsi obtenu : rien de
@@ -5423,6 +5486,7 @@ function importerPourBeta(){
   const e = typeof ecus === "function" ? ecus() : null;
   if(!e || e.importe) return Promise.resolve(false);
   return lireDistant().then(lu => {
+    lu = lu && lu.etat;
     e.importe = true;
     if(lu && typeof lu === "object"){
       const garde = ETAT.ecus;
@@ -5436,9 +5500,14 @@ function importerPourBeta(){
   });
 }
 
-/* Lit le document du serveur, le fusionne dans la progression locale,
-   enregistre le resultat dans le telephone puis le renvoie au serveur. */
-function synchroniser(){
+/* Synchronise la progression. Par defaut (ouverture, retour au premier
+   plan, bouton) : lit le document du serveur, le fusionne dans la
+   progression locale, l'enregistre dans le telephone puis le renvoie s'il
+   differe de ce que le serveur a deja. Avec { envoi: true } (apres une
+   sauvegarde, au depart) : envoie seulement ce qui a change, sans relire
+   si la version du serveur est connue. */
+function synchroniser(o){
+  o = o || {};
   if(!compteConnecte()) return Promise.resolve(false);
   /* Pseudo pas encore verifie (reseau absent a la connexion) : on reessaie. */
   if(typeof pseudoCompte === "function" && !pseudoCompte() && !PSEUDO.aChoisir && !PSEUDO.verifie && !COMPTE.creation) verifierPseudo();
@@ -5446,6 +5515,7 @@ function synchroniser(){
      the Day, verifie par le serveur, s'y publie. */
   if(typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE){
     if(typeof publierQuotidien === "function") publierQuotidien().catch(() => {});
+    if(o.envoi) return Promise.resolve(true);
     /* Dans cet ordre : la progression d'abord (la bourse, creee ensuite,
        part de ces points et de cette collection), puis la bourse, puis la
        fiche publique (sa vitrine : des cartes de la bourse). */
@@ -5453,39 +5523,46 @@ function synchroniser(){
       .then(() => typeof chargerBourse === "function" ? chargerBourse() : null)
       .then(() => { if(typeof assurerJoueur === "function") assurerJoueur(); return true; }, () => false);
   }
-  if(COMPTE.enCours){ COMPTE.encore = true; return Promise.resolve(false); }
+  if(COMPTE.enCours){ COMPTE.encore = COMPTE.encore === "lire" || !o.envoi ? "lire" : "envoi"; return Promise.resolve(false); }
+  const connu = distantConnu();
+  /* Un envoi sans rien de neuf : ni lecture ni ecriture. */
+  if(o.envoi && connu && connu.version && JSON.stringify(progressionAEnvoyer()) === connu.texte){ clearTimeout(COMPTE.minuteur); apresSynchro(o); return Promise.resolve(true); }
+  const lire = !(o.envoi && connu && connu.version);
   COMPTE.enCours = true;
   clearTimeout(COMPTE.minuteur);
   majVuesCompte(true);
-  return lireSanction().then(sanction => {
+  let ecrit = false;
+  const releve = () => lireSanction().then(sanction => {
     /* Compte supprime par l'administrateur : on n'ecrit plus rien. */
     if(sanction && sanction.etat === "supprime"){ appliquerSuppression(); throw Object.assign(new Error("compte supprimé"), { supprime: true }); }
     return lireDistant();
   }).then(lu => {
     const avant = JSON.stringify(progressionAEnvoyer());
-    if(lu && typeof lu === "object"){
-      ETAT = fusionnerProgressions(ETAT, fusionnerEtat(etatVierge(), lu));
+    if(lu && typeof lu.etat === "object" && lu.etat){
+      ETAT = fusionnerProgressions(ETAT, fusionnerEtat(etatVierge(), lu.etat));
     }
+    COMPTE.relu = Date.now();
     const apres = JSON.stringify(progressionAEnvoyer());
     /* Ce qu'un autre appareil vient d'apporter (points, missions) y a deja
        rapporte ses ecus : on ne le compte pas une 2e fois. */
     if(apres !== avant){ if(typeof rebaserEcus === "function") rebaserEcus(); sauverEtat(true); rafraichirApresSynchro(); }
-    return ecrireDistant(apres);
-  }).then(() => {
+    if(lu && lu.texte === apres){ retenirDistant(apres, lu.version); return true; }
+    ecrit = true;
+    return ecrireDistant(apres, lu ? lu.version : "absent").then(v => { retenirDistant(apres, v); return true; });
+  });
+  const envoi = () => {
+    const texte = JSON.stringify(progressionAEnvoyer());
+    ecrit = true;
+    return ecrireDistant(texte, connu.version).then(v => { retenirDistant(texte, v); return true; },
+      /* Un autre appareil a ecrit entre-temps : on relit, on fusionne. */
+      e => { if(!conflitEcriture(e)) throw e; COMPTE.distant = null; return releve(); });
+  };
+  return (lire ? releve().catch(e => { if(!conflitEcriture(e)) throw e; COMPTE.distant = null; return releve(); }) : envoi()).then(() => {
     COMPTE.derniere = new Date();
     COMPTE.erreur = null;
-    /* Sa ligne du classement general suit (z0j_classement.js). */
-    if(typeof publierClassement === "function") publierClassement();
-    if(typeof publierAlbum === "function") publierAlbum();
-    if(typeof publierProfil === "function") publierProfil();
-    if(typeof verifierPrixSaison === "function") verifierPrixSaison();
-    if(typeof completerProfils === "function") completerProfils();
-    if(typeof publierQuotidien === "function") publierQuotidien().then(() => { if(typeof qjMajRangsDiscret === "function") qjMajRangsDiscret(); });
-    /* Version Ecus : la bourse (creee la 1re fois d'apres la progression
-       qu'on vient de fusionner), puis la fiche publique (sa vitrine : des
-       cartes de la bourse). */
-    if(typeof BETA !== "undefined" && BETA && typeof chargerBourse === "function")
-      chargerBourse().then(() => { if(typeof assurerJoueur === "function") assurerJoueur(); });
+    /* Seuls les envois apres une sauvegarde prennent un jeton. */
+    if(ecrit && o.envoi) COMPTE.jetons = { n: Math.max(0, jetonsEnvoi() - 1), t: Date.now() };
+    apresSynchro(o);
     return true;
   }).catch(e => {
     if(e && e.supprime) return false;
@@ -5497,8 +5574,28 @@ function synchroniser(){
   }).finally(() => {
     COMPTE.enCours = false;
     majVuesCompte(true);
-    if(COMPTE.encore){ COMPTE.encore = false; planifierSynchro(); }
+    if(COMPTE.encore){ const lireEncore = COMPTE.encore === "lire"; COMPTE.encore = false; if(lireEncore) planifierReleve(); else planifierSynchro(); }
   });
+}
+
+/* Apres une synchronisation reussie : les fiches publiques suivent ;
+   chacune ne part que si elle a change (publierSiChange). Le reste ne sert
+   qu'a la releve (ouverture, retour) : podium de la saison passee, profils
+   du professeur, et la bourse (version Ecus : creee la 1re fois d'apres la
+   progression qu'on vient de fusionner), puis la fiche publique (sa
+   vitrine : des cartes de la bourse). */
+function apresSynchro(o){
+  if(typeof publierClassement === "function") publierClassement();
+  if(typeof publierAlbum === "function") publierAlbum();
+  if(typeof publierProfil === "function") publierProfil();
+  if(typeof publierQuotidien === "function") publierQuotidien().then(() => { if(!o.envoi && typeof qjMajRangsDiscret === "function") qjMajRangsDiscret(); });
+  if(o.envoi) return;
+  if(typeof verifierPrixSaison === "function") verifierPrixSaison();
+  if(typeof completerProfils === "function") completerProfils();
+  /* La bourse se relit a chaque releve (un autre appareil a pu acheter ou
+     ouvrir un pack), sauf si elle vient d'etre lue. */
+  if(typeof BETA !== "undefined" && BETA && typeof chargerBourse === "function")
+    chargerBourse(typeof BOURSE !== "undefined" && Date.now() - (BOURSE.lu || 0) > 30000).then(() => { if(typeof assurerJoueur === "function") assurerJoueur(); });
 }
 
 /* Apres une fusion qui a change la progression, l'ecran se redessine,
@@ -6603,7 +6700,8 @@ if(typeof document !== "undefined") document.addEventListener("keydown", ev => {
    ====================================================================== */
 
 const CLASSEMENT_TOP = 10;
-const CLASSEMENT_FRAIS = 5 * 60 * 1000;   // relu au plus toutes les 5 minutes
+const CLASSEMENT_FRAIS = 15 * 60 * 1000;   // relu au plus toutes les 15 minutes
+const CLASSEMENT_TOTAL = 60 * 60 * 1000;   // le nombre de classes, recompte au plus toutes les heures
 const CLASSEMENT_GENERAL = { liste: null, total: null, devant: null, maj: 0, enCours: false, erreur: null };
 const CLASSEMENT_SAISON = { liste: null, total: null, devant: null, maj: 0, enCours: false, erreur: null, n: 0 };
 let VUE_CLASSEMENT = "saison";   // « saison » (par defaut) ou « general »
@@ -6641,28 +6739,35 @@ function publierClassement(){
   const url = urlDocuments("/classement/" + encodeURIComponent(COMPTE.user.uid));
   const pseudo = pseudoCompte();
   if(!participeClassement() || !pseudo){
+    oublierPublication("classement"); oublierPublication("saison-" + saisonEnCours());
     requeteJeton("DELETE", urlDocuments("/saisons/" + saisonEnCours() + "/scores/" + encodeURIComponent(COMPTE.user.uid))).catch(() => {});
     return requeteJeton("DELETE", url).then(() => true, () => false);
   }
   /* « maj » est l'heure du serveur, pas celle du telephone (qu'un tricheur
      regle a sa guise) : les regles s'en servent pour borner la hausse des
-     points au temps ecoule depuis la ligne precedente. */
-  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+     points au temps ecoule depuis la ligne precedente. Une ligne inchangee
+     ne repart pas (publierSiChange, z0g_compte.js). */
+  const ligne = { nom: pseudo, points: Math.max(0, Math.round(pointsTotal())), palier: rangActuel().i };
+  return publierSiChange("classement", ligne, () => requeteJeton("POST", urlDocuments(":commit"), { writes: [{
     update: {
       name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/classement/" + COMPTE.user.uid,
       fields: {
-        nom: { stringValue: pseudo },
-        points: { integerValue: String(Math.max(0, Math.round(pointsTotal()))) },
-        palier: { integerValue: String(rangActuel().i) }
+        nom: { stringValue: ligne.nom },
+        points: { integerValue: String(ligne.points) },
+        palier: { integerValue: String(ligne.palier) }
       }
     },
     updateMask: { fieldPaths: ["nom", "points", "palier"] },
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
-  }] }).then(r => { publierSaison(pseudo); return r.ok; }, () => false);
+  }] }).then(r => r.ok, () => false)).then(ok => { publierSaison(pseudo); return ok; });
 }
 
 /* Les dix premiers, le nombre d'inscrits et le nombre d'eleves devant soi :
-   trois requetes, dont deux comptages que Firestore fait sans tout lire.
+   une requete et au plus deux comptages, que Firestore fait sans tout lire
+   (une lecture par tranche de 1 000 lignes comptees). Pour ne pas les
+   repayer a chaque coup d'oeil (novembre 2026) : le nombre d'inscrits se
+   recompte au plus toutes les heures, et ceux devant soi ne se comptent pas
+   quand on figure soi-meme dans les dix premiers.
    Classement general : classement/{uid}, par points ; classement de la
    saison : saisons/{n}/scores/{uid}, par points gagnes pendant la saison. */
 function sourceClassement(vue){
@@ -6694,12 +6799,15 @@ function chargerClassement(force, vue){
     throw Object.assign(new Error((j && j.error && j.error.message) || "réponse " + r.status), { statut: r.status }); });
   const nombre = rep => Number(((((rep || [])[0] || {}).result || {}).aggregateFields || {}).n
     ? rep[0].result.aggregateFields.n.integerValue : 0);
-  const url = urlDocuments(src.parent);
-  Promise.all([
-    requeteJeton("POST", url + ":runQuery", top).then(lireJson),
-    requeteJeton("POST", url + ":runAggregationQuery", compter(null)).then(lireJson),
-    requeteJeton("POST", url + ":runAggregationQuery", compter(plusQueMoi)).then(lireJson)
-  ]).then(([lignes, tous, devant]) => {
+  const url = urlDocuments(src.parent), moi = COMPTE.user.uid;
+  const compterTous = E.total === null || !E.totalMaj || Date.now() - E.totalMaj > CLASSEMENT_TOTAL;
+  requeteJeton("POST", url + ":runQuery", top).then(lireJson).then(lignes => {
+    const liste = (lignes || []).filter(x => x.document);
+    const dedans = liste.some(x => decodeURIComponent(x.document.name.split("/").pop()) === moi);
+    return Promise.all([lignes,
+      compterTous ? requeteJeton("POST", url + ":runAggregationQuery", compter(null)).then(lireJson) : null,
+      dedans ? null : requeteJeton("POST", url + ":runAggregationQuery", compter(plusQueMoi)).then(lireJson)]);
+  }).then(([lignes, tous, devant]) => {
     E.liste = (lignes || []).filter(x => x.document).map(x => {
       const f = x.document.fields || {}, entier = k => Number((f[k] && f[k].integerValue) || 0);
       return { uid: decodeURIComponent(x.document.name.split("/").pop()),
@@ -6709,8 +6817,10 @@ function chargerClassement(force, vue){
                   generale, ou le palier publie avec la ligne de la saison. */
                palier: src.champ === "points" ? indicePalier(entier("points")) : entier("palier") };
     });
-    E.total = nombre(tous);
-    E.devant = nombre(devant);
+    if(tous){ E.total = nombre(tous); E.totalMaj = Date.now(); }
+    /* Dans les dix premiers : ceux devant soi sont dans la liste. */
+    E.devant = devant ? nombre(devant) : E.liste.filter(e => e.points > src.mien).length;
+    E.total = Math.max(E.total || 0, E.liste.length);
     E.erreur = null;
   }).catch(e => {
     E.erreur = e && e.statut === 403
@@ -6850,15 +6960,15 @@ function fusionnerSaisons(l, d){
 }
 function publierSaison(pseudo){
   if(!compteConnecte() || !pseudo || typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE) return Promise.resolve(false);
-  const n = saisonEnCours();
-  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+  const n = saisonEnCours(), ligne = { nom: pseudo, ps: pointsSaison(), palier: rangActuel().i };
+  return publierSiChange("saison-" + n, ligne, () => requeteJeton("POST", urlDocuments(":commit"), { writes: [{
     update: {
       name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/saisons/" + n + "/scores/" + COMPTE.user.uid,
-      fields: { nom: { stringValue: pseudo }, ps: { integerValue: String(pointsSaison()) }, palier: { integerValue: String(rangActuel().i) } }
+      fields: { nom: { stringValue: ligne.nom }, ps: { integerValue: String(ligne.ps) }, palier: { integerValue: String(ligne.palier) } }
     },
     updateMask: { fieldPaths: ["nom", "ps", "palier"] },
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
-  }] }).then(r => r.ok, () => false);
+  }] }).then(r => r.ok, () => false));
 }
 /* Le podium des saisons finies depuis 2 jours, lu une fois. Beta : le
    podium inscrit sur le serveur par le professeur (z0o_bourse.js), qui
@@ -7088,12 +7198,12 @@ function publierProfil(){
   if(!compteConnecte() || typeof BETA_ISOLEE !== "undefined" && BETA_ISOLEE) return Promise.resolve(false);
   const pseudo = pseudoCompte();
   const uid = COMPTE.user.uid;
-  if(!pseudo) return requeteJeton("DELETE", urlDocuments("/profils/" + encodeURIComponent(uid))).then(() => true, () => false);
+  if(!pseudo){ oublierPublication("profil"); return requeteJeton("DELETE", urlDocuments("/profils/" + encodeURIComponent(uid))).then(() => true, () => false); }
   const r = Object.assign({ nom: pseudo }, resumeProfil());
-  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+  return publierSiChange("profil", r, () => requeteJeton("POST", urlDocuments(":commit"), { writes: [{
     update: { name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/profils/" + uid, fields: qjChampsEncodes(r) },
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
-  }] }).then(x => x.ok, () => false);
+  }] }).then(x => x.ok, () => false));
 }
 /* Le professeur, qui lit deja les progressions, complete les profils des
    joueurs qui n'ont pas encore rouvert l'application a jour (ou dont le
@@ -7755,14 +7865,16 @@ function effacerQuotidien(){
     requeteJeton("DELETE", urlDocuments("/semaine/" + qjLundi(aujourdhui()) + "/scores/" + uid))
   ]).then(() => true, () => false);
 }
-function chargerClassementQJ(chemin, monScore){
+/* sansListe : seulement le nombre de joueurs et ceux devant soi (la place,
+   sans les dix premiers : 2 lectures au lieu de 12). */
+function chargerClassementQJ(chemin, monScore, sansListe){
   if(!compteConnecte()) return Promise.resolve(null);
   const de = { from: [{ collectionId: "scores" }] };
   const lire = r => r.ok ? r.json() : Promise.reject(Object.assign(new Error("réponse " + r.status), { statut: r.status }));
   const nombre = rep => Number(((((rep || [])[0] || {}).result || {}).aggregateFields || {}).n ? rep[0].result.aggregateFields.n.integerValue : 0);
   const base = urlDocuments("/" + chemin);
   return Promise.all([
-    requeteJeton("POST", base + ":runQuery", { structuredQuery: Object.assign({}, de, {
+    sansListe ? Promise.resolve([]) : requeteJeton("POST", base + ":runQuery", { structuredQuery: Object.assign({}, de, {
       orderBy: [{ field: { fieldPath: "score" }, direction: "DESCENDING" }], limit: 10 }) }).then(lire),
     requeteJeton("POST", base + ":runAggregationQuery", { structuredAggregationQuery: { structuredQuery: de,
       aggregations: [{ alias: "n", count: {} }] } }).then(lire),
@@ -8221,7 +8333,7 @@ function qjMajRangs(){
   Object.keys(ETAT.quotidien || {}).sort().reverse().forEach(d => {
     const e = ETAT.quotidien[d];
     if(!e.fini || !e.envoye || e.rangFinal) return;
-    taches.push(() => chargerClassementQJ("jour/" + d, e.justes * 1000 + (999 - e.temps))
+    taches.push(() => chargerClassementQJ("jour/" + d, e.justes * 1000 + (999 - e.temps), true)
       .then(r => { if(r && !r.erreur && r.devant !== null) qjNoterRang(true, d, r.devant + 1, Math.max(r.total, r.devant + 1)); }));
   });
   const semaines = {};
@@ -8231,17 +8343,18 @@ function qjMajRangs(){
     if(w && w.final) return;
     if(!semaines[l].some(e => e.envoye)) return;   // semaine jamais publiee : rien a relire
     const pts = semaines[l].reduce((t, e) => t + QJ_PTS * e.justes, 0), tps = semaines[l].reduce((t, e) => t + e.temps, 0);
-    taches.push(() => chargerClassementQJ("semaine/" + l, pts * 10000 + (9999 - tps))
+    taches.push(() => chargerClassementQJ("semaine/" + l, pts * 10000 + (9999 - tps), true)
       .then(r => { if(r && !r.erreur && r.devant !== null) qjNoterRang(false, l, r.devant + 1, Math.max(r.total, r.devant + 1), pts); }));
   });
   return Promise.all(taches.slice(0, 14).map(t => t())).then(() => true, () => false);
 }
-/* Relue a chaque synchronisation, au plus toutes les dix minutes : c'est
-   ce qui rend definitives les places des jours et semaines passes, donc
-   les bonus du premier, sans ouvrir l'historique. */
+/* Relue a l'ouverture et au retour sur l'application, au plus toutes les
+   heures (toutes les dix minutes jusqu'en novembre 2026) : c'est ce qui
+   rend definitives les places des jours et semaines passes, donc les
+   bonus du premier, sans ouvrir l'historique. */
 let QJ_RANGS_LUS = 0;
 function qjMajRangsDiscret(){
-  if(Date.now() - QJ_RANGS_LUS < 10 * 60 * 1000) return;
+  if(Date.now() - QJ_RANGS_LUS < 60 * 60 * 1000) return;
   QJ_RANGS_LUS = Date.now();
   qjMajRangs();
 }
@@ -8789,7 +8902,416 @@ const CARTES = [
 {"n": 402, "r": "epique", "nom": "Bob Marley", "pv": 86, "t": "mexique", "e": 3, "a": 1980},
 {"n": 403, "r": "mythique", "nom": "Albert Einstein", "pv": 98, "t": "centrale", "e": 3, "a": 1934},
 {"n": 404, "r": "mythique", "nom": "Léonard de Vinci", "pv": 98, "t": "mediterranee", "e": 2, "a": 1503},
-{"n": 405, "r": "mythique", "nom": "Lucy", "pv": 95, "t": "corne", "e": 0, "a": -3000000}
+{"n": 405, "r": "mythique", "nom": "Lucy", "pv": 95, "t": "corne", "e": 0, "a": -3000000},
+{"n": 406, "r": "legendaire", "nom": "Erik le Rouge", "pv": 94, "t": "groenland", "e": 1, "a": 994},
+{"n": 407, "r": "epique", "nom": "Leif Erikson", "pv": 89, "t": "groenland", "e": 1, "a": 1012},
+{"n": 408, "r": "epique", "nom": "Knud Rasmussen", "pv": 87, "t": "groenland", "e": 3, "a": 1924},
+{"n": 409, "r": "rare", "nom": "Bjarni Herjólfsson", "pv": 79, "t": "groenland", "e": 1, "a": 995},
+{"n": 410, "r": "rare", "nom": "Hans Egede", "pv": 78, "t": "groenland", "e": 2, "a": 1740},
+{"n": 411, "r": "rare", "nom": "Gudrid Thorbjarnardottir", "pv": 78, "t": "groenland", "e": 1, "a": 1032},
+{"n": 412, "r": "peu-commune", "nom": "Thorvald Eriksson", "pv": 59, "t": "groenland", "e": 1, "a": 1004},
+{"n": 413, "r": "peu-commune", "nom": "Thorfinn Karlsefni", "pv": 43, "t": "groenland", "e": 1, "a": 1015},
+{"n": 414, "r": "commune", "nom": "Peter Freuchen", "pv": 39, "t": "groenland", "e": 3, "a": 1939},
+{"n": 415, "r": "commune", "nom": "Poul Egede", "pv": 37, "t": "groenland", "e": 2, "a": 1766},
+{"n": 416, "r": "commune", "nom": "Martin Frobisher", "pv": 15, "t": "groenland", "e": 2, "a": 1582},
+{"n": 417, "r": "legendaire", "nom": "Samuel de Champlain", "pv": 94, "t": "canada", "e": 2, "a": 1622},
+{"n": 418, "r": "epique", "nom": "Jacques Cartier", "pv": 88, "t": "canada", "e": 2, "a": 1542},
+{"n": 419, "r": "epique", "nom": "Louis Riel", "pv": 86, "t": "canada", "e": 3, "a": 1882},
+{"n": 420, "r": "rare", "nom": "Joseph Brant", "pv": 79, "t": "canada", "e": 2, "a": 1792},
+{"n": 421, "r": "peu-commune", "nom": "Terry Fox", "pv": 58, "t": "canada", "e": 3, "a": 1981},
+{"n": 422, "r": "peu-commune", "nom": "Lucy Maud Montgomery", "pv": 57, "t": "canada", "e": 3, "a": 1926},
+{"n": 423, "r": "peu-commune", "nom": "John A. Macdonald", "pv": 56, "t": "canada", "e": 3, "a": 1870},
+{"n": 424, "r": "commune", "nom": "Laura Secord", "pv": 38, "t": "canada", "e": 3, "a": 1839},
+{"n": 425, "r": "commune", "nom": "Pontiac", "pv": 38, "t": "canada", "e": 2, "a": 1762},
+{"n": 426, "r": "commune", "nom": "Pierre Le Moyne d'Iberville", "pv": 37, "t": "canada", "e": 2, "a": 1701},
+{"n": 427, "r": "commune", "nom": "Thanadelthur", "pv": 37, "t": "canada", "e": 2, "a": 1717},
+{"n": 428, "r": "commune", "nom": "Jeanne Mance", "pv": 36, "t": "canada", "e": 2, "a": 1657},
+{"n": 429, "r": "commune", "nom": "Madeleine de Verchères", "pv": 36, "t": "canada", "e": 2, "a": 1730},
+{"n": 430, "r": "legendaire", "nom": "Abraham Lincoln", "pv": 93, "t": "usa", "e": 3, "a": 1854},
+{"n": 431, "r": "epique", "nom": "George Washington", "pv": 89, "t": "usa", "e": 2, "a": 1783},
+{"n": 432, "r": "rare", "nom": "Benjamin Franklin", "pv": 61, "t": "usa", "e": 2, "a": 1766},
+{"n": 433, "r": "peu-commune", "nom": "Pocahontas", "pv": 48, "t": "usa", "e": 2, "a": 1617},
+{"n": 434, "r": "legendaire", "nom": "Benito Juárez", "pv": 94, "t": "mexique", "e": 3, "a": 1856},
+{"n": 435, "r": "legendaire", "nom": "Moctezuma II", "pv": 93, "t": "mexique", "e": 2, "a": 1510},
+{"n": 436, "r": "epique", "nom": "Pakal le Grand", "pv": 88, "t": "mexique", "e": 1, "a": 660},
+{"n": 437, "r": "epique", "nom": "Miguel Hidalgo", "pv": 86, "t": "mexique", "e": 2, "a": 1800},
+{"n": 438, "r": "rare", "nom": "Sor Juana Inés de la Cruz", "pv": 79, "t": "mexique", "e": 2, "a": 1689},
+{"n": 439, "r": "rare", "nom": "Nezahualcóyotl", "pv": 78, "t": "mexique", "e": 1, "a": 1454},
+{"n": 440, "r": "peu-commune", "nom": "Cuauhtémoc", "pv": 59, "t": "mexique", "e": 2, "a": 1525},
+{"n": 441, "r": "peu-commune", "nom": "Jean-Jacques Dessalines", "pv": 59, "t": "mexique", "e": 2, "a": 1800},
+{"n": 442, "r": "peu-commune", "nom": "La Malinche", "pv": 46, "t": "mexique", "e": 2, "a": 1529},
+{"n": 443, "r": "peu-commune", "nom": "Moctezuma Ier", "pv": 42, "t": "mexique", "e": 1, "a": 1451},
+{"n": 444, "r": "commune", "nom": "Siyaj K'ak'", "pv": 16, "t": "mexique", "e": 0, "a": 350},
+{"n": 445, "r": "commune", "nom": "Siyaj Chan K'awiil II", "pv": 15, "t": "mexique", "e": 0, "a": 456},
+{"n": 446, "r": "commune", "nom": "Itzcóatl", "pv": 15, "t": "mexique", "e": 1, "a": 1440},
+{"n": 447, "r": "legendaire", "nom": "Pachacutec", "pv": 94, "t": "andes", "e": 1, "a": 1462},
+{"n": 448, "r": "epique", "nom": "Atahualpa", "pv": 87, "t": "andes", "e": 2, "a": 1533},
+{"n": 449, "r": "rare", "nom": "Bartolina Sisa", "pv": 78, "t": "andes", "e": 2, "a": 1782},
+{"n": 450, "r": "rare", "nom": "Huayna Capac", "pv": 77, "t": "andes", "e": 2, "a": 1513},
+{"n": 451, "r": "rare", "nom": "Manco Inca", "pv": 77, "t": "andes", "e": 2, "a": 1544},
+{"n": 452, "r": "rare", "nom": "Túpac Inca Yupanqui", "pv": 60, "t": "andes", "e": 1, "a": 1493},
+{"n": 453, "r": "peu-commune", "nom": "Inca Garcilaso de la Vega", "pv": 58, "t": "andes", "e": 2, "a": 1595},
+{"n": 454, "r": "peu-commune", "nom": "Túpac Katari", "pv": 58, "t": "andes", "e": 2, "a": 1781},
+{"n": 455, "r": "peu-commune", "nom": "Gabriel García Márquez", "pv": 56, "t": "andes", "e": 3, "a": 1988},
+{"n": 456, "r": "peu-commune", "nom": "Antonio José de Sucre", "pv": 55, "t": "andes", "e": 3, "a": 1830},
+{"n": 457, "r": "commune", "nom": "Juana Azurduy", "pv": 37, "t": "andes", "e": 3, "a": 1838},
+{"n": 458, "r": "commune", "nom": "José Antonio Galán", "pv": 34, "t": "andes", "e": 2, "a": 1782},
+{"n": 459, "r": "commune", "nom": "Rumiñahui", "pv": 34, "t": "andes", "e": 2, "a": 1535},
+{"n": 460, "r": "commune", "nom": "Le Seigneur de Sipán", "pv": 17, "t": "andes", "e": 0, "a": 242},
+{"n": 461, "r": "legendaire", "nom": "Pelé", "pv": 94, "t": "bresil", "e": 3, "a": 1998},
+{"n": 462, "r": "epique", "nom": "Zumbi dos Palmares", "pv": 88, "t": "bresil", "e": 2, "a": 1692},
+{"n": 463, "r": "epique", "nom": "Tiradentes", "pv": 84, "t": "bresil", "e": 2, "a": 1786},
+{"n": 464, "r": "epique", "nom": "Ayrton Senna", "pv": 83, "t": "bresil", "e": 3, "a": 1994},
+{"n": 465, "r": "rare", "nom": "Pedro II", "pv": 79, "t": "bresil", "e": 3, "a": 1876},
+{"n": 466, "r": "peu-commune", "nom": "Alberto Santos-Dumont", "pv": 54, "t": "bresil", "e": 3, "a": 1920},
+{"n": 467, "r": "peu-commune", "nom": "Machado de Assis", "pv": 54, "t": "bresil", "e": 3, "a": 1891},
+{"n": 468, "r": "peu-commune", "nom": "Oscar Niemeyer", "pv": 53, "t": "bresil", "e": 3, "a": 1977},
+{"n": 469, "r": "peu-commune", "nom": "Antônio Vieira", "pv": 48, "t": "bresil", "e": 2, "a": 1670},
+{"n": 470, "r": "peu-commune", "nom": "Bartolomeu de Gusmão", "pv": 47, "t": "bresil", "e": 2, "a": 1722},
+{"n": 471, "r": "commune", "nom": "Aleijadinho", "pv": 34, "t": "bresil", "e": 2, "a": 1794},
+{"n": 472, "r": "commune", "nom": "Dandara", "pv": 34, "t": "bresil", "e": 2, "a": 1694},
+{"n": 473, "r": "commune", "nom": "Garrincha", "pv": 33, "t": "bresil", "e": 3, "a": 1976},
+{"n": 474, "r": "commune", "nom": "Cunhambebe", "pv": 24, "t": "bresil", "e": 2, "a": 1555},
+{"n": 475, "r": "commune", "nom": "Arariboia", "pv": 23, "t": "bresil", "e": 2, "a": 1589},
+{"n": 476, "r": "legendaire", "nom": "José de San Martín", "pv": 93, "t": "conesud", "e": 3, "a": 1832},
+{"n": 477, "r": "rare", "nom": "Lautaro", "pv": 77, "t": "conesud", "e": 2, "a": 1557},
+{"n": 478, "r": "peu-commune", "nom": "Bernardo O'Higgins", "pv": 53, "t": "conesud", "e": 3, "a": 1828},
+{"n": 479, "r": "peu-commune", "nom": "Jorge Luis Borges", "pv": 52, "t": "conesud", "e": 3, "a": 1960},
+{"n": 480, "r": "peu-commune", "nom": "Eva Perón", "pv": 51, "t": "conesud", "e": 3, "a": 1952},
+{"n": 481, "r": "peu-commune", "nom": "Pablo Neruda", "pv": 51, "t": "conesud", "e": 3, "a": 1956},
+{"n": 482, "r": "commune", "nom": "Carlos Gardel", "pv": 33, "t": "conesud", "e": 3, "a": 1930},
+{"n": 483, "r": "commune", "nom": "Caupolicán", "pv": 32, "t": "conesud", "e": 2, "a": 1558},
+{"n": 484, "r": "commune", "nom": "Mercedes Sosa", "pv": 30, "t": "conesud", "e": 3, "a": 1990},
+{"n": 485, "r": "commune", "nom": "Galvarino", "pv": 25, "t": "conesud", "e": 2, "a": 1557},
+{"n": 486, "r": "commune", "nom": "Juan de Garay", "pv": 25, "t": "conesud", "e": 2, "a": 1573},
+{"n": 487, "r": "legendaire", "nom": "Guillaume le Conquérant", "pv": 91, "t": "britanniques", "e": 1, "a": 1075},
+{"n": 488, "r": "rare", "nom": "Richard Cœur de Lion", "pv": 70, "t": "britanniques", "e": 1, "a": 1196},
+{"n": 489, "r": "rare", "nom": "Francis Drake", "pv": 69, "t": "britanniques", "e": 2, "a": 1586},
+{"n": 490, "r": "rare", "nom": "Geoffrey Chaucer", "pv": 68, "t": "britanniques", "e": 1, "a": 1389},
+{"n": 491, "r": "rare", "nom": "Robert Bruce", "pv": 68, "t": "britanniques", "e": 1, "a": 1319},
+{"n": 492, "r": "rare", "nom": "Adam Smith", "pv": 68, "t": "britanniques", "e": 2, "a": 1774},
+{"n": 493, "r": "rare", "nom": "Oliver Cromwell", "pv": 66, "t": "britanniques", "e": 2, "a": 1646},
+{"n": 494, "r": "rare", "nom": "James Watt", "pv": 65, "t": "britanniques", "e": 2, "a": 1795},
+{"n": 495, "r": "peu-commune", "nom": "Thomas More", "pv": 49, "t": "britanniques", "e": 2, "a": 1524},
+{"n": 496, "r": "commune", "nom": "Cassivellaunos", "pv": 34, "t": "britanniques", "e": 0, "a": -54},
+{"n": 497, "r": "commune", "nom": "Caratacos", "pv": 31, "t": "britanniques", "e": 0, "a": 50},
+{"n": 498, "r": "commune", "nom": "Cunobelinus", "pv": 30, "t": "britanniques", "e": 0, "a": 41},
+{"n": 499, "r": "commune", "nom": "Bède le Vénérable", "pv": 29, "t": "britanniques", "e": 1, "a": 722},
+{"n": 500, "r": "legendaire", "nom": "Louis IX", "pv": 90, "t": "ouest", "e": 1, "a": 1260},
+{"n": 501, "r": "legendaire", "nom": "Louis XIV", "pv": 90, "t": "ouest", "e": 2, "a": 1694},
+{"n": 502, "r": "epique", "nom": "Voltaire", "pv": 83, "t": "ouest", "e": 2, "a": 1754},
+{"n": 503, "r": "epique", "nom": "Clovis", "pv": 81, "t": "ouest", "e": 1, "a": 506},
+{"n": 504, "r": "epique", "nom": "Charles Martel", "pv": 80, "t": "ouest", "e": 1, "a": 732},
+{"n": 505, "r": "epique", "nom": "Christophe Colomb", "pv": 80, "t": "ouest", "e": 1, "a": 1496},
+{"n": 506, "r": "rare", "nom": "Philippe Auguste", "pv": 72, "t": "ouest", "e": 1, "a": 1212},
+{"n": 507, "r": "rare", "nom": "Le Cid", "pv": 72, "t": "ouest", "e": 1, "a": 1088},
+{"n": 508, "r": "rare", "nom": "Richelieu", "pv": 72, "t": "ouest", "e": 2, "a": 1631},
+{"n": 509, "r": "rare", "nom": "Hugues Capet", "pv": 71, "t": "ouest", "e": 1, "a": 986},
+{"n": 510, "r": "rare", "nom": "Henri IV", "pv": 71, "t": "ouest", "e": 2, "a": 1599},
+{"n": 511, "r": "rare", "nom": "François Ier", "pv": 70, "t": "ouest", "e": 2, "a": 1538},
+{"n": 512, "r": "rare", "nom": "Isabelle la Catholique", "pv": 69, "t": "ouest", "e": 1, "a": 1495},
+{"n": 513, "r": "rare", "nom": "Abd al-Rahman III", "pv": 69, "t": "ouest", "e": 1, "a": 944},
+{"n": 514, "r": "rare", "nom": "Henri le Navigateur", "pv": 69, "t": "ouest", "e": 1, "a": 1444},
+{"n": 515, "r": "rare", "nom": "Fernand de Magellan", "pv": 69, "t": "ouest", "e": 2, "a": 1518},
+{"n": 516, "r": "rare", "nom": "Vasco de Gama", "pv": 69, "t": "ouest", "e": 2, "a": 1514},
+{"n": 517, "r": "rare", "nom": "Montesquieu", "pv": 68, "t": "ouest", "e": 2, "a": 1740},
+{"n": 518, "r": "rare", "nom": "Miguel de Cervantès", "pv": 68, "t": "ouest", "e": 2, "a": 1599},
+{"n": 519, "r": "rare", "nom": "Rembrandt", "pv": 68, "t": "ouest", "e": 2, "a": 1655},
+{"n": 520, "r": "commune", "nom": "Viriathe", "pv": 36, "t": "ouest", "e": 0, "a": -142},
+{"n": 521, "r": "commune", "nom": "Ambiorix", "pv": 35, "t": "ouest", "e": 0, "a": -53},
+{"n": 522, "r": "commune", "nom": "Brennus", "pv": 35, "t": "ouest", "e": 0, "a": -390},
+{"n": 523, "r": "rare", "nom": "Carl von Linné", "pv": 75, "t": "scandinavie", "e": 2, "a": 1760},
+{"n": 524, "r": "rare", "nom": "Alfred Nobel", "pv": 74, "t": "scandinavie", "e": 3, "a": 1882},
+{"n": 525, "r": "rare", "nom": "Knut le Grand", "pv": 67, "t": "scandinavie", "e": 1, "a": 1032},
+{"n": 526, "r": "rare", "nom": "Snorri Sturluson", "pv": 67, "t": "scandinavie", "e": 1, "a": 1228},
+{"n": 527, "r": "rare", "nom": "Gustav Vasa", "pv": 60, "t": "scandinavie", "e": 2, "a": 1546},
+{"n": 528, "r": "peu-commune", "nom": "Charles XII", "pv": 48, "t": "scandinavie", "e": 2, "a": 1718},
+{"n": 529, "r": "commune", "nom": "Marguerite Ire de Danemark", "pv": 39, "t": "scandinavie", "e": 1, "a": 1400},
+{"n": 530, "r": "commune", "nom": "Christine de Suède", "pv": 32, "t": "scandinavie", "e": 2, "a": 1675},
+{"n": 531, "r": "commune", "nom": "Ingólfr Arnarson", "pv": 28, "t": "scandinavie", "e": 1, "a": 910},
+{"n": 532, "r": "commune", "nom": "Valdemar Ier le Grand", "pv": 27, "t": "scandinavie", "e": 1, "a": 1174},
+{"n": 533, "r": "legendaire", "nom": "Jean Gutenberg", "pv": 91, "t": "centrale", "e": 1, "a": 1452},
+{"n": 534, "r": "epique", "nom": "Wolfgang Amadeus Mozart", "pv": 80, "t": "centrale", "e": 2, "a": 1791},
+{"n": 535, "r": "rare", "nom": "Arminius", "pv": 68, "t": "centrale", "e": 0, "a": 19},
+{"n": 536, "r": "rare", "nom": "Charles IV", "pv": 66, "t": "centrale", "e": 1, "a": 1364},
+{"n": 537, "r": "rare", "nom": "Matthias Corvin", "pv": 66, "t": "centrale", "e": 1, "a": 1484},
+{"n": 538, "r": "rare", "nom": "Otton Ier le Grand", "pv": 65, "t": "centrale", "e": 1, "a": 960},
+{"n": 539, "r": "rare", "nom": "Johannes Kepler", "pv": 65, "t": "centrale", "e": 2, "a": 1618},
+{"n": 540, "r": "rare", "nom": "Étienne Ier de Hongrie", "pv": 64, "t": "centrale", "e": 1, "a": 1024},
+{"n": 541, "r": "rare", "nom": "Jean-Sébastien Bach", "pv": 64, "t": "centrale", "e": 2, "a": 1735},
+{"n": 542, "r": "rare", "nom": "Marie-Thérèse d'Autriche", "pv": 64, "t": "centrale", "e": 2, "a": 1766},
+{"n": 543, "r": "rare", "nom": "Albrecht Dürer", "pv": 63, "t": "centrale", "e": 2, "a": 1517},
+{"n": 544, "r": "commune", "nom": "Marbod", "pv": 32, "t": "centrale", "e": 0, "a": 21},
+{"n": 545, "r": "commune", "nom": "Ladislas II Jagellon", "pv": 28, "t": "centrale", "e": 1, "a": 1410},
+{"n": 546, "r": "legendaire", "nom": "Homère", "pv": 92, "t": "mediterranee", "e": 0, "a": -758},
+{"n": 547, "r": "legendaire", "nom": "Auguste", "pv": 92, "t": "mediterranee", "e": 0, "a": -7},
+{"n": 548, "r": "legendaire", "nom": "Jules César", "pv": 91, "t": "mediterranee", "e": 0, "a": -54},
+{"n": 549, "r": "legendaire", "nom": "Socrate", "pv": 90, "t": "mediterranee", "e": 0, "a": -417},
+{"n": 550, "r": "epique", "nom": "Platon", "pv": 86, "t": "mediterranee", "e": 0, "a": -370},
+{"n": 551, "r": "epique", "nom": "Aristote", "pv": 84, "t": "mediterranee", "e": 0, "a": -336},
+{"n": 552, "r": "epique", "nom": "Périclès", "pv": 84, "t": "mediterranee", "e": 0, "a": -444},
+{"n": 553, "r": "epique", "nom": "Léonidas Ier", "pv": 82, "t": "mediterranee", "e": 0, "a": -492},
+{"n": 554, "r": "epique", "nom": "Spartacus", "pv": 82, "t": "mediterranee", "e": 0, "a": -71},
+{"n": 555, "r": "epique", "nom": "Archimède", "pv": 81, "t": "mediterranee", "e": 0, "a": -232},
+{"n": 556, "r": "epique", "nom": "Pythagore", "pv": 81, "t": "mediterranee", "e": 0, "a": -520},
+{"n": 557, "r": "epique", "nom": "Hippocrate", "pv": 81, "t": "mediterranee", "e": 0, "a": -401},
+{"n": 558, "r": "epique", "nom": "Euclide", "pv": 80, "t": "mediterranee", "e": 0, "a": -278},
+{"n": 559, "r": "epique", "nom": "Cicéron", "pv": 80, "t": "mediterranee", "e": 0, "a": -57},
+{"n": 560, "r": "epique", "nom": "Marc Aurèle", "pv": 80, "t": "mediterranee", "e": 0, "a": 168},
+{"n": 561, "r": "epique", "nom": "Dante Alighieri", "pv": 80, "t": "mediterranee", "e": 1, "a": 1310},
+{"n": 562, "r": "epique", "nom": "Michel-Ange", "pv": 80, "t": "mediterranee", "e": 2, "a": 1537},
+{"n": 563, "r": "rare", "nom": "Virgile", "pv": 75, "t": "mediterranee", "e": 0, "a": -27},
+{"n": 564, "r": "rare", "nom": "Trajan", "pv": 75, "t": "mediterranee", "e": 0, "a": 102},
+{"n": 565, "r": "rare", "nom": "Sénèque", "pv": 74, "t": "mediterranee", "e": 0, "a": 48},
+{"n": 566, "r": "rare", "nom": "Sappho", "pv": 73, "t": "mediterranee", "e": 0, "a": -582},
+{"n": 567, "r": "rare", "nom": "Clisthène", "pv": 73, "t": "mediterranee", "e": 0, "a": -522},
+{"n": 568, "r": "rare", "nom": "Solon", "pv": 72, "t": "mediterranee", "e": 0, "a": -582},
+{"n": 569, "r": "rare", "nom": "Philippe II de Macédoine", "pv": 72, "t": "mediterranee", "e": 0, "a": -342},
+{"n": 570, "r": "rare", "nom": "Eschyle", "pv": 71, "t": "mediterranee", "e": 0, "a": -473},
+{"n": 571, "r": "rare", "nom": "Aristophane", "pv": 69, "t": "mediterranee", "e": 0, "a": -398},
+{"n": 572, "r": "rare", "nom": "Giotto", "pv": 65, "t": "mediterranee", "e": 1, "a": 1320},
+{"n": 573, "r": "rare", "nom": "Basile II", "pv": 64, "t": "mediterranee", "e": 1, "a": 1009},
+{"n": 574, "r": "rare", "nom": "Raphaël", "pv": 64, "t": "mediterranee", "e": 2, "a": 1519},
+{"n": 575, "r": "rare", "nom": "Nicolas Machiavel", "pv": 64, "t": "mediterranee", "e": 2, "a": 1516},
+{"n": 576, "r": "rare", "nom": "Marco Polo", "pv": 63, "t": "mediterranee", "e": 1, "a": 1306},
+{"n": 577, "r": "rare", "nom": "Laurent de Médicis", "pv": 63, "t": "mediterranee", "e": 1, "a": 1488},
+{"n": 578, "r": "rare", "nom": "Skanderbeg", "pv": 63, "t": "mediterranee", "e": 1, "a": 1454},
+{"n": 579, "r": "rare", "nom": "Antonio Vivaldi", "pv": 63, "t": "mediterranee", "e": 2, "a": 1727},
+{"n": 580, "r": "rare", "nom": "Pétrarque", "pv": 62, "t": "mediterranee", "e": 1, "a": 1356},
+{"n": 581, "r": "peu-commune", "nom": "Praxitèle", "pv": 54, "t": "mediterranee", "e": 0, "a": -346},
+{"n": 582, "r": "peu-commune", "nom": "Pyrrhus Ier", "pv": 52, "t": "mediterranee", "e": 0, "a": -278},
+{"n": 583, "r": "peu-commune", "nom": "Plutarque", "pv": 51, "t": "mediterranee", "e": 0, "a": 103},
+{"n": 584, "r": "peu-commune", "nom": "Épicure", "pv": 50, "t": "mediterranee", "e": 0, "a": -288},
+{"n": 585, "r": "commune", "nom": "Empédocle", "pv": 39, "t": "mediterranee", "e": 0, "a": -442},
+{"n": 587, "r": "commune", "nom": "Polybe", "pv": 38, "t": "mediterranee", "e": 0, "a": -150},
+{"n": 588, "r": "commune", "nom": "Parménide", "pv": 38, "t": "mediterranee", "e": 0, "a": -465},
+{"n": 589, "r": "commune", "nom": "Tiberius Gracchus", "pv": 37, "t": "mediterranee", "e": 0, "a": -133},
+{"n": 590, "r": "commune", "nom": "Mécène", "pv": 37, "t": "mediterranee", "e": 0, "a": -22},
+{"n": 591, "r": "commune", "nom": "Agrippa", "pv": 37, "t": "mediterranee", "e": 0, "a": -20},
+{"n": 592, "r": "commune", "nom": "Livie", "pv": 35, "t": "mediterranee", "e": 0, "a": 3},
+{"n": 593, "r": "commune", "nom": "Dioclétien", "pv": 35, "t": "mediterranee", "e": 0, "a": 295},
+{"n": 594, "r": "commune", "nom": "Fibonacci", "pv": 27, "t": "mediterranee", "e": 1, "a": 1228},
+{"n": 595, "r": "legendaire", "nom": "Iaroslav le Sage", "pv": 91, "t": "est", "e": 1, "a": 1034},
+{"n": 596, "r": "epique", "nom": "Vlad III l'Empaleur", "pv": 89, "t": "est", "e": 1, "a": 1471},
+{"n": 597, "r": "epique", "nom": "Olga de Kiev", "pv": 89, "t": "est", "e": 1, "a": 947},
+{"n": 598, "r": "epique", "nom": "Vytautas le Grand", "pv": 89, "t": "est", "e": 1, "a": 1408},
+{"n": 599, "r": "rare", "nom": "Volodymyr le Grand", "pv": 77, "t": "est", "e": 1, "a": 1004},
+{"n": 600, "r": "rare", "nom": "Bohdan Khmelnytsky", "pv": 74, "t": "est", "e": 2, "a": 1644},
+{"n": 601, "r": "peu-commune", "nom": "Gediminas", "pv": 59, "t": "est", "e": 1, "a": 1326},
+{"n": 603, "r": "peu-commune", "nom": "Ivan Mazepa", "pv": 56, "t": "est", "e": 2, "a": 1692},
+{"n": 604, "r": "peu-commune", "nom": "Taras Chevtchenko", "pv": 51, "t": "est", "e": 3, "a": 1855},
+{"n": 605, "r": "peu-commune", "nom": "Décébale", "pv": 51, "t": "est", "e": 0, "a": 106},
+{"n": 607, "r": "commune", "nom": "Burebista", "pv": 30, "t": "est", "e": 0, "a": -44},
+{"n": 609, "r": "legendaire", "nom": "Ivan le Terrible", "pv": 91, "t": "russie", "e": 2, "a": 1574},
+{"n": 610, "r": "rare", "nom": "Alexandre Nevski", "pv": 78, "t": "russie", "e": 1, "a": 1260},
+{"n": 611, "r": "rare", "nom": "Alexandre Pouchkine", "pv": 70, "t": "russie", "e": 3, "a": 1836},
+{"n": 612, "r": "rare", "nom": "Dmitri Donskoï", "pv": 61, "t": "russie", "e": 1, "a": 1387},
+{"n": 613, "r": "rare", "nom": "Ivan III le Grand", "pv": 60, "t": "russie", "e": 1, "a": 1490},
+{"n": 614, "r": "peu-commune", "nom": "Ermak", "pv": 50, "t": "russie", "e": 2, "a": 1576},
+{"n": 615, "r": "commune", "nom": "Alexandre Souvorov", "pv": 30, "t": "russie", "e": 2, "a": 1782},
+{"n": 616, "r": "commune", "nom": "Mikhaïl Lomonossov", "pv": 30, "t": "russie", "e": 2, "a": 1756},
+{"n": 617, "r": "commune", "nom": "Mikhaïl Koutouzov", "pv": 29, "t": "russie", "e": 2, "a": 1796},
+{"n": 618, "r": "commune", "nom": "Iouri Dolgorouki", "pv": 25, "t": "russie", "e": 1, "a": 1146},
+{"n": 619, "r": "commune", "nom": "Andreï Roublev", "pv": 24, "t": "russie", "e": 1, "a": 1412},
+{"n": 620, "r": "commune", "nom": "Emelian Pougatchev", "pv": 24, "t": "russie", "e": 2, "a": 1775},
+{"n": 621, "r": "legendaire", "nom": "Abd el-Kader", "pv": 93, "t": "maghreb", "e": 3, "a": 1863},
+{"n": 622, "r": "epique", "nom": "Augustin d'Hippone", "pv": 89, "t": "maghreb", "e": 0, "a": 410},
+{"n": 623, "r": "epique", "nom": "Tariq ibn Ziyad", "pv": 86, "t": "maghreb", "e": 1, "a": 712},
+{"n": 624, "r": "epique", "nom": "La Kahena", "pv": 85, "t": "maghreb", "e": 1, "a": 703},
+{"n": 625, "r": "rare", "nom": "Apulée", "pv": 79, "t": "maghreb", "e": 0, "a": 170},
+{"n": 626, "r": "rare", "nom": "Juba II", "pv": 79, "t": "maghreb", "e": 0, "a": 4},
+{"n": 627, "r": "rare", "nom": "Barberousse", "pv": 60, "t": "maghreb", "e": 2, "a": 1530},
+{"n": 628, "r": "peu-commune", "nom": "Septime Sévère", "pv": 59, "t": "maghreb", "e": 0, "a": 196},
+{"n": 629, "r": "peu-commune", "nom": "Tin Hinan", "pv": 58, "t": "maghreb", "e": 0, "a": 400},
+{"n": 630, "r": "peu-commune", "nom": "Youssef ibn Tachfine", "pv": 55, "t": "maghreb", "e": 1, "a": 1075},
+{"n": 631, "r": "peu-commune", "nom": "Hamilcar Barca", "pv": 50, "t": "maghreb", "e": 0, "a": -234},
+{"n": 632, "r": "peu-commune", "nom": "Moulay Ismaïl", "pv": 45, "t": "maghreb", "e": 2, "a": 1704},
+{"n": 633, "r": "commune", "nom": "Syphax", "pv": 31, "t": "maghreb", "e": 0, "a": -202},
+{"n": 634, "r": "commune", "nom": "Sophonisbe", "pv": 31, "t": "maghreb", "e": 0, "a": -203},
+{"n": 635, "r": "commune", "nom": "Tertullien", "pv": 29, "t": "maghreb", "e": 0, "a": 205},
+{"n": 636, "r": "commune", "nom": "Térence", "pv": 27, "t": "maghreb", "e": 0, "a": -159},
+{"n": 638, "r": "commune", "nom": "Ahmed al-Mansour", "pv": 19, "t": "maghreb", "e": 2, "a": 1594},
+{"n": 639, "r": "mythique", "nom": "Toutânkhamon", "pv": 97, "t": "nil", "e": 0, "a": -1327},
+{"n": 640, "r": "legendaire", "nom": "Néfertiti", "pv": 94, "t": "nil", "e": 0, "a": -1332},
+{"n": 641, "r": "legendaire", "nom": "Hatchepsout", "pv": 92, "t": "nil", "e": 0, "a": -1465},
+{"n": 642, "r": "epique", "nom": "Khéops", "pv": 89, "t": "nil", "e": 0, "a": -2566},
+{"n": 643, "r": "epique", "nom": "Thoutmôsis III", "pv": 89, "t": "nil", "e": 0, "a": -1436},
+{"n": 644, "r": "epique", "nom": "Akhenaton", "pv": 87, "t": "nil", "e": 0, "a": -1340},
+{"n": 645, "r": "epique", "nom": "Néfertari", "pv": 87, "t": "nil", "e": 0, "a": -1260},
+{"n": 646, "r": "epique", "nom": "Taharqa", "pv": 86, "t": "nil", "e": 0, "a": -664},
+{"n": 647, "r": "rare", "nom": "Narmer", "pv": 77, "t": "nil", "e": 0, "a": -3100},
+{"n": 649, "r": "rare", "nom": "Ahmôsis Ier", "pv": 69, "t": "nil", "e": 0, "a": -1525},
+{"n": 650, "r": "rare", "nom": "Khéphren", "pv": 69, "t": "nil", "e": 0, "a": -2532},
+{"n": 651, "r": "rare", "nom": "Amenhotep III", "pv": 67, "t": "nil", "e": 0, "a": -1364},
+{"n": 652, "r": "peu-commune", "nom": "Djéser", "pv": 56, "t": "nil", "e": 0, "a": -2650},
+{"n": 654, "r": "peu-commune", "nom": "Ptolémée Ier", "pv": 49, "t": "nil", "e": 0, "a": -308},
+{"n": 655, "r": "peu-commune", "nom": "Héron d'Alexandrie", "pv": 46, "t": "nil", "e": 0, "a": 58},
+{"n": 656, "r": "commune", "nom": "Chajar ad-Durr", "pv": 39, "t": "nil", "e": 1, "a": 1257},
+{"n": 657, "r": "commune", "nom": "Baybars", "pv": 38, "t": "nil", "e": 1, "a": 1268},
+{"n": 658, "r": "commune", "nom": "Psammétique Ier", "pv": 28, "t": "nil", "e": 0, "a": -610},
+{"n": 659, "r": "commune", "nom": "Bérénice II", "pv": 28, "t": "nil", "e": 0, "a": -226},
+{"n": 660, "r": "commune", "nom": "Néchao II", "pv": 26, "t": "nil", "e": 0, "a": -595},
+{"n": 663, "r": "legendaire", "nom": "Soundiata Keïta", "pv": 92, "t": "afouest", "e": 1, "a": 1240},
+{"n": 665, "r": "rare", "nom": "La reine Amina de Zaria", "pv": 77, "t": "afouest", "e": 2, "a": 1589},
+{"n": 666, "r": "rare", "nom": "Kwame Nkrumah", "pv": 63, "t": "afouest", "e": 3, "a": 1958},
+{"n": 667, "r": "peu-commune", "nom": "Thomas Sankara", "pv": 49, "t": "afouest", "e": 3, "a": 1986},
+{"n": 674, "r": "legendaire", "nom": "La reine Njinga", "pv": 90, "t": "afcentre", "e": 2, "a": 1640},
+{"n": 676, "r": "peu-commune", "nom": "Manu Dibango", "pv": 48, "t": "afcentre", "e": 3, "a": 1994},
+{"n": 677, "r": "peu-commune", "nom": "Barthélemy Boganda", "pv": 47, "t": "afcentre", "e": 3, "a": 1952},
+{"n": 678, "r": "commune", "nom": "Lukeni lua Nimi", "pv": 36, "t": "afcentre", "e": 1, "a": 1418},
+{"n": 679, "r": "commune", "nom": "Agostinho Neto", "pv": 27, "t": "afcentre", "e": 3, "a": 1968},
+{"n": 682, "r": "legendaire", "nom": "Ménélik II", "pv": 92, "t": "corne", "e": 3, "a": 1896},
+{"n": 683, "r": "rare", "nom": "Ahmad Gragne", "pv": 74, "t": "corne", "e": 2, "a": 1542},
+{"n": 684, "r": "peu-commune", "nom": "Haïlé Sélassié", "pv": 48, "t": "corne", "e": 3, "a": 1951},
+{"n": 685, "r": "peu-commune", "nom": "Zara Yaqob", "pv": 46, "t": "corne", "e": 1, "a": 1451},
+{"n": 688, "r": "commune", "nom": "Amda Seyon Ier", "pv": 21, "t": "corne", "e": 1, "a": 1344},
+{"n": 689, "r": "commune", "nom": "Fasiladas", "pv": 21, "t": "corne", "e": 2, "a": 1652},
+{"n": 691, "r": "legendaire", "nom": "Moshoeshoe Ier", "pv": 90, "t": "australe", "e": 3, "a": 1846},
+{"n": 692, "r": "peu-commune", "nom": "Andrianampoinimerina", "pv": 56, "t": "australe", "e": 2, "a": 1795},
+{"n": 693, "r": "peu-commune", "nom": "Miriam Makeba", "pv": 47, "t": "australe", "e": 3, "a": 1988},
+{"n": 694, "r": "peu-commune", "nom": "Steve Biko", "pv": 45, "t": "australe", "e": 3, "a": 1977},
+{"n": 695, "r": "commune", "nom": "Albert Luthuli", "pv": 28, "t": "australe", "e": 3, "a": 1950},
+{"n": 696, "r": "commune", "nom": "Cetshwayo", "pv": 27, "t": "australe", "e": 3, "a": 1872},
+{"n": 698, "r": "legendaire", "nom": "Hammourabi", "pv": 93, "t": "procheorient", "e": 0, "a": -1762},
+{"n": 699, "r": "epique", "nom": "Sargon d'Akkad", "pv": 88, "t": "procheorient", "e": 0, "a": -2279},
+{"n": 700, "r": "epique", "nom": "Zénobie", "pv": 87, "t": "procheorient", "e": 0, "a": 274},
+{"n": 701, "r": "epique", "nom": "Mehmed II", "pv": 85, "t": "procheorient", "e": 1, "a": 1474},
+{"n": 702, "r": "epique", "nom": "Haroun al-Rachid", "pv": 84, "t": "procheorient", "e": 1, "a": 805},
+{"n": 704, "r": "rare", "nom": "Constantin le Grand", "pv": 75, "t": "procheorient", "e": 0, "a": 322},
+{"n": 705, "r": "rare", "nom": "Sennachérib", "pv": 68, "t": "procheorient", "e": 0, "a": -681},
+{"n": 706, "r": "rare", "nom": "Thalès de Milet", "pv": 66, "t": "procheorient", "e": 0, "a": -568},
+{"n": 707, "r": "rare", "nom": "Mithridate VI", "pv": 66, "t": "procheorient", "e": 0, "a": -80},
+{"n": 708, "r": "rare", "nom": "Galien", "pv": 66, "t": "procheorient", "e": 0, "a": 190},
+{"n": 709, "r": "rare", "nom": "Osman Ier", "pv": 62, "t": "procheorient", "e": 1, "a": 1310},
+{"n": 710, "r": "peu-commune", "nom": "Justinien", "pv": 57, "t": "procheorient", "e": 1, "a": 541},
+{"n": 711, "r": "peu-commune", "nom": "Théodora", "pv": 57, "t": "procheorient", "e": 1, "a": 540},
+{"n": 712, "r": "peu-commune", "nom": "Tiglath-Phalasar III", "pv": 48, "t": "procheorient", "e": 0, "a": -727},
+{"n": 713, "r": "peu-commune", "nom": "Héraclite", "pv": 48, "t": "procheorient", "e": 0, "a": -494},
+{"n": 714, "r": "peu-commune", "nom": "Héraclius", "pv": 48, "t": "procheorient", "e": 1, "a": 626},
+{"n": 715, "r": "peu-commune", "nom": "Crésus", "pv": 46, "t": "procheorient", "e": 0, "a": -553},
+{"n": 716, "r": "peu-commune", "nom": "Mimar Sinan", "pv": 45, "t": "procheorient", "e": 2, "a": 1556},
+{"n": 717, "r": "commune", "nom": "Al-Kindi", "pv": 35, "t": "procheorient", "e": 1, "a": 854},
+{"n": 718, "r": "commune", "nom": "Ibn al-Haytham", "pv": 35, "t": "procheorient", "e": 1, "a": 1020},
+{"n": 719, "r": "commune", "nom": "Nabonide", "pv": 27, "t": "procheorient", "e": 0, "a": -539},
+{"n": 720, "r": "commune", "nom": "Gudea", "pv": 26, "t": "procheorient", "e": 0, "a": -2124},
+{"n": 721, "r": "commune", "nom": "Diogène de Sinope", "pv": 26, "t": "procheorient", "e": 0, "a": -350},
+{"n": 722, "r": "commune", "nom": "Strabon", "pv": 25, "t": "procheorient", "e": 0, "a": -2},
+{"n": 723, "r": "commune", "nom": "Arétas IV", "pv": 24, "t": "procheorient", "e": 0, "a": 40},
+{"n": 724, "r": "commune", "nom": "Anaximandre", "pv": 23, "t": "procheorient", "e": 0, "a": -560},
+{"n": 725, "r": "commune", "nom": "Artémise Ire", "pv": 22, "t": "procheorient", "e": 0, "a": -480},
+{"n": 727, "r": "commune", "nom": "Nur ad-Din", "pv": 18, "t": "procheorient", "e": 1, "a": 1164},
+{"n": 728, "r": "commune", "nom": "Evliya Çelebi", "pv": 18, "t": "procheorient", "e": 2, "a": 1665},
+{"n": 729, "r": "epique", "nom": "Antara ibn Shaddad", "pv": 84, "t": "arabie", "e": 1, "a": 584},
+{"n": 732, "r": "rare", "nom": "Imrou'l Qays", "pv": 75, "t": "arabie", "e": 1, "a": 540},
+{"n": 735, "r": "rare", "nom": "Al-Khalil ibn Ahmad", "pv": 73, "t": "arabie", "e": 1, "a": 770},
+{"n": 737, "r": "peu-commune", "nom": "Al-Khansa", "pv": 55, "t": "arabie", "e": 1, "a": 628},
+{"n": 741, "r": "commune", "nom": "Sayf ibn Dhi Yazan", "pv": 33, "t": "arabie", "e": 1, "a": 578},
+{"n": 744, "r": "legendaire", "nom": "Darius Ier", "pv": 94, "t": "asiecentrale", "e": 0, "a": -500},
+{"n": 745, "r": "legendaire", "nom": "Tamerlan", "pv": 92, "t": "asiecentrale", "e": 1, "a": 1388},
+{"n": 746, "r": "epique", "nom": "Al-Khwarizmi", "pv": 84, "t": "asiecentrale", "e": 1, "a": 832},
+{"n": 747, "r": "epique", "nom": "Omar Khayyam", "pv": 83, "t": "asiecentrale", "e": 1, "a": 1107},
+{"n": 748, "r": "rare", "nom": "Ferdowsi", "pv": 76, "t": "asiecentrale", "e": 1, "a": 998},
+{"n": 749, "r": "rare", "nom": "Ulugh Beg", "pv": 75, "t": "asiecentrale", "e": 1, "a": 1439},
+{"n": 750, "r": "rare", "nom": "Al-Biruni", "pv": 74, "t": "asiecentrale", "e": 1, "a": 1029},
+{"n": 751, "r": "rare", "nom": "Babur", "pv": 71, "t": "asiecentrale", "e": 2, "a": 1524},
+{"n": 752, "r": "rare", "nom": "Shapur Ier", "pv": 64, "t": "asiecentrale", "e": 0, "a": 260},
+{"n": 753, "r": "rare", "nom": "Ardachir Ier", "pv": 63, "t": "asiecentrale", "e": 0, "a": 242},
+{"n": 754, "r": "peu-commune", "nom": "Tomyris", "pv": 58, "t": "asiecentrale", "e": 0, "a": -530},
+{"n": 755, "r": "peu-commune", "nom": "Saadi", "pv": 53, "t": "asiecentrale", "e": 1, "a": 1268},
+{"n": 756, "r": "peu-commune", "nom": "Al-Farabi", "pv": 51, "t": "asiecentrale", "e": 1, "a": 928},
+{"n": 757, "r": "peu-commune", "nom": "Hafez", "pv": 51, "t": "asiecentrale", "e": 1, "a": 1375},
+{"n": 758, "r": "peu-commune", "nom": "Mithridate Ier", "pv": 47, "t": "asiecentrale", "e": 0, "a": -146},
+{"n": 759, "r": "peu-commune", "nom": "Suréna", "pv": 45, "t": "asiecentrale", "e": 0, "a": -52},
+{"n": 760, "r": "commune", "nom": "Shah Abbas Ier", "pv": 30, "t": "asiecentrale", "e": 2, "a": 1618},
+{"n": 761, "r": "commune", "nom": "Nader Shah", "pv": 29, "t": "asiecentrale", "e": 2, "a": 1735},
+{"n": 762, "r": "commune", "nom": "Ahmad Shah Durrani", "pv": 25, "t": "asiecentrale", "e": 2, "a": 1764},
+{"n": 764, "r": "legendaire", "nom": "Akbar", "pv": 93, "t": "inde", "e": 2, "a": 1591},
+{"n": 765, "r": "legendaire", "nom": "Ashoka", "pv": 91, "t": "inde", "e": 0, "a": -250},
+{"n": 766, "r": "epique", "nom": "Shah Jahan", "pv": 86, "t": "inde", "e": 2, "a": 1646},
+{"n": 767, "r": "epique", "nom": "Rabindranath Tagore", "pv": 80, "t": "inde", "e": 3, "a": 1918},
+{"n": 768, "r": "rare", "nom": "Chandragupta Maurya", "pv": 74, "t": "inde", "e": 0, "a": -301},
+{"n": 769, "r": "rare", "nom": "Samudragupta", "pv": 64, "t": "inde", "e": 0, "a": 366},
+{"n": 770, "r": "rare", "nom": "Kautilya", "pv": 62, "t": "inde", "e": 0, "a": -312},
+{"n": 771, "r": "peu-commune", "nom": "Shivaji", "pv": 53, "t": "inde", "e": 2, "a": 1672},
+{"n": 775, "r": "peu-commune", "nom": "Porus", "pv": 44, "t": "inde", "e": 0, "a": -317},
+{"n": 776, "r": "peu-commune", "nom": "Sushruta", "pv": 44, "t": "inde", "e": 0, "a": -550},
+{"n": 777, "r": "peu-commune", "nom": "Aurangzeb", "pv": 42, "t": "inde", "e": 2, "a": 1680},
+{"n": 778, "r": "peu-commune", "nom": "Panini", "pv": 41, "t": "inde", "e": 0, "a": -450},
+{"n": 779, "r": "peu-commune", "nom": "Krishnadevaraya", "pv": 41, "t": "inde", "e": 2, "a": 1518},
+{"n": 780, "r": "peu-commune", "nom": "Chandragupta II", "pv": 40, "t": "inde", "e": 0, "a": 412},
+{"n": 781, "r": "commune", "nom": "Tipu Sultan", "pv": 26, "t": "inde", "e": 2, "a": 1792},
+{"n": 782, "r": "commune", "nom": "Charaka", "pv": 21, "t": "inde", "e": 0, "a": 150},
+{"n": 786, "r": "commune", "nom": "Prithviraj Chauhan", "pv": 18, "t": "inde", "e": 1, "a": 1192},
+{"n": 787, "r": "commune", "nom": "Alauddin Khalji", "pv": 16, "t": "inde", "e": 1, "a": 1308},
+{"n": 788, "r": "commune", "nom": "Rana Pratap", "pv": 16, "t": "inde", "e": 2, "a": 1586},
+{"n": 789, "r": "legendaire", "nom": "Kubilai Khan", "pv": 91, "t": "chine", "e": 1, "a": 1272},
+{"n": 790, "r": "epique", "nom": "Han Wudi", "pv": 87, "t": "chine", "e": 0, "a": -104},
+{"n": 791, "r": "epique", "nom": "Li Bai", "pv": 84, "t": "chine", "e": 1, "a": 749},
+{"n": 792, "r": "epique", "nom": "Zheng He", "pv": 81, "t": "chine", "e": 1, "a": 1420},
+{"n": 793, "r": "rare", "nom": "Tang Taizong", "pv": 72, "t": "chine", "e": 1, "a": 641},
+{"n": 794, "r": "rare", "nom": "Liu Bang", "pv": 61, "t": "chine", "e": 0, "a": -208},
+{"n": 795, "r": "rare", "nom": "Cao Cao", "pv": 61, "t": "chine", "e": 0, "a": 205},
+{"n": 796, "r": "rare", "nom": "Kangxi", "pv": 61, "t": "chine", "e": 2, "a": 1706},
+{"n": 797, "r": "rare", "nom": "Sima Qian", "pv": 60, "t": "chine", "e": 0, "a": -98},
+{"n": 798, "r": "rare", "nom": "Zhang Qian", "pv": 60, "t": "chine", "e": 0, "a": -137},
+{"n": 799, "r": "rare", "nom": "Zhu Yuanzhang", "pv": 60, "t": "chine", "e": 1, "a": 1380},
+{"n": 800, "r": "peu-commune", "nom": "Cai Lun", "pv": 55, "t": "chine", "e": 0, "a": 103},
+{"n": 801, "r": "peu-commune", "nom": "Du Fu", "pv": 49, "t": "chine", "e": 1, "a": 758},
+{"n": 802, "r": "peu-commune", "nom": "Xuanzang", "pv": 43, "t": "chine", "e": 1, "a": 650},
+{"n": 803, "r": "peu-commune", "nom": "Yue Fei", "pv": 43, "t": "chine", "e": 1, "a": 1140},
+{"n": 804, "r": "peu-commune", "nom": "Qianlong", "pv": 42, "t": "chine", "e": 2, "a": 1772},
+{"n": 805, "r": "peu-commune", "nom": "Xiang Yu", "pv": 40, "t": "chine", "e": 0, "a": -202},
+{"n": 806, "r": "peu-commune", "nom": "Mencius", "pv": 40, "t": "chine", "e": 0, "a": -313},
+{"n": 807, "r": "commune", "nom": "Shen Kuo", "pv": 34, "t": "chine", "e": 1, "a": 1080},
+{"n": 808, "r": "commune", "nom": "Hua Tuo", "pv": 20, "t": "chine", "e": 0, "a": 192},
+{"n": 809, "r": "commune", "nom": "Wang Mang", "pv": 18, "t": "chine", "e": 0, "a": 6},
+{"n": 810, "r": "commune", "nom": "Ban Chao", "pv": 17, "t": "chine", "e": 0, "a": 84},
+{"n": 811, "r": "commune", "nom": "Zhuangzi", "pv": 17, "t": "chine", "e": 0, "a": -310},
+{"n": 813, "r": "commune", "nom": "Koxinga", "pv": 15, "t": "chine", "e": 2, "a": 1660},
+{"n": 814, "r": "legendaire", "nom": "Sejong le Grand", "pv": 91, "t": "japon", "e": 1, "a": 1441},
+{"n": 815, "r": "epique", "nom": "Oda Nobunaga", "pv": 86, "t": "japon", "e": 2, "a": 1576},
+{"n": 816, "r": "epique", "nom": "Tokugawa Ieyasu", "pv": 85, "t": "japon", "e": 2, "a": 1597},
+{"n": 817, "r": "epique", "nom": "Miyamoto Musashi", "pv": 82, "t": "japon", "e": 2, "a": 1632},
+{"n": 818, "r": "epique", "nom": "Toyotomi Hideyoshi", "pv": 81, "t": "japon", "e": 2, "a": 1585},
+{"n": 820, "r": "rare", "nom": "Murasaki Shikibu", "pv": 72, "t": "japon", "e": 1, "a": 1011},
+{"n": 823, "r": "peu-commune", "nom": "Matsuo Bashō", "pv": 52, "t": "japon", "e": 2, "a": 1686},
+{"n": 824, "r": "peu-commune", "nom": "Minamoto no Yoritomo", "pv": 50, "t": "japon", "e": 1, "a": 1190},
+{"n": 825, "r": "peu-commune", "nom": "Minamoto no Yoshitsune", "pv": 43, "t": "japon", "e": 1, "a": 1189},
+{"n": 826, "r": "commune", "nom": "Le prince Shōtoku", "pv": 32, "t": "japon", "e": 1, "a": 616},
+{"n": 828, "r": "commune", "nom": "Jang Yeong-sil", "pv": 30, "t": "japon", "e": 1, "a": 1425},
+{"n": 830, "r": "commune", "nom": "Ashikaga Takauji", "pv": 16, "t": "japon", "e": 1, "a": 1349},
+{"n": 831, "r": "legendaire", "nom": "Hô Chi Minh", "pv": 90, "t": "sudest", "e": 3, "a": 1947},
+{"n": 833, "r": "epique", "nom": "Bayinnaung", "pv": 82, "t": "sudest", "e": 2, "a": 1566},
+{"n": 834, "r": "epique", "nom": "Ramkhamhaeng", "pv": 81, "t": "sudest", "e": 1, "a": 1285},
+{"n": 835, "r": "rare", "nom": "Bà Triệu", "pv": 76, "t": "sudest", "e": 0, "a": 248},
+{"n": 836, "r": "rare", "nom": "Naresuan", "pv": 74, "t": "sudest", "e": 2, "a": 1598},
+{"n": 837, "r": "rare", "nom": "Lý Thường Kiệt", "pv": 73, "t": "sudest", "e": 1, "a": 1080},
+{"n": 838, "r": "rare", "nom": "Anawrahta", "pv": 71, "t": "sudest", "e": 1, "a": 1063},
+{"n": 840, "r": "peu-commune", "nom": "Trần Hưng Đạo", "pv": 47, "t": "sudest", "e": 1, "a": 1282},
+{"n": 841, "r": "commune", "nom": "Lê Lợi", "pv": 29, "t": "sudest", "e": 1, "a": 1426},
+{"n": 842, "r": "commune", "nom": "Suryavarman II", "pv": 29, "t": "sudest", "e": 1, "a": 1150},
+{"n": 844, "r": "commune", "nom": "Taksin", "pv": 27, "t": "sudest", "e": 2, "a": 1776},
+{"n": 845, "r": "commune", "nom": "Triệu Đà", "pv": 17, "t": "sudest", "e": 0, "a": -171},
+{"n": 846, "r": "legendaire", "nom": "Gajah Mada", "pv": 91, "t": "insulinde", "e": 1, "a": 1344},
+{"n": 848, "r": "rare", "nom": "Soekarno", "pv": 60, "t": "insulinde", "e": 3, "a": 1953},
+{"n": 850, "r": "peu-commune", "nom": "Gabriela Silang", "pv": 49, "t": "insulinde", "e": 2, "a": 1763},
+{"n": 854, "r": "commune", "nom": "Raden Wijaya", "pv": 29, "t": "insulinde", "e": 1, "a": 1309},
+{"n": 857, "r": "legendaire", "nom": "Don Bradman", "pv": 91, "t": "australie", "e": 3, "a": 1972},
+{"n": 859, "r": "rare", "nom": "Abel Tasman", "pv": 60, "t": "australie", "e": 2, "a": 1648},
+{"n": 860, "r": "peu-commune", "nom": "Ned Kelly", "pv": 45, "t": "australie", "e": 3, "a": 1880},
+{"n": 861, "r": "peu-commune", "nom": "Truganini", "pv": 45, "t": "australie", "e": 3, "a": 1862},
+{"n": 863, "r": "peu-commune", "nom": "William Dampier", "pv": 45, "t": "australie", "e": 2, "a": 1700},
+{"n": 864, "r": "peu-commune", "nom": "Albert Namatjira", "pv": 42, "t": "australie", "e": 3, "a": 1948},
+{"n": 865, "r": "commune", "nom": "Arthur Phillip", "pv": 22, "t": "australie", "e": 2, "a": 1794},
+{"n": 867, "r": "commune", "nom": "Banjo Paterson", "pv": 21, "t": "australie", "e": 3, "a": 1920},
+{"n": 868, "r": "commune", "nom": "Caroline Chisholm", "pv": 19, "t": "australie", "e": 3, "a": 1860},
+{"n": 869, "r": "legendaire", "nom": "Edmund Hillary", "pv": 91, "t": "pacifique", "e": 3, "a": 1981},
+{"n": 870, "r": "peu-commune", "nom": "Ernest Rutherford", "pv": 42, "t": "pacifique", "e": 3, "a": 1922},
+{"n": 871, "r": "peu-commune", "nom": "Te Rauparaha", "pv": 41, "t": "pacifique", "e": 3, "a": 1824},
+{"n": 872, "r": "peu-commune", "nom": "Kate Sheppard", "pv": 40, "t": "pacifique", "e": 3, "a": 1908},
+{"n": 873, "r": "commune", "nom": "Pōmare Ier", "pv": 23, "t": "pacifique", "e": 2, "a": 1790},
+{"n": 875, "r": "commune", "nom": "Hongi Hika", "pv": 18, "t": "pacifique", "e": 3, "a": 1818},
+{"n": 876, "r": "commune", "nom": "Jonah Lomu", "pv": 16, "t": "pacifique", "e": 3, "a": 2012}
 ];
 /* Doublons supprimes (audit d'octobre 2026) : la carte supprimee -> la carte
    gardee du meme personnage. Une collection qui les a encore les echange
@@ -9293,17 +9815,17 @@ function publierAlbum(){
   if(typeof compteConnecte !== "function" || !compteConnecte() || typeof CARTES === "undefined" || !CARTES.length) return Promise.resolve(false);
   const url = urlDocuments("/albums/" + encodeURIComponent(COMPTE.user.uid));
   const pseudo = pseudoCompte();
-  if(!pseudo) return requeteJeton("DELETE", url).then(() => true, () => false);
-  const m = cartesPossedees();
-  return requeteJeton("POST", urlDocuments(":commit"), { writes: [{
+  if(!pseudo){ oublierPublication("album"); return requeteJeton("DELETE", url).then(() => true, () => false); }
+  const m = cartesPossedees(), ligne = { nom: pseudo, pv: scoreCollection(m), cartes: Object.keys(m).length };
+  return publierSiChange("album", ligne, () => requeteJeton("POST", urlDocuments(":commit"), { writes: [{
     update: {
       name: "projects/" + CONFIG_COMPTE.projectId + "/databases/(default)/documents/albums/" + COMPTE.user.uid,
-      fields: { nom: { stringValue: pseudo }, pv: { integerValue: String(scoreCollection(m)) },
-                cartes: { integerValue: String(Object.keys(m).length) } }
+      fields: { nom: { stringValue: ligne.nom }, pv: { integerValue: String(ligne.pv) },
+                cartes: { integerValue: String(ligne.cartes) } }
     },
     updateMask: { fieldPaths: ["nom", "pv", "cartes"] },
     updateTransforms: [{ fieldPath: "maj", setToServerValue: "REQUEST_TIME" }]
-  }] }).then(r => r.ok, () => false);
+  }] }).then(r => r.ok, () => false));
 }
 /* Les dix premieres collections, le nombre de joueurs et ceux devant soi. */
 function chargerAlbums(force){
@@ -9320,17 +9842,26 @@ function chargerAlbums(force){
   const lire = r => r.ok ? r.json() : Promise.reject(new Error("réponse " + r.status));
   const nombre = rep => Number(((((rep || [])[0] || {}).result || {}).aggregateFields || {}).n
     ? rep[0].result.aggregateFields.n.integerValue : 0);
-  Promise.all([
-    requeteJeton("POST", urlDocuments(":runQuery"), top).then(lire),
-    requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(null)).then(lire),
-    requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(plusQueMoi)).then(lire)
-  ]).then(([lignes, tous, devant]) => {
+  /* Comme le classement general (z0j_classement.js) : le nombre de
+     joueurs recompte au plus toutes les heures, ceux devant soi seulement
+     hors des dix premiers. */
+  const moi = COMPTE.user.uid, mien = scoreCollection();
+  const compterTous = ALBUMS.total === null || !ALBUMS.totalMaj || Date.now() - ALBUMS.totalMaj > CLASSEMENT_TOTAL;
+  requeteJeton("POST", urlDocuments(":runQuery"), top).then(lire).then(lignes => {
+    const dedans = (lignes || []).some(x => x.document && decodeURIComponent(x.document.name.split("/").pop()) === moi);
+    return Promise.all([lignes,
+      compterTous ? requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(null)).then(lire) : null,
+      dedans ? null : requeteJeton("POST", urlDocuments(":runAggregationQuery"), compter(plusQueMoi)).then(lire)]);
+  }).then(([lignes, tous, devant]) => {
     ALBUMS.liste = (lignes || []).filter(x => x.document).map(x => {
       const f = x.document.fields || {};
       return { uid: decodeURIComponent(x.document.name.split("/").pop()), nom: (f.nom && f.nom.stringValue) || "?",
                pv: Number((f.pv && f.pv.integerValue) || 0), cartes: Number((f.cartes && f.cartes.integerValue) || 0) };
     });
-    ALBUMS.total = nombre(tous); ALBUMS.devant = nombre(devant); ALBUMS.erreur = null;
+    if(tous){ ALBUMS.total = nombre(tous); ALBUMS.totalMaj = Date.now(); }
+    ALBUMS.devant = devant ? nombre(devant) : ALBUMS.liste.filter(e => e.pv > mien).length;
+    ALBUMS.total = Math.max(ALBUMS.total || 0, ALBUMS.liste.length);
+    ALBUMS.erreur = null;
   }).catch(() => { ALBUMS.erreur = "Classement des collections indisponible pour l’instant."; })
     .finally(() => {
       ALBUMS.enCours = false; ALBUMS.maj = Date.now();
@@ -10600,6 +11131,10 @@ function ecrireJoueur(x, nouvelle){
   const valeurs = { nom: monNom(), nomMin: nomRecherche(monNom()), code: monCode(), vitrine };
   if(x) valeurs.elo = Math.max(100, Math.min(4000, Math.round(x.elo)));
   else if(nouvelle) valeurs.elo = ELO_DEPART;
+  /* Fiche inchangee (meme nom, meme code, meme vitrine) : rien a reecrire. */
+  const m0 = SOC.moi;
+  if(!x && !nouvelle && m0 && m0.nom === valeurs.nom && m0.nomMin === valeurs.nomMin && m0.code === valeurs.code
+    && JSON.stringify(m0.vitrine || []) === JSON.stringify(vitrine)) return Promise.resolve(true);
   const champs = qjChampsEncodes(valeurs);
   if(x){ champs.eloDefi = { stringValue: x.defi.id }; champs.eloMaj = { timestampValue: x.defi.fini }; }
   return qjCommit({ update: { name: qjNomDoc("/joueurs/" + uid), fields: champs }, updateMask: { fieldPaths: Object.keys(champs) },
@@ -10612,10 +11147,13 @@ function ecrireJoueur(x, nouvelle){
    pour qu'un ami puisse nous trouver des le premier jour. */
 function assurerJoueur(){
   if(!socialPossible()) return Promise.resolve(false);
-  return lireJoueur(COMPTE.user.uid).then(j => {
+  /* Une fois par session et par compte (et de nouveau si le pseudo change). */
+  const uid = COMPTE.user.uid, cle = uid + "|" + monNom();
+  if(SOC.assure === cle) return Promise.resolve(true);
+  return lireJoueur(uid).then(j => {
     SOC.moi = j;
-    if(j && j.nom === monNom() && j.code === monCode() && j.nomMin === nomRecherche(monNom())) return true;
-    return publierJoueur(j && typeof j.elo === "number" ? j.elo : ELO_DEPART);
+    if(j && j.nom === monNom() && j.code === monCode() && j.nomMin === nomRecherche(monNom())){ SOC.assure = cle; return true; }
+    return publierJoueur(j && typeof j.elo === "number" ? j.elo : ELO_DEPART).then(ok => { if(ok) SOC.assure = cle; return ok; });
   });
 }
 function lireJoueur(uid){
@@ -11233,13 +11771,16 @@ function saisonActuelle(d){ return Math.max(d ? d.saison : 1, typeof qjSaison ==
 function rangDepartDe(pts){ let k = 0; while(k < 10 && pts >= SEUILS_RANGS[k + 1]) k++; return k; }
 
 /* ---------- Lecture, creation ---------- */
+const BOURSE_FRAIS = 15 * 60 * 1000;
 function chargerBourse(force){
   if(!bourseConnectee()) return Promise.resolve(null);
   const uid = COMPTE.user.uid;
   if(BOURSE.chargement && BOURSE.uid === uid) return BOURSE.chargement;
-  /* Relue au plus une fois par minute (meme apres un echec : « Reessayer »
-     force la lecture). */
-  if(!force && BOURSE.uid === uid && BOURSE.lu && Date.now() - BOURSE.lu < 60 * 1000) return Promise.resolve(BOURSE.doc);
+  /* Relue au plus tous les quarts d'heure par l'affichage (meme apres un
+     echec, une fois par minute ; « Reessayer » force la lecture) : nos propres operations la
+     tiennent a jour (commitBourse), la recolte la relit, et chaque releve
+     de la progression (ouverture, retour sur l'application) la relit aussi. */
+  if(!force && BOURSE.uid === uid && BOURSE.lu && Date.now() - BOURSE.lu < (BOURSE.etat === "erreur" ? 60 * 1000 : BOURSE_FRAIS)) return Promise.resolve(BOURSE.doc);
   if(BOURSE.uid !== uid){ BOURSE.uid = uid; BOURSE.doc = null; BOURSE.maj = null; BOURSE.etat = "inconnu"; bourse(); }
   if(BOURSE.etat !== "ok") BOURSE.etat = "chargement";
   BOURSE.chargement = lireConfigServeur().then(() => requeteJeton("GET", urlDocuments("/bourses/" + encodeURIComponent(uid))))
@@ -11385,14 +11926,19 @@ function appelerFonction(nom, data){
     r.ok && j && "result" in j ? j.result
       : Promise.reject(Object.assign(new Error((j && j.error && j.error.message) || "réponse " + r.status), { statut: r.status }))));
 }
-/* La recolte : au plus une toutes les 20 secondes (force : tout de suite,
-   apres un Quiz of the Day publie ou un pack ouvert). */
-const RECOLTE = { enCours: null, derniere: 0, minuteur: null };
+/* La recolte. Le serveur ne compte que des faits qu'il tient lui-meme
+   (Quiz of the Day verifies, places, packs ouverts) : rien de ce qui change
+   sur l'appareil ne lui apporte de gain. On la demande donc une fois par
+   jour et par session (a l'ouverture : les places de la veille sont
+   devenues definitives), et tout de suite apres un Quiz of the Day publie
+   ou un pack ouvert (force). Jamais plus d'une toutes les 20 secondes. */
+const RECOLTE = { enCours: null, derniere: 0, minuteur: null, jour: null };
 function recolterServeur(force){
   if(!bourseConnectee() || !bourse()) return Promise.resolve(null);
   if(RECOLTE.enCours) return RECOLTE.enCours.then(() => force ? recolterServeur(true) : null);
-  if(!force && Date.now() - RECOLTE.derniere < 20000) return Promise.resolve(null);
+  if(!force && (Date.now() - RECOLTE.derniere < 20000 || RECOLTE.jour === BOURSE.uid + "|" + jourBourse())) return Promise.resolve(null);
   RECOLTE.derniere = Date.now();
+  RECOLTE.jour = BOURSE.uid + "|" + jourBourse();
   RECOLTE.enCours = appelerFonction("recolter").then(r => {
     if(!r || !(r.ecus || r.pts)) return r;
     /* Le journal du jour (« Gagner des ecus ») : les raisons donnees par le serveur. */
@@ -11402,7 +11948,7 @@ function recolterServeur(force){
     sauverEtat(true);
     if(r.ecus && typeof annoncerGain === "function") annoncerGain(r.ecus);
     return chargerBourse(true).then(() => { reclamerRangs(); return r; });
-  }, () => null).finally(() => { RECOLTE.enCours = null; });
+  }, () => { RECOLTE.jour = null; return null; }).finally(() => { RECOLTE.enCours = null; });
   return RECOLTE.enCours;
 }
 
